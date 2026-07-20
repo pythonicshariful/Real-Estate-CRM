@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expenses — Southeast CRM v2.0</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  
+</head>
+<body class="flex h-screen overflow-hidden text-slate-100 bg-[#0a0a14]">
+  <div id="sidebar-container"></div>
+  <main class="flex-1 flex flex-col h-screen overflow-hidden">
+    <header class="glass-dark border-b border-slate-800/60 h-14 flex items-center justify-between px-6 flex-shrink-0">
+      <div><div class="text-sm font-bold text-white">Expenses</div><div class="text-xs text-slate-500">Financial outflow tracking and budget management</div></div>
+      <button class="btn-gradient px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg> Log Expense
+      </button>
+    </header>
+    <div class="flex-1 overflow-y-auto p-5 space-y-5">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Total Expenses</div><div class="kpi-value text-rose-400" style="font-size:1.5rem">৳3.8M</div><div class="trend-down">This month</div></div>
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Marketing</div><div class="kpi-value text-indigo-400" style="font-size:1.5rem">৳1.4M</div><div class="trend-up">36.8% of total</div></div>
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Salaries</div><div class="kpi-value text-amber-400" style="font-size:1.5rem">৳1.1M</div><div class="trend-flat">Monthly payroll</div></div>
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Budget Left</div><div class="kpi-value text-emerald-400" style="font-size:1.5rem">৳0.9M</div><div class="trend-up">18.7% remaining</div></div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="chart-card">
+          <div class="chart-title">Expense Breakdown</div><div class="chart-subtitle">By category this month</div>
+          
+        </div>
+        <div class="chart-card lg:col-span-2">
+          <div class="chart-title">Monthly Expenses by Category</div><div class="chart-subtitle">Stacked bar — Jan to Jul 2025</div>
+          
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title mb-4">Recent Expenses</div>
+        <table class="crm-table">
+          <thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount</th><th>Submitted By</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="text-slate-400">Jul 18</td><td class="font-medium text-white">Facebook Ad Campaign — July</td><td>Marketing</td><td class="text-rose-400 font-semibold">৳320,000</td><td>Marketing Team</td><td><span class="badge badge-active">Approved</span></td></tr>
+            <tr><td class="text-slate-400">Jul 17</td><td class="font-medium text-white">Office Supplies — Q3</td><td>Office</td><td class="text-amber-400">৳18,500</td><td>Admin</td><td><span class="badge badge-active">Approved</span></td></tr>
+            <tr><td class="text-slate-400">Jul 15</td><td class="font-medium text-white">Sales Team Lunch</td><td>Misc</td><td class="text-slate-400">৳8,200</td><td>Rafi Islam</td><td><span class="badge badge-pending">Pending</span></td></tr>
+            <tr><td class="text-slate-400">Jul 14</td><td class="font-medium text-white">CRM Software Subscription</td><td>Tech</td><td class="text-indigo-400">৳45,000</td><td>IT Dept</td><td><span class="badge badge-active">Approved</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+  <div id="toast-container"></div>
+  <script src="/assets/js/sidebar.js"></script>
+  <script type="module" src="/assets/js/app.js"></script>
+  
+</body>
+</html>

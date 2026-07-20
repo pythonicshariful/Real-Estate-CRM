@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prospects — Southeast CRM v2.0</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  
+</head>
+<body class="flex h-screen overflow-hidden text-slate-100 bg-[#0a0a14]">
+  <div id="sidebar-container"></div>
+  <main class="flex-1 flex flex-col h-screen overflow-hidden">
+    <header class="glass-dark border-b border-slate-800/60 h-14 flex items-center justify-between px-6 flex-shrink-0">
+      <div><div class="text-sm font-bold text-white">Prospects & Estimates</div><div class="text-xs text-slate-500">Estimate List · Estimate Requests · Forms · Proposals</div></div>
+      <button class="btn-gradient px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg> New Estimate
+      </button>
+    </header>
+    <!-- Sub-tabs -->
+    <div class="glass-dark border-b border-slate-800/60 px-6 flex gap-1 flex-shrink-0">
+      <button class="px-4 py-2.5 text-xs font-semibold text-white border-b-2 border-indigo-500">Estimate List</button>
+      <button class="px-4 py-2.5 text-xs font-medium text-slate-400 border-b-2 border-transparent hover:text-white">Requests</button>
+      <button class="px-4 py-2.5 text-xs font-medium text-slate-400 border-b-2 border-transparent hover:text-white">Forms</button>
+      <button class="px-4 py-2.5 text-xs font-medium text-slate-400 border-b-2 border-transparent hover:text-white">Proposals</button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-5 space-y-5">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Estimates Sent</div><div class="kpi-value text-indigo-400">64</div><div class="trend-up">This month</div></div>
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Approved</div><div class="kpi-value text-emerald-400">28</div><div class="trend-up">43.7% rate</div></div>
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Pending</div><div class="kpi-value text-amber-400">22</div><div class="trend-flat">Awaiting response</div></div>
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Proposals</div><div class="kpi-value text-violet-400">14</div><div class="trend-up">Active proposals</div></div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="chart-card lg:col-span-2">
+          <div class="chart-title">Estimate Conversion Funnel</div><div class="chart-subtitle">Prospects through the estimate pipeline</div>
+          
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Estimate Outcomes</div><div class="chart-subtitle">Final status distribution</div>
+          
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title mb-4">Recent Estimates</div>
+        <table class="crm-table">
+          <thead><tr><th>Estimate #</th><th>Prospect</th><th>Unit Type</th><th>Estimated Value</th><th>Sent</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="text-violet-400 font-mono">#EST-082</td><td class="font-medium text-white">Dr. Shahidul Islam</td><td>3 BHK Apartment</td><td class="text-emerald-400 font-semibold">৳9,800,000</td><td>Jul 18</td><td><span class="badge badge-pending">Pending</span></td></tr>
+            <tr><td class="text-violet-400 font-mono">#EST-081</td><td class="font-medium text-white">Mrs. Farida Khanam</td><td>2 BHK Apartment</td><td class="text-emerald-400 font-semibold">৳7,200,000</td><td>Jul 15</td><td><span class="badge badge-won">Approved</span></td></tr>
+            <tr><td class="text-violet-400 font-mono">#EST-080</td><td class="font-medium text-white">Engr. Anwar Hossain</td><td>Commercial Space</td><td class="text-amber-400 font-semibold">৳18,500,000</td><td>Jul 12</td><td><span class="badge badge-active">Proposal Sent</span></td></tr>
+            <tr><td class="text-violet-400 font-mono">#EST-079</td><td class="font-medium text-white">Md. Zahirul Islam</td><td>4 BHK Duplex</td><td class="text-rose-400">৳14,000,000</td><td>Jul 8</td><td><span class="badge badge-lost">Declined</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+  <div id="toast-container"></div>
+  <script src="/assets/js/sidebar.js"></script>
+  <script type="module" src="/assets/js/app.js"></script>
+  
+</body>
+</html>

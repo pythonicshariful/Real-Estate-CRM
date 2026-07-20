@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Southeast Landmark CRM v2.0</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body class="auth-bg h-screen w-screen flex items-center justify-center font-sans antialiased text-white">
+  
+  <canvas id="auth-canvas"></canvas>
+
+  <div class="auth-card glass p-10 rounded-2xl w-full max-w-md mx-4 shadow-2xl relative overflow-hidden">
+    <!-- Gradient blur accent -->
+    <div class="absolute -top-20 -right-20 w-40 h-40 bg-indigo-600 rounded-full mix-blend-screen filter blur-3xl opacity-50"></div>
+    <div class="absolute -bottom-20 -left-20 w-40 h-40 bg-violet-600 rounded-full mix-blend-screen filter blur-3xl opacity-50"></div>
+    
+    <div class="relative z-10">
+      <div class="text-center mb-8">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg">
+          <span class="text-2xl font-bold tracking-tighter">SL</span>
+        </div>
+        <h1 class="text-2xl font-semibold tracking-tight">Southeast Landmark Ltd.</h1>
+        <p class="text-sm text-slate-400 mt-1">Sales CRM v2.0</p>
+      </div>
+
+      <form id="login-form" class="space-y-5">
+        <div id="step-1">
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-1">Email</label>
+            <input type="email" id="email" class="w-full input-glass px-4 py-3 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all" placeholder="name@southeast.com" required>
+          </div>
+          <div class="mt-4">
+            <label class="block text-sm font-medium text-slate-300 mb-1">Password</label>
+            <input type="password" id="password" class="w-full input-glass px-4 py-3 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all" placeholder="••••••••" required>
+          </div>
+          <button type="submit" class="w-full btn-gradient mt-6 py-3 rounded-lg font-medium shadow-lg hover:shadow-indigo-500/25 transition-all text-white flex justify-center items-center">
+            <span id="btn-text">Sign In</span>
+            <svg id="btn-spinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+          </button>
+        </div>
+
+        <div id="step-mfa" class="hidden">
+          <div class="text-center mb-6">
+            <p class="text-sm text-slate-300">Enter the 6-digit code from your authenticator app.</p>
+          </div>
+          <div class="flex justify-center gap-2 mb-6">
+            <input type="text" maxlength="1" class="mfa-input w-12 h-14 input-glass text-center text-xl font-semibold rounded-lg focus:ring-2 focus:ring-indigo-500" />
+            <input type="text" maxlength="1" class="mfa-input w-12 h-14 input-glass text-center text-xl font-semibold rounded-lg focus:ring-2 focus:ring-indigo-500" />
+            <input type="text" maxlength="1" class="mfa-input w-12 h-14 input-glass text-center text-xl font-semibold rounded-lg focus:ring-2 focus:ring-indigo-500" />
+            <span class="text-2xl text-slate-500 self-center">-</span>
+            <input type="text" maxlength="1" class="mfa-input w-12 h-14 input-glass text-center text-xl font-semibold rounded-lg focus:ring-2 focus:ring-indigo-500" />
+            <input type="text" maxlength="1" class="mfa-input w-12 h-14 input-glass text-center text-xl font-semibold rounded-lg focus:ring-2 focus:ring-indigo-500" />
+            <input type="text" maxlength="1" class="mfa-input w-12 h-14 input-glass text-center text-xl font-semibold rounded-lg focus:ring-2 focus:ring-indigo-500" />
+          </div>
+          <button type="button" id="verify-mfa" class="w-full btn-gradient py-3 rounded-lg font-medium shadow-lg">Verify & Continue</button>
+        </div>
+      </form>
+
+      <div class="mt-8 text-center text-xs text-slate-500 flex items-center justify-center gap-1">
+        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path></svg>
+        Secured with 256-bit encryption
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script type="module" src="/assets/js/api.js"></script>
+  <script type="module" src="/assets/js/app.js"></script>
+  <script type="module" src="/assets/js/auth.js"></script>
+  <script>
+    // Simple 3D background animation
+    const canvas = document.getElementById('auth-canvas');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+
+    const particles = new THREE.Group();
+    scene.add(particles);
+
+    const geometry = new THREE.SphereGeometry(0.1, 8, 8);
+    const material = new THREE.MeshBasicMaterial({ color: 0x6366f1, transparent: true, opacity: 0.5 });
+
+    for(let i=0; i<100; i++) {
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.set(
+        (Math.random() - 0.5) * 20,
+        (Math.random() - 0.5) * 20,
+        (Math.random() - 0.5) * 20
+      );
+      mesh.velocity = new THREE.Vector3(
+        (Math.random() - 0.5) * 0.02,
+        (Math.random() - 0.5) * 0.02,
+        (Math.random() - 0.5) * 0.02
+      );
+      particles.add(mesh);
+    }
+
+    camera.position.z = 5;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      particles.rotation.y += 0.001;
+      particles.rotation.x += 0.0005;
+      
+      particles.children.forEach(p => {
+        p.position.add(p.velocity);
+        if(p.position.length() > 10) {
+          p.position.setLength(Math.random() * 5);
+        }
+      });
+      
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>

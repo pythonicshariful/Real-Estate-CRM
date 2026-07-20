@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pipeline - CRM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body class="flex h-screen overflow-hidden text-slate-100 bg-[#0f0f1a]">
+  
+  <main class="flex-1 flex flex-col h-screen overflow-hidden">
+    <header class="glass-dark border-b border-slate-800 h-16 flex items-center px-6">
+      <div class="text-lg font-semibold">Kanban Pipeline</div>
+    </header>
+
+    <div class="flex-1 overflow-x-auto p-4 flex gap-4 items-start scrollbar-hide">
+      
+      <!-- Column 1 -->
+      <div class="kanban-col glass-dark rounded-xl flex flex-col max-h-full border border-slate-800">
+        <div class="p-3 border-b border-slate-800 flex justify-between items-center bg-indigo-500/10 rounded-t-xl">
+          <div class="font-semibold text-sm">NEW</div>
+          <span class="bg-indigo-500 text-white text-xs px-2 py-0.5 rounded-full">12</span>
+        </div>
+        <div class="p-3 flex-1 overflow-y-auto space-y-3" id="col-new" ondrop="drop(event)" ondragover="allowDrop(event)">
+          <!-- Card -->
+          <div class="glass p-3 rounded-lg cursor-grab border-l-2 border-indigo-500" draggable="true" ondragstart="drag(event)" id="card-1">
+            <div class="font-medium text-sm">Sarah Jenkins</div>
+            <div class="text-xs text-slate-400 mt-1">Project A • Warm</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Column 2 -->
+      <div class="kanban-col glass-dark rounded-xl flex flex-col max-h-full border border-slate-800">
+        <div class="p-3 border-b border-slate-800 flex justify-between items-center bg-cyan-500/10 rounded-t-xl">
+          <div class="font-semibold text-sm">CONTACTED</div>
+          <span class="bg-cyan-500 text-white text-xs px-2 py-0.5 rounded-full">5</span>
+        </div>
+        <div class="p-3 flex-1 overflow-y-auto space-y-3" id="col-contacted" ondrop="drop(event)" ondragover="allowDrop(event)">
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    function allowDrop(ev) { ev.preventDefault(); }
+    function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
+    function drop(ev) {
+      ev.preventDefault();
+      var data = ev.dataTransfer.getData("text");
+      var target = ev.target.closest('.kanban-col').querySelector('.overflow-y-auto');
+      if (target) {
+        target.appendChild(document.getElementById(data));
+      }
+    }
+  </script>
+</body>
+</html>

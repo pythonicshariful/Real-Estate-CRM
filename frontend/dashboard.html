@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - CRM v2.0</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="flex h-screen overflow-hidden text-slate-100">
+
+  <!-- Sidebar -->
+  <aside class="sidebar glass-dark h-full flex flex-col hidden md:flex border-r border-slate-800 relative z-20">
+    <div class="p-6 flex items-center justify-between">
+      <div class="font-bold text-xl tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-violet-400">SL CRM</div>
+    </div>
+    
+    <div class="flex-1 overflow-y-auto px-4 py-2 space-y-8 scrollbar-hide">
+      
+      <!-- CORE -->
+      <div>
+        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 px-2">Core</div>
+        <nav class="space-y-1">
+          <a href="/dashboard.html" class="sidebar-item active flex items-center px-3 py-2 text-sm font-medium rounded-lg text-white">
+            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            Dashboard
+          </a>
+          <!-- other links -->
+        </nav>
+      </div>
+
+      <!-- LEAD ENGINE -->
+      <div>
+        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 px-2">Lead Engine</div>
+        <nav class="space-y-1">
+          <a href="/leads.html" class="sidebar-item flex items-center px-3 py-2 text-sm font-medium rounded-lg text-slate-300">
+            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            Leads
+            <span class="ml-auto bg-indigo-500 text-white py-0.5 px-2 rounded-full text-xs">12</span>
+          </a>
+          <a href="/pipeline.html" class="sidebar-item flex items-center px-3 py-2 text-sm font-medium rounded-lg text-slate-300">
+            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            Pipeline
+          </a>
+        </nav>
+      </div>
+
+      <!-- ADMINISTRATION -->
+      <div>
+        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 px-2">Administration</div>
+        <nav class="space-y-1">
+          <a href="/team.html" class="sidebar-item flex items-center px-3 py-2 text-sm font-medium rounded-lg text-slate-300">
+            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+            Team & Accounts
+          </a>
+          <a href="/settings.html" class="sidebar-item flex items-center px-3 py-2 text-sm font-medium rounded-lg text-slate-300">
+            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg>
+            Settings
+          </a>
+        </nav>
+      </div>
+
+    </div>
+    
+    <div class="p-4 border-t border-slate-800">
+      <div class="flex items-center gap-3 cursor-pointer sidebar-item p-2 rounded-lg" onclick="window.logout()">
+        <img src="https://ui-avatars.com/api/?name=User&background=6366f1&color=fff" class="w-8 h-8 rounded-full">
+        <div>
+          <div class="text-sm font-medium text-white">Log Out</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 flex flex-col h-screen overflow-hidden">
+    
+    <!-- Topbar -->
+    <header class="glass-dark border-b border-slate-800 h-16 flex items-center justify-between px-6 z-10 relative">
+      <div class="text-lg font-semibold">Dashboard Overview</div>
+      <div class="flex items-center gap-4">
+        <div class="relative">
+          <svg class="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+          <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full overdue-pulse"></span>
+        </div>
+      </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-6 space-y-6">
+      
+      <!-- ROW 1: KPIs -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="glass p-5 rounded-2xl">
+          <div class="text-sm text-slate-400 font-medium">Total Leads Today</div>
+          <div class="mt-2 text-3xl font-bold text-white">124</div>
+          <div class="mt-2 text-sm text-emerald-400">↑ 12% vs yesterday</div>
+        </div>
+        <div class="glass p-5 rounded-2xl">
+          <div class="text-sm text-slate-400 font-medium">SLA Compliance</div>
+          <div class="mt-2 text-3xl font-bold text-emerald-400">92%</div>
+        </div>
+        <div class="glass p-5 rounded-2xl">
+          <div class="text-sm text-slate-400 font-medium">Contact Rate</div>
+          <div class="mt-2 text-3xl font-bold text-indigo-400">68%</div>
+        </div>
+        <div class="glass p-5 rounded-2xl">
+          <div class="text-sm text-slate-400 font-medium">Active Opps</div>
+          <div class="mt-2 text-3xl font-bold text-violet-400">45</div>
+        </div>
+      </div>
+
+      <!-- ROW 2: 3D Visualizations -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 h-96">
+        <div class="glass rounded-2xl p-4 flex flex-col">
+          <div class="font-semibold text-lg mb-2">3D Sales Pipeline Funnel</div>
+          <div class="text-xs text-slate-400 mb-2">Drag to rotate • Scroll to zoom</div>
+          <canvas id="funnel-canvas" class="flex-1 w-full rounded-lg"></canvas>
+        </div>
+        <div class="glass rounded-2xl p-4 flex flex-col">
+          <div class="font-semibold text-lg mb-2">3D Revenue Heatmap</div>
+          <div class="text-xs text-slate-400 mb-2">Drag to rotate • Projects vs Months</div>
+          <canvas id="heatmap-canvas" class="flex-1 w-full rounded-lg"></canvas>
+        </div>
+      </div>
+
+      <!-- ROW 3 & 4: Tables and Charts -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="glass rounded-2xl p-5">
+          <div class="font-semibold text-lg mb-4">Pipeline Distribution</div>
+          <canvas id="bar-chart" height="200"></canvas>
+        </div>
+        <div class="glass rounded-2xl p-5">
+          <div class="font-semibold text-lg mb-4">Recent Leads</div>
+          <!-- Table mock -->
+          <div class="space-y-3">
+            <div class="flex justify-between items-center p-3 glass-dark rounded-lg">
+              <div>
+                <div class="font-medium text-white">John Doe</div>
+                <div class="text-xs text-slate-400">01711223344</div>
+              </div>
+              <span class="badge badge-new">New</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script type="module" src="/assets/js/dashboard3d.js"></script>
+  <script type="module" src="/assets/js/app.js"></script>
+  <script>
+    const ctx = document.getElementById('bar-chart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['New', 'Contacted', 'Qualified', 'Proposal', 'Sold'],
+        datasets: [{
+          label: 'Leads',
+          data: [65, 59, 80, 81, 56],
+          backgroundColor: 'rgba(99, 102, 241, 0.6)',
+          borderColor: 'rgba(99, 102, 241, 1)',
+          borderWidth: 1,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { grid: { color: 'rgba(255,255,255,0.1)' } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

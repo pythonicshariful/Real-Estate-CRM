@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings - CRM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body class="flex h-screen overflow-hidden text-slate-100 bg-[#0f0f1a]">
+  
+  <main class="flex-1 flex flex-col h-screen overflow-hidden">
+    <header class="glass-dark border-b border-slate-800 h-16 flex items-center justify-between px-6">
+      <div class="text-lg font-semibold">System Settings</div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+      <!-- Settings Sidebar -->
+      <div class="w-64 border-r border-slate-800 p-4 space-y-2 glass-dark">
+        <button class="w-full text-left px-4 py-2 rounded-lg bg-white/10 text-white font-medium">General</button>
+        <button class="w-full text-left px-4 py-2 rounded-lg text-slate-400 hover:bg-white/5">Meta Webhook</button>
+        <button class="w-full text-left px-4 py-2 rounded-lg text-slate-400 hover:bg-white/5">SLA Config</button>
+        <button class="w-full text-left px-4 py-2 rounded-lg text-slate-400 hover:bg-white/5">Users & Roles</button>
+      </div>
+
+      <!-- Settings Content -->
+      <div class="flex-1 overflow-y-auto p-6">
+        
+        <div class="max-w-2xl space-y-6">
+          <h2 class="text-xl font-semibold">Meta Webhook Configuration</h2>
+          
+          <div class="glass p-5 rounded-xl flex items-center justify-between border-l-4 border-emerald-500">
+            <div>
+              <div class="font-medium text-white">Webhook Status: Active</div>
+              <div class="text-sm text-slate-400 mt-1">Last payload received 4 mins ago</div>
+            </div>
+            <button class="btn-ghost px-3 py-1.5 rounded text-sm">Test</button>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm text-slate-400 mb-1">Webhook URL</label>
+              <input type="text" class="w-full input-glass p-2 rounded" value="https://crm.southeast.com/api/webhooks/meta" readonly>
+            </div>
+            <div>
+              <label class="block text-sm text-slate-400 mb-1">Verify Token</label>
+              <input type="text" class="w-full input-glass p-2 rounded" value="sl_crm_secure_webhook_token_2024">
+            </div>
+            <div>
+              <label class="block text-sm text-slate-400 mb-1">App Secret</label>
+              <input type="password" class="w-full input-glass p-2 rounded" value="••••••••••••••••">
+            </div>
+            <button class="btn-gradient px-6 py-2 rounded-lg text-sm font-medium mt-2">Save Configuration</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+</body>
+</html>

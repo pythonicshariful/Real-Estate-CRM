@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clients — Southeast CRM v2.0</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  
+</head>
+<body class="flex h-screen overflow-hidden text-slate-100 bg-[#0a0a14]">
+  <div id="sidebar-container"></div>
+  <main class="flex-1 flex flex-col h-screen overflow-hidden">
+    <header class="glass-dark border-b border-slate-800/60 h-14 flex items-center justify-between px-6 flex-shrink-0">
+      <div><div class="text-sm font-bold text-white">Clients & Contacts</div><div class="text-xs text-slate-500">Client database, contracts and relationship management</div></div>
+      <div class="flex gap-2">
+        <input type="text" placeholder="Search clients..." class="input-glass px-3 py-1.5 rounded-lg text-xs w-48">
+        <button class="btn-gradient px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg> Add Client
+        </button>
+      </div>
+    </header>
+    <div class="flex-1 overflow-y-auto p-5 space-y-5">
+      <!-- KPIs -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Total Clients</div><div class="kpi-value text-indigo-400">284</div><div class="trend-up">↑ 12 this month</div></div>
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Active</div><div class="kpi-value text-emerald-400">198</div><div class="trend-up">69.7% of total</div></div>
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">VIP Clients</div><div class="kpi-value text-amber-400">24</div><div class="trend-up">High value</div></div>
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Churned</div><div class="kpi-value text-rose-400">18</div><div class="trend-down">↑ 2 this quarter</div></div>
+      </div>
+      <!-- Charts -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="chart-card">
+          <div class="chart-title">Client Status</div><div class="chart-subtitle">Active vs inactive vs prospect</div>
+          
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Clients by District</div><div class="chart-subtitle">Geographic distribution</div>
+          
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Growth Trend</div><div class="chart-subtitle">New clients per month</div>
+          
+        </div>
+      </div>
+      <!-- Client Table -->
+      <div class="chart-card">
+        <div class="flex items-center justify-between mb-4">
+          <div class="chart-title">Client Directory</div>
+          <div class="flex gap-2">
+            <select class="input-glass px-2 py-1.5 rounded-lg text-xs">
+              <option>All Status</option><option>Active</option><option>VIP</option><option>Churned</option>
+            </select>
+          </div>
+        </div>
+        <table class="crm-table">
+          <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Unit</th><th>Value</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-white">Md. Akter Rahman</td><td>01711000001</td><td>akter@email.com</td><td>Block A, 3F</td><td class="text-emerald-400 font-semibold">৳8.5M</td><td><span class="badge badge-active">Active</span></td><td><button class="btn-ghost px-2 py-1 rounded text-xs">View</button></td></tr>
+            <tr><td class="font-medium text-white">Nasrin Begum</td><td>01812000002</td><td>nasrin@email.com</td><td>Block C, 2B</td><td class="text-emerald-400 font-semibold">৳12.2M</td><td><span class="badge badge-new">VIP</span></td><td><button class="btn-ghost px-2 py-1 rounded text-xs">View</button></td></tr>
+            <tr><td class="font-medium text-white">Engr. Rafiqul Islam</td><td>01611223344</td><td>rafiq@email.com</td><td>Block B, 5A</td><td class="text-amber-400 font-semibold">৳6.8M</td><td><span class="badge badge-active">Active</span></td><td><button class="btn-ghost px-2 py-1 rounded text-xs">View</button></td></tr>
+            <tr><td class="font-medium text-white">Sultana Khanam</td><td>01987654321</td><td>sultana@email.com</td><td>Block D, 1C</td><td class="text-slate-400">৳4.2M</td><td><span class="badge badge-pending">Prospect</span></td><td><button class="btn-ghost px-2 py-1 rounded text-xs">View</button></td></tr>
+            <tr><td class="font-medium text-white">Kamal Uddin</td><td>01811000005</td><td>kamal@email.com</td><td>Block A, 6D</td><td class="text-emerald-400 font-semibold">৳9.1M</td><td><span class="badge badge-active">Active</span></td><td><button class="btn-ghost px-2 py-1 rounded text-xs">View</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+  <div id="toast-container"></div>
+  <script src="/assets/js/sidebar.js"></script>
+  <script type="module" src="/assets/js/app.js"></script>
+  
+</body>
+</html>

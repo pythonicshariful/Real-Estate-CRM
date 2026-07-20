@@ -1,0 +1,45 @@
+# Python / Virtual Environment
+backend/venv/
+venv/
+ENV/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# SQLite / Database
+*.db
+*.sqlite
+*.sqlite3
+instance/
+backend/instance/
+backend/*.db
+
+# Environment variables & secrets
+.env
+backend/.env
+*.env
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Gemini / Antigravity Agent directories
+.gemini/
+brain/
+scratch/
+
+# Uploads / Media
+backend/uploads/
+backend/recordings/
+*.log
+
+# Node / Frontend build artifacts (if applicable)
+node_modules/
+dist/
+build/

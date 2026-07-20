@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Southeast CRM v2.0</title>
+  <meta name="description" content="CRM system overview and analytics for Southeast Landmark">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="flex h-screen overflow-hidden text-slate-100 bg-[#0a0a14]">
+
+  <!-- Sidebar injected here -->
+  <div id="sidebar-container"></div>
+
+  <!-- Main Content -->
+  <main class="flex-1 flex flex-col h-screen overflow-hidden">
+
+    <!-- Topbar -->
+    <header class="glass-dark border-b border-slate-800/60 h-14 flex items-center justify-between px-6 z-10 flex-shrink-0">
+      <div>
+        <div class="text-sm font-bold text-white">Dashboard Overview</div>
+        <div class="text-xs text-slate-500" id="dashboard-date">Loading...</div>
+      </div>
+      <div class="flex items-center gap-3">
+        <select id="period-select" class="input-glass px-3 py-1.5 rounded-lg text-xs font-medium">
+          <option value="7">Last 7 days</option>
+          <option value="30" selected>Last 30 days</option>
+          <option value="90">Last 90 days</option>
+        </select>
+        <button class="btn-ghost px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5" onclick="exportDashboard()">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Export
+        </button>
+        <div class="relative cursor-pointer" onclick="window.location.href='/messages.html'">
+          <svg class="w-5 h-5 text-slate-400 hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+          <span class="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full text-[9px] font-bold flex items-center justify-center">3</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Scrollable Content -->
+    <div class="flex-1 overflow-y-auto p-5 space-y-5">
+
+      <!-- ══ ROW 1: 8 KPI Cards ══ -->
+      <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
+        <!-- KPI 1 -->
+        <div class="kpi-card col-span-1">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Today's Leads</div>
+            <div class="w-7 h-7 rounded-lg bg-indigo-500/15 flex items-center justify-center">
+              <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value text-white" id="kpi-leads">—</div>
+          <div class="trend-up mt-1">↑ 12% vs yesterday</div>
+        </div>
+        <!-- KPI 2 -->
+        <div class="kpi-card col-span-1">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">SLA Compliance</div>
+            <div class="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+              <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value text-emerald-400">92%</div>
+          <div class="trend-up mt-1">↑ 3% this week</div>
+        </div>
+        <!-- KPI 3 -->
+        <div class="kpi-card col-span-1">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Contact Rate</div>
+            <div class="w-7 h-7 rounded-lg bg-cyan-500/15 flex items-center justify-center">
+              <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value text-cyan-400">68%</div>
+          <div class="trend-down mt-1">↓ 2% vs last week</div>
+        </div>
+        <!-- KPI 4 -->
+        <div class="kpi-card col-span-1">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Active Opps</div>
+            <div class="w-7 h-7 rounded-lg bg-violet-500/15 flex items-center justify-center">
+              <svg class="w-3.5 h-3.5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value text-violet-400">45</div>
+          <div class="trend-up mt-1">↑ 8 new this week</div>
+        </div>
+        <!-- KPI 5 -->
+        <div class="kpi-card col-span-1">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Revenue</div>
+            <div class="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center">
+              <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 8v1m0-8c-1.11 0-2.08.402-2.599 1"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value text-amber-400" style="font-size:1.4rem">৳2.4M</div>
+          <div class="trend-up mt-1">↑ 18% this month</div>
+        </div>
+        <!-- KPI 6 -->
+        <div class="kpi-card col-span-1">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Closed Deals</div>
+            <div class="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+              <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value text-emerald-400">14</div>
+          <div class="trend-up mt-1">Target: 10 ✓</div>
+        </div>
+        <!-- KPI 7 -->
+        <div class="kpi-card col-span-1">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Speed-to-Lead</div>
+            <div class="w-7 h-7 rounded-lg bg-rose-500/15 flex items-center justify-center">
+              <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value text-rose-400">4.2m</div>
+          <div class="trend-up mt-1">↑ Better than 5m target</div>
+        </div>
+        <!-- KPI 8 -->
+        <div class="kpi-card col-span-1">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Show Rate</div>
+            <div class="w-7 h-7 rounded-lg bg-sky-500/15 flex items-center justify-center">
+              <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value text-sky-400">78%</div>
+          <div class="trend-flat mt-1">→ Same as last week</div>
+        </div>
+      </div>
+
+      <!-- ══ ROW 2: Pipeline Bar + Lead Source Doughnut + Daily Leads Line ══ -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+        <!-- Pipeline Bar Chart -->
+        <div class="chart-card lg:col-span-5">
+          <div class="chart-title">Pipeline Stage Distribution</div>
+          <div class="chart-subtitle">Leads count per stage this month</div>
+          <canvas id="pipelineBar" height="200"></canvas>
+        </div>
+
+        <!-- Lead Source Doughnut -->
+        <div class="chart-card lg:col-span-3 flex flex-col">
+          <div class="chart-title">Lead Sources</div>
+          <div class="chart-subtitle">Where leads are coming from</div>
+          <div class="flex-1 flex items-center justify-center">
+            <canvas id="sourceDoughnut" height="200"></canvas>
+          </div>
+        </div>
+
+        <!-- Daily Leads Line -->
+        <div class="chart-card lg:col-span-4">
+          <div class="chart-title">Daily Leads — Last 30 Days</div>
+          <div class="chart-subtitle">Facebook & organic combined</div>
+          <canvas id="dailyLeadsLine" height="200"></canvas>
+        </div>
+      </div>
+
+      <!-- ══ ROW 3: Revenue Area + Ticket Pie + Exec Performance Bar ══ -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+        <!-- Revenue Area Chart -->
+        <div class="chart-card lg:col-span-5">
+          <div class="chart-title">Monthly Revenue — 2025</div>
+          <div class="chart-subtitle">Bookings + collections in BDT</div>
+          <canvas id="revenueArea" height="200"></canvas>
+        </div>
+
+        <!-- Ticket Status Pie -->
+        <div class="chart-card lg:col-span-3 flex flex-col">
+          <div class="chart-title">Ticket Status</div>
+          <div class="chart-subtitle">Support tickets breakdown</div>
+          <div class="flex-1 flex items-center justify-center">
+            <canvas id="ticketPie" height="200"></canvas>
+          </div>
+        </div>
+
+        <!-- Executive Performance Horizontal Bar -->
+        <div class="chart-card lg:col-span-4">
+          <div class="chart-title">Executive Performance</div>
+          <div class="chart-subtitle">Leads closed this month</div>
+          <canvas id="execBar" height="200"></canvas>
+        </div>
+      </div>
+
+      <!-- ══ ROW 4: SLA Alerts + Recent Leads ══ -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+        <!-- SLA Overdue Alerts -->
+        <div class="chart-card">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <div class="chart-title">⚠️ SLA Overdue Alerts</div>
+              <div class="chart-subtitle">Leads requiring immediate escalation</div>
+            </div>
+            <span class="badge badge-overdue overdue-pulse">3 Critical</span>
+          </div>
+          <div class="space-y-2" id="sla-alerts-list">
+            <div class="flex items-center justify-between p-3 rounded-xl bg-rose-500/8 border border-rose-500/20">
+              <div>
+                <div class="text-sm font-semibold text-white">Md. Karim Hossain</div>
+                <div class="text-xs text-slate-400">01712345678 · Facebook Lead · 35 min ago</div>
+              </div>
+              <div class="text-right">
+                <div class="sla-critical sla-countdown text-sm" id="sla-timer-1">35:24</div>
+                <div class="text-[10px] text-rose-400">Reassignment due</div>
+              </div>
+            </div>
+            <div class="flex items-center justify-between p-3 rounded-xl bg-amber-500/8 border border-amber-500/20">
+              <div>
+                <div class="text-sm font-semibold text-white">Mrs. Sultana Begum</div>
+                <div class="text-xs text-slate-400">01987654321 · WhatsApp · 22 min ago</div>
+              </div>
+              <div class="text-right">
+                <div class="sla-countdown text-sm text-amber-400">22:08</div>
+                <div class="text-[10px] text-amber-400">Manager alert due</div>
+              </div>
+            </div>
+            <div class="flex items-center justify-between p-3 rounded-xl bg-indigo-500/8 border border-indigo-500/20">
+              <div>
+                <div class="text-sm font-semibold text-white">Engr. Rafiqul Islam</div>
+                <div class="text-xs text-slate-400">01611223344 · Walk-in · 9 min ago</div>
+              </div>
+              <div class="text-right">
+                <div class="sla-countdown text-sm text-indigo-400">09:45</div>
+                <div class="text-[10px] text-indigo-400">Reminder pending</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Leads Activity -->
+        <div class="chart-card">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <div class="chart-title">Recent Leads</div>
+              <div class="chart-subtitle">Latest 5 leads from all sources</div>
+            </div>
+            <a href="/leads.html" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium">View all →</a>
+          </div>
+          <table class="crm-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Source</th>
+                <th>Stage</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td class="font-medium text-white">Akter Rahman</td><td>01711000001</td><td>Facebook</td><td><span class="badge badge-new">New</span></td></tr>
+              <tr><td class="font-medium text-white">Nasrin Begum</td><td>01812000002</td><td>WhatsApp</td><td><span class="badge badge-active">Contacted</span></td></tr>
+              <tr><td class="font-medium text-white">Md. Farhan</td><td>01912000003</td><td>Referral</td><td><span class="badge badge-pending">Qualified</span></td></tr>
+              <tr><td class="font-medium text-white">Razia Sultana</td><td>01711000004</td><td>Walk-in</td><td><span class="badge badge-confirmed">Proposal</span></td></tr>
+              <tr><td class="font-medium text-white">Kamal Uddin</td><td>01811000005</td><td>Facebook</td><td><span class="badge badge-won">Closed</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══ ROW 5: Appointment Lifecycle + Expense Breakdown ══ -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+        <!-- Appointment Lifecycle Bar -->
+        <div class="chart-card">
+          <div class="chart-title">Appointment Lifecycle (M-07)</div>
+          <div class="chart-subtitle">This month's appointment status breakdown</div>
+          <canvas id="apptBar" height="180"></canvas>
+        </div>
+
+        <!-- Expense Breakdown Doughnut -->
+        <div class="chart-card flex flex-col">
+          <div class="chart-title">Expense Breakdown</div>
+          <div class="chart-subtitle">Spending by category this month</div>
+          <div class="flex-1 flex items-center justify-center">
+            <canvas id="expenseDoughnut" height="180"></canvas>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="toast-container"></div>
+
+  <script src="/assets/js/sidebar.js"></script>
+  <script type="module" src="/assets/js/app.js"></script>
+  <script>
+    // Date display
+    document.getElementById('dashboard-date').textContent =
+      new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+    // Chart defaults
+    Chart.defaults.color = '#64748b';
+    Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+    Chart.defaults.font.family = 'Inter, sans-serif';
+    Chart.defaults.font.size = 11;
+
+    const GRAD_INDIGO = (ctx) => {
+      const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 300);
+      g.addColorStop(0, 'rgba(99,102,241,0.7)');
+      g.addColorStop(1, 'rgba(99,102,241,0.05)');
+      return g;
+    };
+    const GRAD_VIOLET = (ctx) => {
+      const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 300);
+      g.addColorStop(0, 'rgba(139,92,246,0.7)');
+      g.addColorStop(1, 'rgba(139,92,246,0.05)');
+      return g;
+    };
+
+    // ── 1. Pipeline Bar ──────────────────────────────────────────────
+    new Chart(document.getElementById('pipelineBar'), {
+      type: 'bar',
+      data: {
+        labels: ['New', 'Contacted', 'Qualified', 'Site Visit', 'Proposal', 'Negotiation', 'Closed Won', 'Closed Lost'],
+        datasets: [{
+          label: 'Leads',
+          data: [120, 95, 72, 45, 38, 24, 14, 18],
+          backgroundColor: [
+            'rgba(99,102,241,0.7)','rgba(6,182,212,0.7)','rgba(139,92,246,0.7)',
+            'rgba(245,158,11,0.7)','rgba(59,130,246,0.7)','rgba(168,85,247,0.7)',
+            'rgba(16,185,129,0.7)','rgba(239,68,68,0.7)'
+          ],
+          borderRadius: 6, borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } },
+          x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } } }
+        }
+      }
+    });
+
+    // ── 2. Source Doughnut ──────────────────────────────────────────
+    new Chart(document.getElementById('sourceDoughnut'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Facebook Ads', 'WhatsApp', 'Walk-in', 'Referral', 'Direct'],
+        datasets: [{
+          data: [45, 22, 12, 14, 7],
+          backgroundColor: ['#6366f1','#06b6d4','#10b981','#f59e0b','#8b5cf6'],
+          borderWidth: 2, borderColor: '#0a0a14',
+          hoverOffset: 6
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: true,
+        cutout: '68%',
+        plugins: {
+          legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 8, font: { size: 10 } } }
+        }
+      }
+    });
+
+    // ── 3. Daily Leads Line ──────────────────────────────────────────
+    const days = Array.from({length: 30}, (_, i) => `Day ${i+1}`);
+    const leadsData = [8,12,7,15,11,9,14,18,22,16,13,19,24,21,17,28,25,30,22,26,18,32,28,35,24,29,33,27,31,38];
+    new Chart(document.getElementById('dailyLeadsLine'), {
+      type: 'line',
+      data: {
+        labels: days,
+        datasets: [{
+          label: 'Leads',
+          data: leadsData,
+          borderColor: '#6366f1',
+          backgroundColor: GRAD_INDIGO,
+          fill: true, tension: 0.4, pointRadius: 0,
+          pointHoverRadius: 5, borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } },
+          x: { grid: { display: false }, ticks: { display: false } }
+        }
+      }
+    });
+
+    // ── 4. Revenue Area ──────────────────────────────────────────────
+    new Chart(document.getElementById('revenueArea'), {
+      type: 'line',
+      data: {
+        labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+        datasets: [
+          {
+            label: 'Bookings',
+            data: [1200000,1500000,1800000,1600000,2100000,2400000,2200000,2600000,2800000,3100000,2900000,3400000],
+            borderColor: '#6366f1', backgroundColor: GRAD_INDIGO,
+            fill: true, tension: 0.4, pointRadius: 3, borderWidth: 2
+          },
+          {
+            label: 'Collections',
+            data: [900000,1100000,1400000,1200000,1800000,2000000,1900000,2200000,2500000,2700000,2500000,2900000],
+            borderColor: '#8b5cf6', backgroundColor: GRAD_VIOLET,
+            fill: true, tension: 0.4, pointRadius: 3, borderWidth: 2
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: true,
+        plugins: { legend: { position: 'top', labels: { color: '#94a3b8', font: { size: 10 }, padding: 8 } } },
+        scales: {
+          y: {
+            grid: { color: 'rgba(255,255,255,0.05)' }, ticks: {
+              color: '#64748b',
+              callback: v => v >= 1000000 ? (v/1000000).toFixed(1)+'M' : (v/1000)+'K'
+            }
+          },
+          x: { grid: { display: false }, ticks: { color: '#64748b' } }
+        }
+      }
+    });
+
+    // ── 5. Ticket Pie ───────────────────────────────────────────────
+    new Chart(document.getElementById('ticketPie'), {
+      type: 'pie',
+      data: {
+        labels: ['Open', 'In Progress', 'Resolved', 'Closed'],
+        datasets: [{
+          data: [8, 5, 12, 4],
+          backgroundColor: ['#ef4444','#f59e0b','#10b981','#6366f1'],
+          borderWidth: 2, borderColor: '#0a0a14'
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: true,
+        plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 8, font: { size: 10 } } } }
+      }
+    });
+
+    // ── 6. Executive Horizontal Bar ─────────────────────────────────
+    new Chart(document.getElementById('execBar'), {
+      type: 'bar',
+      data: {
+        labels: ['Rafi Islam', 'Sumi Akter', 'Kamal H.', 'Nasrin B.', 'Farhan A.'],
+        datasets: [{
+          label: 'Closed',
+          data: [14, 11, 9, 7, 5],
+          backgroundColor: ['rgba(16,185,129,0.7)','rgba(99,102,241,0.7)','rgba(6,182,212,0.7)','rgba(245,158,11,0.7)','rgba(139,92,246,0.7)'],
+          borderRadius: 6, borderWidth: 0
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } },
+          y: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 11 } } }
+        }
+      }
+    });
+
+    // ── 7. Appointment Lifecycle Bar ────────────────────────────────
+    new Chart(document.getElementById('apptBar'), {
+      type: 'bar',
+      data: {
+        labels: ['Scheduled', 'Conf. Pending', 'Confirmed', 'Completed', 'No Show', 'Cancelled'],
+        datasets: [{
+          label: 'Appointments',
+          data: [32, 18, 24, 41, 9, 6],
+          backgroundColor: ['rgba(6,182,212,0.7)','rgba(245,158,11,0.7)','rgba(99,102,241,0.7)','rgba(16,185,129,0.7)','rgba(239,68,68,0.7)','rgba(100,116,139,0.7)'],
+          borderRadius: 6, borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } },
+          x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } } }
+        }
+      }
+    });
+
+    // ── 8. Expense Doughnut ─────────────────────────────────────────
+    new Chart(document.getElementById('expenseDoughnut'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Marketing', 'Salaries', 'Office', 'Travel', 'Tech', 'Misc'],
+        datasets: [{
+          data: [35, 28, 12, 10, 9, 6],
+          backgroundColor: ['#6366f1','#8b5cf6','#06b6d4','#f59e0b','#10b981','#ef4444'],
+          borderWidth: 2, borderColor: '#0a0a14', hoverOffset: 5
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: true,
+        cutout: '65%',
+        plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 8, font: { size: 10 } } } }
+      }
+    });
+
+    // Load KPI from API
+    (async () => {
+      const token = localStorage.getItem('crm_token');
+      if (!token) return;
+      try {
+        const res = await fetch('/api/dashboard/stats', { headers: { Authorization: `Bearer ${token}` } });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.total_leads !== undefined) document.getElementById('kpi-leads').textContent = data.total_leads;
+          const kpiWon = document.getElementById('kpi-conversions');
+          if (kpiWon && data.closed_won !== undefined) kpiWon.textContent = data.closed_won;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+
+    function exportDashboard() {
+      alert('Export feature coming soon — will generate PDF/CSV analytics report.');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tasks — Southeast CRM v2.0</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  
+</head>
+<body class="flex h-screen overflow-hidden text-slate-100 bg-[#0a0a14]">
+  <div id="sidebar-container"></div>
+  <main class="flex-1 flex flex-col h-screen overflow-hidden">
+    <header class="glass-dark border-b border-slate-800/60 h-14 flex items-center justify-between px-6 flex-shrink-0">
+      <div><div class="text-sm font-bold text-white">Tasks</div><div class="text-xs text-slate-500">Individual and team task management</div></div>
+      <button class="btn-gradient px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg> Add Task
+      </button>
+    </header>
+    <div class="flex-1 overflow-y-auto p-5 space-y-5">
+      <!-- KPIs -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Total Tasks</div><div class="kpi-value text-indigo-400">156</div><div class="trend-flat">This month</div></div>
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Completed</div><div class="kpi-value text-emerald-400">98</div><div class="trend-up">62.8% rate</div></div>
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">In Progress</div><div class="kpi-value text-cyan-400">32</div><div class="trend-flat">Ongoing</div></div>
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Overdue</div><div class="kpi-value text-rose-400">8</div><div class="trend-down">Needs action</div></div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="chart-card">
+          <div class="chart-title">Tasks by Priority</div><div class="chart-subtitle">Distribution this month</div>
+          
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Tasks by Assignee</div><div class="chart-subtitle">Workload per team member</div>
+          
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Completion Rate Trend</div><div class="chart-subtitle">Weekly % completion rate</div>
+          
+        </div>
+      </div>
+      <!-- Task List -->
+      <div class="chart-card">
+        <div class="flex items-center justify-between mb-4">
+          <div class="chart-title">Task List</div>
+          <div class="flex gap-2">
+            <select class="input-glass px-2 py-1.5 rounded-lg text-xs"><option>All Priority</option><option>🔴 Critical</option><option>🟡 High</option><option>🟢 Normal</option></select>
+            <select class="input-glass px-2 py-1.5 rounded-lg text-xs"><option>All Assignees</option><option>Rafi Islam</option><option>Sumi Akter</option></select>
+          </div>
+        </div>
+        <div class="space-y-2">
+          <div class="flex items-center gap-3 p-3 rounded-xl bg-rose-500/5 border border-rose-500/15 hover:bg-rose-500/10 transition-all">
+            <input type="checkbox" class="rounded">
+            <div class="flex-1">
+              <div class="text-sm font-semibold text-white">Follow up with Engr. Rafiqul — Price objection</div>
+              <div class="text-xs text-slate-400">Assigned to: Rafi Islam · Due: Today 5 PM · Lead Engine M-08</div>
+            </div>
+            <span class="badge badge-overdue">🔴 Critical</span>
+          </div>
+          <div class="flex items-center gap-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/15 hover:bg-amber-500/10 transition-all">
+            <input type="checkbox" class="rounded">
+            <div class="flex-1">
+              <div class="text-sm font-semibold text-white">Prepare site visit for Nasrin Begum — Block C</div>
+              <div class="text-xs text-slate-400">Assigned to: Sumi Akter · Due: Tomorrow 10 AM</div>
+            </div>
+            <span class="badge badge-pending">🟡 High</span>
+          </div>
+          <div class="flex items-center gap-3 p-3 rounded-xl bg-white/4 border border-white/8 hover:bg-white/7 transition-all">
+            <input type="checkbox" class="rounded">
+            <div class="flex-1">
+              <div class="text-sm font-semibold text-white">Send proposal to Kamal Uddin — Heights Block A</div>
+              <div class="text-xs text-slate-400">Assigned to: Kamal H. · Due: Jul 23</div>
+            </div>
+            <span class="badge badge-active">🟢 Normal</span>
+          </div>
+          <div class="flex items-center gap-3 p-3 rounded-xl bg-white/4 border border-white/8 hover:bg-white/7 transition-all opacity-60">
+            <input type="checkbox" class="rounded" checked>
+            <div class="flex-1">
+              <div class="text-sm font-semibold text-white line-through text-slate-400">Update project specs for Heights A Phase 2</div>
+              <div class="text-xs text-slate-500">Completed by: Nasrin B. · Jul 18</div>
+            </div>
+            <span class="badge badge-won">✓ Done</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <div id="toast-container"></div>
+  <script src="/assets/js/sidebar.js"></script>
+  <script type="module" src="/assets/js/app.js"></script>
+  
+</body>
+</html>

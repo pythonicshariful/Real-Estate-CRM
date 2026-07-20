@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tickets — Southeast CRM v2.0</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  
+</head>
+<body class="flex h-screen overflow-hidden text-slate-100 bg-[#0a0a14]">
+  <div id="sidebar-container"></div>
+  <main class="flex-1 flex flex-col h-screen overflow-hidden">
+    <header class="glass-dark border-b border-slate-800/60 h-14 flex items-center justify-between px-6 flex-shrink-0">
+      <div><div class="text-sm font-bold text-white">Support Tickets</div><div class="text-xs text-slate-500">Customer support and issue tracking</div></div>
+      <button class="btn-gradient px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg> New Ticket
+      </button>
+    </header>
+    <div class="flex-1 overflow-y-auto p-5 space-y-5">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Total Open</div><div class="kpi-value text-rose-400">8</div><div class="trend-down overdue-pulse">2 Critical</div></div>
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">In Progress</div><div class="kpi-value text-amber-400">5</div><div class="trend-flat">Being resolved</div></div>
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Resolved</div><div class="kpi-value text-emerald-400">42</div><div class="trend-up">This month</div></div>
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Avg Resolution</div><div class="kpi-value text-indigo-400">4.2h</div><div class="trend-up">↓ 0.8h faster</div></div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="chart-card">
+          <div class="chart-title">Tickets by Category</div><div class="chart-subtitle">Issue type distribution</div>
+          
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Monthly Volume</div><div class="chart-subtitle">Tickets opened vs resolved</div>
+          
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Resolution Time</div><div class="chart-subtitle">Avg hours per priority level</div>
+          
+        </div>
+      </div>
+      <!-- Tickets Table -->
+      <div class="chart-card">
+        <div class="chart-title mb-4">Active Tickets</div>
+        <table class="crm-table">
+          <thead><tr><th>Ticket #</th><th>Subject</th><th>Client</th><th>Category</th><th>Priority</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            <tr class="border-l-2 border-rose-500"><td class="text-rose-400 font-mono">#TKT-142</td><td class="font-medium text-white">Maintenance request — Lift not working</td><td>Block A Residents</td><td>Maintenance</td><td><span class="badge badge-overdue">Critical</span></td><td><span class="badge badge-new">Open</span></td><td><button class="btn-ghost px-2 py-1 rounded text-xs">View</button></td></tr>
+            <tr class="border-l-2 border-amber-500"><td class="text-amber-400 font-mono">#TKT-141</td><td class="font-medium text-white">Water supply issue — 4th floor</td><td>Engr. Rafiqul Islam</td><td>Utilities</td><td><span class="badge badge-pending">High</span></td><td><span class="badge badge-active">In Progress</span></td><td><button class="btn-ghost px-2 py-1 rounded text-xs">View</button></td></tr>
+            <tr><td class="text-indigo-400 font-mono">#TKT-140</td><td class="font-medium text-white">Parking space assignment — Block C</td><td>Nasrin Begum</td><td>Admin</td><td><span class="badge badge-active">Normal</span></td><td><span class="badge badge-active">In Progress</span></td><td><button class="btn-ghost px-2 py-1 rounded text-xs">View</button></td></tr>
+            <tr><td class="text-slate-500 font-mono">#TKT-139</td><td class="text-slate-400 line-through">Gym equipment repair request</td><td>General</td><td>Amenities</td><td><span class="badge badge-active">Normal</span></td><td><span class="badge badge-won">Resolved</span></td><td><button class="btn-ghost px-2 py-1 rounded text-xs">View</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+  <div id="toast-container"></div>
+  <script src="/assets/js/sidebar.js"></script>
+  <script type="module" src="/assets/js/app.js"></script>
+  
+</body>
+</html>

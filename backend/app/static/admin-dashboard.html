@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Command Center — Southeast CRM</title>
+  <meta name="description" content="Main Admin dashboard showing all Lead Owner performance, leads, and activity.">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="flex h-screen overflow-hidden text-slate-100 bg-[#0a0a14]">
+  <div id="sidebar-container"></div>
+  
+  <main class="flex-1 flex flex-col h-screen overflow-hidden">
+    <!-- Header -->
+    <header class="glass-dark border-b border-slate-800/60 h-14 flex items-center justify-between px-6 flex-shrink-0 z-10">
+      <div>
+        <div class="text-sm font-bold text-white">Admin Command Center</div>
+        <div class="text-xs text-indigo-400" id="admin-date">Loading...</div>
+      </div>
+      <div class="flex items-center gap-3">
+        <select id="owner-filter" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+          <option value="">All Lead Owners</option>
+        </select>
+        <button onclick="window.location.reload()" class="btn-ghost px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          Refresh
+        </button>
+      </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-5 space-y-5">
+
+      <!-- KPI Row -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="kpi-card">
+          <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Total Lead Owners</div>
+          <div id="kpi-owners" class="text-2xl font-black text-indigo-400">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Total Leads</div>
+          <div id="kpi-total" class="text-2xl font-black text-white">—</div>
+        </div>
+        <div class="kpi-card border-rose-500/30 bg-rose-500/5">
+          <div class="text-[10px] text-rose-400 uppercase font-semibold mb-1">Overdue SLA</div>
+          <div id="kpi-overdue" class="text-2xl font-black text-rose-400">—</div>
+        </div>
+        <div class="kpi-card border-emerald-500/30 bg-emerald-500/5">
+          <div class="text-[10px] text-emerald-400 uppercase font-semibold mb-1">Closed Won</div>
+          <div id="kpi-won" class="text-2xl font-black text-emerald-400">—</div>
+        </div>
+      </div>
+
+      <!-- Lead Owner Performance Cards -->
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-sm font-bold text-white">Lead Owner Performance</h2>
+          <a href="/lead-owners.html" class="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">Manage Owners →</a>
+        </div>
+        <div id="owner-cards" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Leads by Owner Pie -->
+        <div class="glass-dark border border-slate-800/60 rounded-2xl p-5">
+          <div class="text-sm font-bold text-white mb-4">Leads Distribution by Owner</div>
+          <div class="relative h-56">
+            <canvas id="owner-pie-chart"></canvas>
+          </div>
+        </div>
+        <!-- New Leads Today Bar -->
+        <div class="glass-dark border border-slate-800/60 rounded-2xl p-5">
+          <div class="text-sm font-bold text-white mb-4">Today's New Leads by Owner</div>
+          <div class="relative h-56">
+            <canvas id="today-bar-chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Activity Feed -->
+      <div class="glass-dark border border-slate-800/60 rounded-2xl p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-sm font-bold text-white">Recent Activity Feed</h2>
+          <span class="text-xs text-slate-500">Live across all Lead Owners</span>
+        </div>
+        <div id="activity-feed" class="space-y-2 max-h-72 overflow-y-auto">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="toast-container"></div>
+
+  <script src="/assets/js/sidebar.js"></script>
+  <script type="module" src="/assets/js/app.js"></script>
+  <script>
+    const token = () => localStorage.getItem('crm_token');
+    const fetchAPI = async (url) => {
+      const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token()}` } });
+      if (res.status === 401) { window.location.href = '/index.html'; return null; }
+      if (!res.ok) throw new Error(`API error ${res.status}`);
+      return res.json();
+    };
+
+    let pieChart = null, barChart = null;
+    let ownersData = [];
+
+    async function loadDashboard() {
+      try {
+        const stats = await fetchAPI('/api/dashboard/stats');
+        if (!stats) return;
+
+        ownersData = stats.lead_owners || [];
+
+        // Update KPIs
+        document.getElementById('kpi-owners').textContent = stats.lead_owner_count ?? 0;
+        document.getElementById('kpi-total').textContent = stats.total_leads ?? 0;
+        document.getElementById('kpi-overdue').textContent = stats.overdue ?? 0;
+        document.getElementById('kpi-won').textContent = stats.closed_won ?? 0;
+
+        // Update date
+        document.getElementById('admin-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+        // Populate owner filter
+        const ownerFilter = document.getElementById('owner-filter');
+        ownersData.forEach(o => {
+          const opt = document.createElement('option');
+          opt.value = o.id;
+          opt.textContent = o.name;
+          ownerFilter.appendChild(opt);
+        });
+
+        renderOwnerCards(ownersData);
+        renderCharts(ownersData);
+        await loadActivity();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function renderOwnerCards(owners) {
+      const container = document.getElementById('owner-cards');
+      if (!owners.length) {
+        container.innerHTML = `<div class="col-span-3 text-center py-10 text-slate-500">
+          <p class="text-sm">No Lead Owners yet.</p>
+          <a href="/lead-owners.html" class="mt-2 inline-block text-xs text-indigo-400 hover:text-indigo-300">Create your first Lead Owner →</a>
+        </div>`;
+        return;
+      }
+      container.innerHTML = owners.map(owner => `
+        <div class="glass-dark border rounded-2xl p-5 hover:border-opacity-60 transition-all" style="border-color: ${owner.color}40">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                 style="background: linear-gradient(135deg, ${owner.color}, ${owner.color}99)">
+              ${owner.name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase()}
+            </div>
+            <div>
+              <div class="font-bold text-white text-sm">${owner.name}</div>
+              <div class="flex items-center gap-1.5 mt-0.5">
+                <span class="w-2 h-2 rounded-full" style="background:${owner.is_active ? '#22c55e' : '#ef4444'}"></span>
+                <span class="text-[10px] text-slate-500">${owner.is_active ? 'Active' : 'Inactive'}</span>
+                <span class="w-1 h-1 rounded-full bg-slate-700"></span>
+                <span class="text-[10px]" style="color:${owner.color}">●</span>
+              </div>
+            </div>
+            <div class="ml-auto">
+              <a href="/leads.html?owner=${owner.id}" class="btn-ghost px-2.5 py-1.5 rounded-lg text-[10px] font-medium">View Leads</a>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-slate-900/50 rounded-xl p-3 text-center">
+              <div class="text-xl font-black" style="color:${owner.color}">${owner.total_leads}</div>
+              <div class="text-[9px] text-slate-500 uppercase font-semibold mt-0.5">Total Leads</div>
+            </div>
+            <div class="bg-slate-900/50 rounded-xl p-3 text-center">
+              <div class="text-xl font-black text-indigo-400">${owner.new_today}</div>
+              <div class="text-[9px] text-slate-500 uppercase font-semibold mt-0.5">New Today</div>
+            </div>
+            <div class="bg-rose-500/5 border border-rose-500/20 rounded-xl p-3 text-center">
+              <div class="text-xl font-black text-rose-400">${owner.overdue}</div>
+              <div class="text-[9px] text-rose-400 uppercase font-semibold mt-0.5">Overdue</div>
+            </div>
+            <div class="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 text-center">
+              <div class="text-xl font-black text-emerald-400">${owner.closed_won}</div>
+              <div class="text-[9px] text-emerald-400 uppercase font-semibold mt-0.5">Closed Won</div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderCharts(owners) {
+      const labels = owners.map(o => o.name);
+      const colors = owners.map(o => o.color);
+      const totals = owners.map(o => o.total_leads);
+      const todayData = owners.map(o => o.new_today);
+
+      // Pie chart
+      if (pieChart) pieChart.destroy();
+      const pieCtx = document.getElementById('owner-pie-chart').getContext('2d');
+      pieChart = new Chart(pieCtx, {
+        type: 'doughnut',
+        data: { labels, datasets: [{ data: totals, backgroundColor: colors.map(c => c + 'cc'), borderColor: colors, borderWidth: 2 }] },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 11 }, padding: 12 } } },
+          cutout: '65%',
+        }
+      });
+
+      // Bar chart
+      if (barChart) barChart.destroy();
+      const barCtx = document.getElementById('today-bar-chart').getContext('2d');
+      barChart = new Chart(barCtx, {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'New Today', data: todayData, backgroundColor: colors.map(c => c + 'aa'), borderColor: colors, borderWidth: 1.5, borderRadius: 6 }] },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { color: '#1e293b' } },
+            y: { ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { color: '#1e293b' }, beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    async function loadActivity() {
+      try {
+        const activities = await fetchAPI('/api/dashboard/recent-activity?limit=15');
+        if (!activities) return;
+        const feed = document.getElementById('activity-feed');
+        if (!activities.length) {
+          feed.innerHTML = '<p class="text-slate-500 text-xs text-center py-4">No recent activity yet.</p>';
+          return;
+        }
+        feed.innerHTML = activities.map(a => {
+          const time = a.created_at ? new Date(a.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '--';
+          return `
+            <div class="flex items-start gap-3 p-3 rounded-xl bg-slate-900/40 hover:bg-slate-900/70 transition-colors">
+              <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0 mt-0.5" style="background: ${a.owner_color}">
+                ${a.logged_by.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()}
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-xs text-white font-medium">${a.logged_by} <span class="text-slate-400 font-normal">logged a call on</span> ${a.lead_name}</div>
+                ${a.notes ? `<div class="text-[10px] text-slate-500 mt-0.5 truncate">${a.notes}</div>` : ''}
+              </div>
+              <div class="text-[10px] text-slate-600 flex-shrink-0">${time}</div>
+            </div>
+          `;
+        }).join('');
+      } catch(e) { console.error(e); }
+    }
+
+    // Owner filter
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('owner-filter').addEventListener('change', (e) => {
+        const ownerId = e.target.value;
+        if (!ownerId) {
+          renderOwnerCards(ownersData);
+          renderCharts(ownersData);
+        } else {
+          const filtered = ownersData.filter(o => o.id == ownerId);
+          renderOwnerCards(filtered);
+          renderCharts(filtered);
+        }
+      });
+    });
+
+    loadDashboard();
+  </script>
+</body>
+</html>

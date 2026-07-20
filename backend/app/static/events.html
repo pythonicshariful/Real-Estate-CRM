@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Events & Calendar — Southeast CRM v2.0</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    
+    /* Custom Scrollbar for sleekness */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+    /* Premium FullCalendar Overrides */
+    .fc {
+      --fc-border-color: rgba(255, 255, 255, 0.08);
+      --fc-page-bg-color: transparent;
+      --fc-neutral-bg-color: rgba(255, 255, 255, 0.02);
+      --fc-neutral-text-color: #94a3b8;
+      --fc-today-bg-color: rgba(99, 102, 241, 0.08);
+      --fc-button-bg-color: rgba(255,255,255,0.03);
+      --fc-button-border-color: rgba(255,255,255,0.1);
+      --fc-button-hover-bg-color: rgba(255,255,255,0.08);
+      --fc-button-hover-border-color: rgba(255,255,255,0.2);
+      --fc-button-active-bg-color: rgba(99,102,241,0.2);
+      --fc-button-active-border-color: rgba(99,102,241,0.5);
+    }
+    .fc-theme-standard .fc-scrollgrid { border: 1px solid var(--fc-border-color); border-radius: 16px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+    .fc-theme-standard td, .fc-theme-standard th { border-color: var(--fc-border-color); }
+    
+    /* Header & Typography */
+    .fc-col-header-cell-cushion { color: #f8fafc; font-weight: 600; font-size: 0.85rem; padding: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .fc-daygrid-day-number { color: #cbd5e1; padding: 0.75rem; font-size: 0.9rem; font-weight: 500; transition: color 0.2s; }
+    .fc-daygrid-day:hover .fc-daygrid-day-number { color: #818cf8; }
+    .fc-daygrid-day { transition: background-color 0.3s ease; }
+    .fc-daygrid-day:hover { background-color: rgba(255,255,255,0.015); }
+    
+    /* Toolbars */
+    .fc .fc-toolbar-title { font-size: 1.5rem; font-weight: 800; background: linear-gradient(to right, #fff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .fc-header-toolbar { padding: 1.5rem; background: rgba(255,255,255,0.01); border-bottom: 1px solid var(--fc-border-color); margin-bottom: 0 !important; }
+    .fc-toolbar-chunk { display: flex; gap: 0.5rem; }
+    
+    /* Buttons */
+    .fc .fc-button { padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; transition: all 0.2s; text-transform: capitalize; }
+    .fc .fc-button-primary:not(:disabled):active, .fc .fc-button-primary:not(:disabled).fc-button-active { box-shadow: 0 0 15px rgba(99,102,241,0.4); }
+    
+    /* Events */
+    .fc-event {
+      border: none !important; 
+      border-radius: 6px; 
+      padding: 3px 6px; 
+      font-size: 0.75rem; 
+      font-weight: 600; 
+      cursor: pointer; 
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      margin: 2px 4px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.8), rgba(168,85,247,0.8));
+      box-shadow: 0 2px 10px rgba(99,102,241,0.2);
+      backdrop-filter: blur(4px);
+    }
+    .fc-event:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 6px 15px rgba(99,102,241,0.4);
+      filter: brightness(1.1);
+      z-index: 10;
+    }
+    
+    /* Animations */
+    .animate-in { animation: fadeInScale 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    @keyframes fadeInScale {
+      from { opacity: 0; transform: scale(0.95) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    
+    /* Dynamic ambient glow */
+    .ambient-glow {
+      position: absolute; width: 60vw; height: 60vw; background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, rgba(0,0,0,0) 70%); top: -20vh; right: -20vw; z-index: 0; pointer-events: none;
+    }
+    .ambient-glow-2 {
+      position: absolute; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(168,85,247,0.1) 0%, rgba(0,0,0,0) 70%); bottom: -20vh; left: -20vw; z-index: 0; pointer-events: none;
+    }
+  </style>
+</head>
+<body class="flex h-screen overflow-hidden text-slate-100 bg-[#07070a]">
+  <div id="sidebar-container" class="z-20"></div>
+  <main class="flex-1 flex flex-col h-screen overflow-hidden relative z-10">
+    <!-- Ambient Glow Backgrounds -->
+    <div class="ambient-glow"></div>
+    <div class="ambient-glow-2"></div>
+    
+    <!-- Premium Header -->
+    <header class="glass-dark border-b border-white/5 h-16 flex items-center justify-between px-8 flex-shrink-0 z-20 backdrop-blur-md bg-black/40">
+      <div class="flex items-center gap-4">
+        <div class="p-2 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-lg border border-indigo-500/30 text-indigo-400">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        </div>
+        <div>
+          <div class="text-sm font-bold text-white tracking-wide">Events & Calendar</div>
+          <div class="text-xs text-slate-400 font-medium mt-0.5">Manage site visits, appointments, and reminders</div>
+        </div>
+      </div>
+      <button onclick="document.getElementById('addEventModal').classList.remove('hidden'); document.querySelector('#addEventModal > div').classList.add('animate-in')" class="group relative px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 overflow-hidden shadow-lg shadow-indigo-900/20 hover:shadow-indigo-500/30 transition-all duration-300">
+        <div class="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 group-hover:scale-105 transition-transform duration-300"></div>
+        <div class="absolute inset-0 opacity-0 group-hover:opacity-100 bg-white/20 transition-opacity duration-300"></div>
+        <svg class="w-4 h-4 relative z-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        <span class="relative z-10 text-white">Add Event</span>
+      </button>
+    </header>
+    
+    <!-- Calendar Container -->
+    <div class="flex-1 overflow-y-auto p-6 md:p-8 z-10 relative">
+      <div class="glass-dark border border-white/5 rounded-2xl h-full min-h-[700px] flex flex-col shadow-2xl backdrop-blur-xl bg-black/40 overflow-hidden">
+        <div id="calendar" class="flex-1 w-full h-full"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Premium Add Event Modal -->
+  <div id="addEventModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md transition-opacity">
+    <div class="glass-dark border border-white/10 rounded-2xl w-full max-w-md flex flex-col shadow-[0_0_40px_rgba(0,0,0,0.5)] overflow-visible relative">
+      <!-- Glow behind modal -->
+      <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-2xl pointer-events-none"></div>
+      
+      <div class="px-6 py-5 border-b border-white/5 flex justify-between items-center relative z-10">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          </div>
+          <h3 class="text-lg font-bold text-white tracking-wide">Add Calendar Event</h3>
+        </div>
+        <button onclick="document.getElementById('addEventModal').classList.add('hidden')" class="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="addEventForm" class="p-6 space-y-5 relative z-10">
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-2 tracking-wide uppercase">Event Title</label>
+          <input type="text" id="eventTitle" required class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-600" placeholder="e.g. Client Meeting">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-2 tracking-wide uppercase">Description / Notes</label>
+          <textarea id="eventDescription" rows="2" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-600" placeholder="Add any specific details here..."></textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-2 tracking-wide uppercase">Start Date & Time</label>
+          <input type="datetime-local" id="eventStart" required class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all [color-scheme:dark]">
+        </div>
+        <div class="pt-4 flex justify-end gap-3">
+          <button type="button" onclick="document.getElementById('addEventModal').classList.add('hidden')" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:text-white hover:bg-white/5 transition-all">Cancel</button>
+          <button type="submit" class="relative group px-6 py-2.5 rounded-xl text-sm font-semibold text-white overflow-hidden shadow-lg shadow-indigo-900/20 hover:shadow-indigo-500/30 transition-all duration-300">
+            <div class="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 group-hover:scale-105 transition-transform duration-300"></div>
+            <span class="relative z-10">Save Event</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="/assets/js/sidebar.js"></script>
+  <script type="module" src="/assets/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const token = localStorage.getItem('crm_token');
+
+      const calendarEl = document.getElementById('calendar');
+      const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        height: '100%',
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth'
+        },
+        eventContent: function(arg) {
+          const descHtml = arg.event.extendedProps.description 
+            ? `<div class="text-[10px] text-indigo-200 truncate mt-0.5">${arg.event.extendedProps.description}</div>` 
+            : '';
+            
+          return {
+            html: `
+              <div class="flex flex-col overflow-hidden text-ellipsis px-1.5 py-1">
+                <div class="flex items-center gap-1.5 overflow-hidden">
+                  <div class="w-1.5 h-1.5 rounded-full bg-white/90 flex-shrink-0 shadow-[0_0_6px_rgba(255,255,255,1)]"></div>
+                  <div class="truncate text-white text-[11px] leading-tight font-bold tracking-wide w-full">${arg.timeText ? arg.timeText + ' ' : ''}${arg.event.title}</div>
+                </div>
+                ${descHtml}
+              </div>
+            `
+          };
+        },
+        events: async function(info, successCallback, failureCallback) {
+          if (!token) return successCallback([]);
+          try {
+            const res = await fetch('/api/events/', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('Failed to fetch events');
+            const data = await res.json();
+            
+            const events = data.map(ev => ({
+              id: ev.id,
+              title: ev.title,
+              start: ev.start,
+              end: ev.end,
+              allDay: ev.is_all_day,
+              backgroundColor: ev.color || '#6366f1',
+              extendedProps: {
+                description: ev.description,
+                type: ev.event_type
+              }
+            }));
+            successCallback(events);
+          } catch (err) {
+            console.error(err);
+            failureCallback(err);
+          }
+        },
+        eventClick: function(info) {
+          alert(`Event: ${info.event.title}\n${info.event.extendedProps.description || 'No description'}`);
+        }
+      });
+      calendar.render();
+
+      // Form submission
+      document.getElementById('addEventForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const title = document.getElementById('eventTitle').value;
+        const desc = document.getElementById('eventDescription').value;
+        const start = document.getElementById('eventStart').value;
+        // format to ISO if necessary or just append :00Z. HTML datetime-local gives YYYY-MM-DDThh:mm
+        const startIso = new Date(start).toISOString();
+
+        try {
+          const res = await fetch('/api/events/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              title: title,
+              description: desc,
+              start_datetime: startIso,
+              end_datetime: null
+            })
+          });
+          
+          if (res.ok) {
+            document.getElementById('addEventModal').classList.add('hidden');
+            document.getElementById('addEventForm').reset();
+            calendar.refetchEvents();
+          } else {
+            alert("Error creating event");
+          }
+        } catch(err) {
+          console.error(err);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

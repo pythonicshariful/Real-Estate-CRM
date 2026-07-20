@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Help & Support — Southeast CRM v2.0</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body class="flex h-screen overflow-hidden text-slate-100 bg-[#0a0a14]">
+  <div id="sidebar-container"></div>
+  <main class="flex-1 flex flex-col h-screen overflow-hidden">
+    <header class="glass-dark border-b border-slate-800/60 h-14 flex items-center justify-between px-6 flex-shrink-0">
+      <div><div class="text-sm font-bold text-white">Help & Support</div><div class="text-xs text-slate-500">Guides, FAQs and technical support</div></div>
+      <button class="btn-gradient px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg> Contact Support
+      </button>
+    </header>
+    <div class="flex-1 overflow-y-auto p-5">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <!-- FAQs -->
+        <div class="chart-card">
+          <div class="chart-title mb-4">Frequently Asked Questions</div>
+          <div class="space-y-3">
+            <details class="bg-white/5 border border-white/10 rounded-xl p-4 cursor-pointer group">
+              <summary class="text-sm font-semibold text-white outline-none">How do I assign a lead to another executive?</summary>
+              <div class="mt-3 text-xs text-slate-400 leading-relaxed border-t border-white/10 pt-3">
+                Go to the Leads page, click on the lead you want to reassign. In the top right corner of the Lead Detail modal, click the 'Assign' dropdown and select the new executive. If the lead is SLA overdue, reassignment requires manager approval.
+              </div>
+            </details>
+            <details class="bg-white/5 border border-white/10 rounded-xl p-4 cursor-pointer group">
+              <summary class="text-sm font-semibold text-white outline-none">What does the red pulse on a lead mean?</summary>
+              <div class="mt-3 text-xs text-slate-400 leading-relaxed border-t border-white/10 pt-3">
+                A red pulse indicates an SLA (Service Level Agreement) breach. This means the lead has not been contacted within the mandatory 5-minute window (M-03 rule). Please contact these leads immediately to stop the timer.
+              </div>
+            </details>
+            <details class="bg-white/5 border border-white/10 rounded-xl p-4 cursor-pointer group">
+              <summary class="text-sm font-semibold text-white outline-none">How do I generate a monthly performance report?</summary>
+              <div class="mt-3 text-xs text-slate-400 leading-relaxed border-t border-white/10 pt-3">
+                Navigate to the Reports tab. Select 'Last 30 Days' or 'This Month' from the top right dropdown. The 20-metric dashboard will update automatically. Click 'Export CSV' to download the raw data.
+              </div>
+            </details>
+            <details class="bg-white/5 border border-white/10 rounded-xl p-4 cursor-pointer group">
+              <summary class="text-sm font-semibold text-white outline-none">Why can't I see the Coaching Scores?</summary>
+              <div class="mt-3 text-xs text-slate-400 leading-relaxed border-t border-white/10 pt-3">
+                Coaching scores (M-09 rule) are manager-only data. Regular sales executives only see their own performance metrics. If you are a manager and cannot see this column, please contact the system administrator to check your role settings.
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <!-- Contact Form & Status -->
+        <div class="space-y-5">
+          <div class="chart-card">
+            <div class="chart-title mb-4">System Status</div>
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                  <span class="text-xs text-slate-300">CRM Core Database</span>
+                </div>
+                <span class="text-xs text-emerald-400">Operational</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                  <span class="text-xs text-slate-300">Facebook Lead Webhooks</span>
+                </div>
+                <span class="text-xs text-emerald-400">Operational</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                  <span class="text-xs text-slate-300">Email Service (SendGrid)</span>
+                </div>
+                <span class="text-xs text-emerald-400">Operational</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-2 h-2 rounded-full bg-amber-500"></div>
+                  <span class="text-xs text-slate-300">WhatsApp API Integration</span>
+                </div>
+                <span class="text-xs text-amber-400">Degraded Performance</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="chart-card">
+            <div class="chart-title mb-4">Submit a Support Request</div>
+            <form class="space-y-4" onsubmit="event.preventDefault(); showToast('Support request submitted. Ticket #TKT-143 created.', 'success')">
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1">Issue Category</label>
+                <select class="input-glass w-full px-3 py-2 rounded-lg text-sm">
+                  <option>Bug / Glitch</option>
+                  <option>Feature Request</option>
+                  <option>Access / Permissions</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1">Description</label>
+                <textarea rows="4" class="input-glass w-full px-3 py-2 rounded-lg text-sm" placeholder="Please describe the issue in detail..."></textarea>
+              </div>
+              <button type="submit" class="btn-gradient w-full py-2.5 rounded-xl text-sm font-semibold">Submit Request</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <div id="toast-container"></div>
+  <script src="/assets/js/sidebar.js"></script>
+  <script type="module" src="/assets/js/app.js"></script>
+  <script>
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type} fade-in-up`;
+      toast.innerHTML = `
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${type === 'success' ? 'M5 13l4 4L19 7' : 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'}"></path>
+        </svg>
+        <span>${message}</span>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-10px)';
+        toast.style.transition = 'all 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+  </script>
+</body>
+</html>
