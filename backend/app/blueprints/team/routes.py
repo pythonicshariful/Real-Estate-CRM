@@ -1,6 +1,6 @@
 from flask import request, jsonify
 from app.blueprints.team import team_bp
-from app.models import User, UserRole, db
+from app.models import User, UserRole, db, CallLog, Note, Event, Appointment
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from datetime import datetime
 
@@ -119,6 +119,52 @@ def reset_lead_owner_password(id):
     user.set_password(new_password)
     db.session.commit()
     return jsonify({'message': 'Password reset successfully'}), 200
+
+@team_bp.route('/lead-owners/<int:id>/activities', methods=['GET'])
+@jwt_required()
+def get_lead_owner_activities(id):
+    claims = get_jwt()
+    err = _require_admin(claims)
+    if err: return err
+    
+    user = User.query.get_or_404(id)
+    timeline = []
+    
+    calls = CallLog.query.filter_by(logged_by_id=id).all()
+    for c in calls:
+        timeline.append({
+            'type': 'CALL',
+            'date': c.created_at.isoformat() if c.created_at else None,
+            'connected': c.connected,
+            'notes': c.notes,
+            'recording_url': c.recording_filename # simplified
+        })
+        
+    notes = Note.query.filter_by(created_by_id=id).all()
+    for n in notes:
+        timeline.append({
+            'type': 'NOTE',
+            'date': n.created_at.isoformat() if n.created_at else None,
+            'content': n.content
+        })
+        
+    events = Event.query.filter_by(created_by_id=id).all()
+    for e in events:
+        timeline.append({
+            'type': 'EVENT',
+            'date': e.start_datetime.isoformat() if e.start_datetime else None,
+            'title': e.title,
+            'description': e.description
+        })
+
+    # Sort descending by date
+    timeline.sort(key=lambda x: x.get('date') or '', reverse=True)
+
+    data = user.to_dict()
+    data['timeline'] = timeline
+    data['last_login'] = user.last_login.isoformat() if user.last_login else None
+    
+    return jsonify(data), 200
 
 # Keep old routes for backwards compat
 @team_bp.route('/users', methods=['GET'])

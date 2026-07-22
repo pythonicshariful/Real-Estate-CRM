@@ -13,7 +13,7 @@
   
   <main class="flex-1 flex flex-col h-screen overflow-hidden">
     <!-- Header -->
-    <header class="glass-dark border-b border-slate-800/60 h-14 flex items-center justify-between px-6 flex-shrink-0 z-10">
+    <header class="glass-dark border-b border-slate-800/60 min-h-14 py-2 md:py-0 flex items-center justify-between px-4 md:px-6 flex-shrink-0 z-10 flex-wrap gap-2">
       <div>
         <div class="text-sm font-bold text-white">Admin Command Center</div>
         <div class="text-xs text-indigo-400" id="admin-date">Loading...</div>
@@ -32,7 +32,7 @@
     <div class="flex-1 overflow-y-auto p-5 space-y-5">
 
       <!-- KPI Row -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         <div class="kpi-card">
           <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Total Lead Owners</div>
           <div id="kpi-owners" class="text-2xl font-black text-indigo-400">—</div>

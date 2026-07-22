@@ -164,12 +164,78 @@
   };
   window.logout = window.doLogout;
 
+  // Toggle mobile drawer
+  function toggleMobileSidebar(show) {
+    const sidebar = document.querySelector('.sidebar');
+    let backdrop = document.getElementById('sidebar-backdrop');
+    if (!backdrop) {
+      backdrop = document.createElement('div');
+      backdrop.id = 'sidebar-backdrop';
+      backdrop.className = 'sidebar-backdrop';
+      document.body.appendChild(backdrop);
+      backdrop.addEventListener('click', () => toggleMobileSidebar(false));
+    }
+
+    if (!sidebar) return;
+    const shouldOpen = show !== undefined ? show : !sidebar.classList.contains('mobile-open');
+    if (shouldOpen) {
+      sidebar.classList.add('mobile-open');
+      backdrop.classList.add('active');
+    } else {
+      sidebar.classList.remove('mobile-open');
+      backdrop.classList.remove('active');
+    }
+  }
+
+  // Setup mobile navigation controls
+  function setupMobileNav() {
+    // Inject backdrop
+    let backdrop = document.getElementById('sidebar-backdrop');
+    if (!backdrop) {
+      backdrop = document.createElement('div');
+      backdrop.id = 'sidebar-backdrop';
+      backdrop.className = 'sidebar-backdrop';
+      document.body.appendChild(backdrop);
+      backdrop.addEventListener('click', () => toggleMobileSidebar(false));
+    }
+
+    // Inject hamburger button into page header if not present
+    const header = document.querySelector('header');
+    if (header && !document.getElementById('mobile-sidebar-toggle')) {
+      const toggleBtn = document.createElement('button');
+      toggleBtn.id = 'mobile-sidebar-toggle';
+      toggleBtn.className = 'md:hidden p-1.5 mr-3 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors flex-shrink-0';
+      toggleBtn.setAttribute('aria-label', 'Toggle Navigation');
+      toggleBtn.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>`;
+      toggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleMobileSidebar();
+      });
+
+      // Insert at very beginning of header
+      if (header.firstChild) {
+        header.insertBefore(toggleBtn, header.firstChild);
+      } else {
+        header.appendChild(toggleBtn);
+      }
+    }
+
+    // Auto close sidebar when clicking links inside sidebar
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) {
+      sidebar.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => toggleMobileSidebar(false));
+      });
+    }
+  }
+
   // Init
   function init() {
     if (!authGuard()) return;
     const container = document.getElementById('sidebar-container');
     if (container) {
       container.innerHTML = buildSidebar();
+      setupMobileNav();
     }
   }
 

@@ -95,7 +95,7 @@
     <div class="ambient-glow-2"></div>
     
     <!-- Premium Header -->
-    <header class="glass-dark border-b border-white/5 h-16 flex items-center justify-between px-8 flex-shrink-0 z-20 backdrop-blur-md bg-black/40">
+    <header class="glass-dark border-b border-white/5 min-h-16 py-2 md:py-0 flex items-center justify-between px-4 md:px-8 flex-shrink-0 z-20 backdrop-blur-md bg-black/40 flex-wrap gap-2">
       <div class="flex items-center gap-4">
         <div class="p-2 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-lg border border-indigo-500/30 text-indigo-400">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
@@ -105,7 +105,7 @@
           <div class="text-xs text-slate-400 font-medium mt-0.5">Manage site visits, appointments, and reminders</div>
         </div>
       </div>
-      <button onclick="document.getElementById('addEventModal').classList.remove('hidden'); document.querySelector('#addEventModal > div').classList.add('animate-in')" class="group relative px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 overflow-hidden shadow-lg shadow-indigo-900/20 hover:shadow-indigo-500/30 transition-all duration-300">
+      <button onclick="document.getElementById('addEventModal').classList.remove('hidden'); document.querySelector('#addEventModal > div').classList.add('animate-in')" class="group relative px-4 md:px-5 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-semibold flex items-center gap-2 overflow-hidden shadow-lg shadow-indigo-900/20 hover:shadow-indigo-500/30 transition-all duration-300">
         <div class="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 group-hover:scale-105 transition-transform duration-300"></div>
         <div class="absolute inset-0 opacity-0 group-hover:opacity-100 bg-white/20 transition-opacity duration-300"></div>
         <svg class="w-4 h-4 relative z-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
@@ -122,7 +122,7 @@
   </main>
 
   <!-- Premium Add Event Modal -->
-  <div id="addEventModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md transition-opacity">
+  <div id="addEventModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md transition-opacity">
     <div class="glass-dark border border-white/10 rounded-2xl w-full max-w-md flex flex-col shadow-[0_0_40px_rgba(0,0,0,0.5)] overflow-visible relative">
       <!-- Glow behind modal -->
       <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-2xl pointer-events-none"></div>
