@@ -4,6 +4,20 @@ from app.models import User, UserRole, db, CallLog, Note, Event, Appointment
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from datetime import datetime
 
+def _parse_date(val):
+    if not val: return None
+    try:
+        return datetime.strptime(str(val).strip(), '%Y-%m-%d').date()
+    except Exception:
+        return None
+
+def _parse_time(val):
+    if not val: return None
+    try:
+        return datetime.strptime(str(val).strip(), '%H:%M').time()
+    except Exception:
+        return None
+
 def _require_admin(claims):
     role = claims.get('role')
     if role != UserRole.ADMIN.value:
@@ -33,7 +47,6 @@ def create_lead_owner():
     password = data.get('password', '')
     phone = data.get('phone', '').strip()
     color = data.get('color', '#6366f1')
-    max_capacity = int(data.get('max_lead_capacity', 50))
 
     if not email or not password or not full_name:
         return jsonify({'error': 'Email, full name, and password are required'}), 400
@@ -49,7 +62,10 @@ def create_lead_owner():
         is_active=True,
         is_mfa_enabled=False,
         calendar_color=color,
-        max_lead_capacity=max_capacity
+        schedule_from_date=_parse_date(data.get('schedule_from_date')),
+        schedule_to_date=_parse_date(data.get('schedule_to_date')),
+        schedule_start_time=_parse_time(data.get('schedule_start_time')),
+        schedule_end_time=_parse_time(data.get('schedule_end_time'))
     )
     user.set_password(password)
     db.session.add(user)
@@ -80,7 +96,10 @@ def update_lead_owner(id):
     if 'full_name' in data: user.full_name = data['full_name']
     if 'phone' in data: user.phone = data['phone']
     if 'color' in data: user.calendar_color = data['color']
-    if 'max_lead_capacity' in data: user.max_lead_capacity = int(data['max_lead_capacity'])
+    if 'schedule_from_date' in data: user.schedule_from_date = _parse_date(data['schedule_from_date'])
+    if 'schedule_to_date' in data: user.schedule_to_date = _parse_date(data['schedule_to_date'])
+    if 'schedule_start_time' in data: user.schedule_start_time = _parse_time(data['schedule_start_time'])
+    if 'schedule_end_time' in data: user.schedule_end_time = _parse_time(data['schedule_end_time'])
     
     db.session.commit()
     return jsonify({'message': 'Updated', 'user': user.to_dict()}), 200

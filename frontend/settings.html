@@ -1,56 +1,356 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Settings - CRM</title>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings — Southeast CRM v2.0</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/assets/css/main.css">
+  <style>
+    .tab-btn.active {
+      background: rgba(99, 102, 241, 0.15);
+      color: #818cf8;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      font-weight: 600;
+    }
+  </style>
 </head>
-<body class="flex h-screen overflow-hidden text-slate-100 bg-[#0f0f1a]">
+<body class="flex h-screen overflow-hidden text-slate-100 bg-[#0a0a14]">
+  <div id="sidebar-container"></div>
   
   <main class="flex-1 flex flex-col h-screen overflow-hidden">
-    <header class="glass-dark border-b border-slate-800 h-16 flex items-center justify-between px-6">
-      <div class="text-lg font-semibold">System Settings</div>
+    <!-- Header -->
+    <header class="glass-dark border-b border-slate-800/60 min-h-14 py-2 md:py-0 flex items-center justify-between px-4 md:px-6 flex-shrink-0 flex-wrap gap-2">
+      <div>
+        <div class="text-sm font-bold text-white">System Settings</div>
+        <div class="text-xs text-slate-500">Global configurations, Meta webhooks, SLAs, and Email</div>
+      </div>
     </header>
 
     <div class="flex flex-1 overflow-hidden">
-      <!-- Settings Sidebar -->
-      <div class="w-64 border-r border-slate-800 p-4 space-y-2 glass-dark">
-        <button class="w-full text-left px-4 py-2 rounded-lg bg-white/10 text-white font-medium">General</button>
-        <button class="w-full text-left px-4 py-2 rounded-lg text-slate-400 hover:bg-white/5">Meta Webhook</button>
-        <button class="w-full text-left px-4 py-2 rounded-lg text-slate-400 hover:bg-white/5">SLA Config</button>
-        <button class="w-full text-left px-4 py-2 rounded-lg text-slate-400 hover:bg-white/5">Users & Roles</button>
+      <!-- Settings Sidebar Navigation -->
+      <div class="w-56 md:w-64 border-r border-slate-800/60 p-4 space-y-1.5 glass-dark flex-shrink-0">
+        <button id="nav-meta" onclick="switchTab('meta')" class="tab-btn active w-full text-left px-4 py-2.5 rounded-xl text-xs text-slate-400 hover:bg-white/5 transition-all flex items-center gap-2.5">
+          <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          Meta Webhook & Guide
+        </button>
+        <button id="nav-general" onclick="switchTab('general')" class="tab-btn w-full text-left px-4 py-2.5 rounded-xl text-xs text-slate-400 hover:bg-white/5 transition-all flex items-center gap-2.5">
+          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+          General Settings
+        </button>
+        <button id="nav-sla" onclick="switchTab('sla')" class="tab-btn w-full text-left px-4 py-2.5 rounded-xl text-xs text-slate-400 hover:bg-white/5 transition-all flex items-center gap-2.5">
+          <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          SLA Configuration
+        </button>
+        <button id="nav-roles" onclick="switchTab('roles')" class="tab-btn w-full text-left px-4 py-2.5 rounded-xl text-xs text-slate-400 hover:bg-white/5 transition-all flex items-center gap-2.5">
+          <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          Users & Roles
+        </button>
+        <button id="nav-email" onclick="switchTab('email')" class="tab-btn w-full text-left px-4 py-2.5 rounded-xl text-xs text-slate-400 hover:bg-white/5 transition-all flex items-center gap-2.5">
+          <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          Email & SMTP
+        </button>
       </div>
 
-      <!-- Settings Content -->
-      <div class="flex-1 overflow-y-auto p-6">
+      <!-- Settings Main Content Area -->
+      <div class="flex-1 overflow-y-auto p-4 md:p-6">
         
-        <div class="max-w-2xl space-y-6">
-          <h2 class="text-xl font-semibold">Meta Webhook Configuration</h2>
-          
-          <div class="glass p-5 rounded-xl flex items-center justify-between border-l-4 border-emerald-500">
-            <div>
-              <div class="font-medium text-white">Webhook Status: Active</div>
-              <div class="text-sm text-slate-400 mt-1">Last payload received 4 mins ago</div>
-            </div>
-            <button class="btn-ghost px-3 py-1.5 rounded text-sm">Test</button>
-          </div>
+        <!-- 1. META WEBHOOK TAB -->
+        <div id="tab-meta" class="tab-content">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Config Form Column -->
+            <div class="lg:col-span-6 space-y-5">
+              <div class="flex items-center justify-between">
+                <div class="text-base font-bold text-white">Meta Webhook Configuration</div>
+                <button type="button" id="test-meta-btn" onclick="testMetaWebhook()" class="btn-ghost px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                  Test Connection
+                </button>
+              </div>
 
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm text-slate-400 mb-1">Webhook URL</label>
-              <input type="text" class="w-full input-glass p-2 rounded" value="https://crm.southeast.com/api/webhooks/meta" readonly>
+              <!-- Status Card -->
+              <div id="meta-status-card" class="glass border-l-4 border-emerald-500 p-4 rounded-xl flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-bold text-white flex items-center gap-2">
+                    <span id="webhook-status-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span id="webhook-status-text">Webhook Status: Active</span>
+                  </div>
+                  <div class="text-[11px] text-slate-400 mt-1" id="webhook-last-payload">Last payload received: Checking...</div>
+                </div>
+              </div>
+
+              <!-- Config Form -->
+              <form id="meta-form" onsubmit="saveMetaSettings(event)" class="chart-card space-y-4">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Callback Webhook URL (Read Only)</label>
+                  <div class="flex gap-2">
+                    <input type="text" id="meta-webhook-url" readonly class="w-full input-glass px-3.5 py-2 rounded-xl text-xs font-mono text-indigo-300 bg-slate-900/60" value="https://localhost:5000/api/webhooks/meta">
+                    <button type="button" onclick="copyToClipboard('meta-webhook-url')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold flex-shrink-0">Copy</button>
+                  </div>
+                  <p class="text-[10px] text-slate-500 mt-1">Paste this URL into Facebook Developer Portal &gt; Webhooks &gt; Page.</p>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Verify Token *</label>
+                  <div class="flex gap-2">
+                    <input type="text" id="meta-verify-token" required class="w-full input-glass px-3.5 py-2 rounded-xl text-xs font-mono" placeholder="sl_crm_secure_webhook_token_2025">
+                    <button type="button" onclick="copyToClipboard('meta-verify-token')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold flex-shrink-0">Copy</button>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">App Secret *</label>
+                  <input type="password" id="meta-app-secret" required class="w-full input-glass px-3.5 py-2 rounded-xl text-xs font-mono" placeholder="Enter Meta App Secret">
+                  <p class="text-[10px] text-slate-500 mt-1">Used to cryptographically verify incoming HMAC signatures.</p>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">App ID (Optional)</label>
+                  <input type="text" id="meta-app-id" class="w-full input-glass px-3.5 py-2 rounded-xl text-xs font-mono" placeholder="e.g. 1234567890">
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Page Access Token (Optional)</label>
+                  <textarea id="meta-page-access-token" rows="2" class="w-full input-glass px-3.5 py-2 rounded-xl text-xs font-mono" placeholder="EAAB..."></textarea>
+                </div>
+
+                <div class="pt-2 border-t border-slate-800 flex justify-end">
+                  <button type="submit" class="btn-gradient px-6 py-2 rounded-xl text-xs font-bold">Save Webhook Configuration</button>
+                </div>
+              </form>
             </div>
-            <div>
-              <label class="block text-sm text-slate-400 mb-1">Verify Token</label>
-              <input type="text" class="w-full input-glass p-2 rounded" value="sl_crm_secure_webhook_token_2024">
+
+            <!-- Meta Documentation Panel (Contents of META_WEBHOOK_SETUP.md) -->
+            <div class="lg:col-span-6 space-y-4">
+              <div class="chart-card border border-indigo-500/30 bg-[#0f1122]">
+                <div class="flex items-center gap-2 border-b border-slate-800 pb-3 mb-4">
+                  <div class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-xs">📖</div>
+                  <div>
+                    <div class="text-sm font-bold text-white">Meta Lead Ads Webhook Setup Guide</div>
+                    <div class="text-[11px] text-slate-400">Step-by-step documentation for integrating Facebook Lead Ads</div>
+                  </div>
+                </div>
+
+                <div class="space-y-4 text-xs text-slate-300 max-h-[750px] overflow-y-auto pr-2 custom-scrollbar">
+                  
+                  <!-- Step 1 -->
+                  <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-800">
+                    <div class="font-bold text-indigo-400 mb-1 flex items-center gap-2">
+                      <span class="w-5 h-5 rounded-full bg-indigo-500/20 flex items-center justify-center text-[10px]">1</span>
+                      Create Facebook App
+                    </div>
+                    <ol class="list-decimal list-inside space-y-1 text-slate-400 pl-1 text-[11px]">
+                      <li>Go to <a href="https://developers.facebook.com" target="_blank" class="text-indigo-400 underline">developers.facebook.com</a> &gt; 'My Apps' &gt; 'Create App'.</li>
+                      <li>Select <strong>'Business'</strong> app type.</li>
+                      <li>Enter App Name: <code class="bg-slate-800 px-1 py-0.5 rounded text-indigo-300">Southeast Landmark CRM</code>.</li>
+                      <li>Copy the <strong>App ID</strong> into your settings.</li>
+                    </ol>
+                  </div>
+
+                  <!-- Step 2 -->
+                  <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-800">
+                    <div class="font-bold text-indigo-400 mb-1 flex items-center gap-2">
+                      <span class="w-5 h-5 rounded-full bg-indigo-500/20 flex items-center justify-center text-[10px]">2</span>
+                      Add Lead Ads Product
+                    </div>
+                    <p class="text-[11px] text-slate-400">In your Facebook App dashboard, go to <strong>Add Product</strong>, find <strong>Lead Ads</strong>, and click Set Up.</p>
+                  </div>
+
+                  <!-- Step 3 -->
+                  <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-800">
+                    <div class="font-bold text-indigo-400 mb-1 flex items-center gap-2">
+                      <span class="w-5 h-5 rounded-full bg-indigo-500/20 flex items-center justify-center text-[10px]">3</span>
+                      Get Page Access Token
+                    </div>
+                    <ol class="list-decimal list-inside space-y-1 text-slate-400 pl-1 text-[11px]">
+                      <li>Open <strong>Tools &rarr; Graph API Explorer</strong>.</li>
+                      <li>Select your App &amp; click "Generate Access Token".</li>
+                      <li>Request permissions: <code class="bg-slate-800 px-1 py-0.5 rounded text-indigo-300">pages_manage_ads</code>, <code class="bg-slate-800 px-1 py-0.5 rounded text-indigo-300">pages_read_engagement</code>, <code class="bg-slate-800 px-1 py-0.5 rounded text-indigo-300">leads_retrieval</code>.</li>
+                      <li>Select your Facebook Page to exchange it for a long-lived <strong>Page Access Token</strong>.</li>
+                    </ol>
+                  </div>
+
+                  <!-- Step 4 -->
+                  <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-800">
+                    <div class="font-bold text-indigo-400 mb-1 flex items-center gap-2">
+                      <span class="w-5 h-5 rounded-full bg-indigo-500/20 flex items-center justify-center text-[10px]">4</span>
+                      Set Up Webhook
+                    </div>
+                    <ol class="list-decimal list-inside space-y-1 text-slate-400 pl-1 text-[11px]">
+                      <li>Go to <strong>Webhooks</strong> product &gt; select <strong>Page</strong> object.</li>
+                      <li>Enter Callback URL (copied from form on the left).</li>
+                      <li>Enter Verify Token (copied from form on the left).</li>
+                      <li>Click "Verify &amp; Save", then subscribe to <code class="bg-slate-800 px-1 py-0.5 rounded text-emerald-400">leadgen</code> field.</li>
+                    </ol>
+                  </div>
+
+                  <!-- Step 5 -->
+                  <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-800">
+                    <div class="font-bold text-indigo-400 mb-1 flex items-center gap-2">
+                      <span class="w-5 h-5 rounded-full bg-indigo-500/20 flex items-center justify-center text-[10px]">5</span>
+                      Get App Secret
+                    </div>
+                    <p class="text-[11px] text-slate-400">Navigate to <strong>Settings &rarr; Basic</strong>, click "Show" next to App Secret, and save it in the CRM form.</p>
+                  </div>
+
+                  <!-- Step 6 -->
+                  <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-800">
+                    <div class="font-bold text-indigo-400 mb-1 flex items-center gap-2">
+                      <span class="w-5 h-5 rounded-full bg-indigo-500/20 flex items-center justify-center text-[10px]">6</span>
+                      Subscribe Page to Webhook (Terminal)
+                    </div>
+                    <pre class="bg-black/80 p-2.5 rounded-lg text-[10px] font-mono text-emerald-300 overflow-x-auto">curl -X POST 'https://graph.facebook.com/v19.0/{PAGE_ID}/subscribed_apps' \
+  -H 'Authorization: Bearer {PAGE_ACCESS_TOKEN}' \
+  -d 'subscribed_fields=leadgen'</pre>
+                  </div>
+
+                  <!-- Step 7 -->
+                  <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-800">
+                    <div class="font-bold text-indigo-400 mb-1 flex items-center gap-2">
+                      <span class="w-5 h-5 rounded-full bg-indigo-500/20 flex items-center justify-center text-[10px]">7</span>
+                      Test Incoming Lead
+                    </div>
+                    <p class="text-[11px] text-slate-400">Use the <a href="https://developers.facebook.com/tools/lead-ads-testing" target="_blank" class="text-indigo-400 underline">Meta Lead Ads Testing Tool</a> to generate a test lead. Verified leads push in real-time to your CRM dashboard.</p>
+                  </div>
+
+                </div>
+              </div>
             </div>
-            <div>
-              <label class="block text-sm text-slate-400 mb-1">App Secret</label>
-              <input type="password" class="w-full input-glass p-2 rounded" value="••••••••••••••••">
+
+          </div>
+        </div>
+
+
+        <!-- 2. GENERAL SETTINGS TAB -->
+        <div id="tab-general" class="tab-content hidden">
+          <div class="max-w-2xl space-y-5">
+            <div class="text-base font-bold text-white">General Application Settings</div>
+            <form id="general-form" onsubmit="saveGeneralSettings(event)" class="chart-card space-y-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Company / Application Name</label>
+                <input type="text" id="gen-company-name" required class="w-full input-glass px-4 py-2.5 rounded-xl text-sm" placeholder="Southeast Landmark CRM">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Admin Contact Email</label>
+                <input type="email" id="gen-admin-email" required class="w-full input-glass px-4 py-2.5 rounded-xl text-sm" placeholder="admin@southeast.com">
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Currency Symbol</label>
+                  <input type="text" id="gen-currency" required class="w-full input-glass px-4 py-2.5 rounded-xl text-sm" placeholder="BDT">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">System Timezone</label>
+                  <select id="gen-timezone" class="w-full input-glass px-4 py-2.5 rounded-xl text-sm bg-slate-900">
+                    <option value="Asia/Dhaka">Asia/Dhaka (GMT+6)</option>
+                    <option value="UTC">UTC</option>
+                    <option value="America/New_York">America/New_York (EST)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="pt-3 border-t border-slate-800 flex justify-end">
+                <button type="submit" class="btn-gradient px-6 py-2.5 rounded-xl text-xs font-bold">Save General Settings</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+
+        <!-- 3. SLA CONFIG TAB -->
+        <div id="tab-sla" class="tab-content hidden">
+          <div class="max-w-2xl space-y-5">
+            <div class="text-base font-bold text-white">SLA Timers & Escalation Thresholds</div>
+            <form id="sla-form" onsubmit="saveSlaSettings(event)" class="chart-card space-y-5">
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Executive Reminder (Minutes)</label>
+                <input type="number" id="sla-reminder-min" min="1" max="120" required class="w-full input-glass px-4 py-2.5 rounded-xl text-sm" placeholder="10">
+                <p class="text-[10px] text-slate-500 mt-1">Minutes before reminding the assigned Lead Owner if uncontacted.</p>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Manager Alert Threshold (Minutes)</label>
+                <input type="number" id="sla-alert-min" min="1" max="240" required class="w-full input-glass px-4 py-2.5 rounded-xl text-sm" placeholder="20">
+                <p class="text-[10px] text-slate-500 mt-1">Minutes before notifying team manager of delayed contact.</p>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Escalation Deadline (Minutes)</label>
+                <input type="number" id="sla-escalate-min" min="1" max="480" required class="w-full input-glass px-4 py-2.5 rounded-xl text-sm" placeholder="30">
+                <p class="text-[10px] text-slate-500 mt-1">Hard deadline before SLA breach is logged.</p>
+              </div>
+              <div class="flex items-center gap-3 pt-2">
+                <input type="checkbox" id="sla-auto-reassign" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-indigo-500">
+                <label for="sla-auto-reassign" class="text-xs text-slate-300 font-medium">Auto-reassign lead on SLA breach</label>
+              </div>
+              <div class="pt-3 border-t border-slate-800 flex justify-end">
+                <button type="submit" class="btn-gradient px-6 py-2.5 rounded-xl text-xs font-bold">Save SLA Configuration</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+
+        <!-- 4. USERS & ROLES TAB -->
+        <div id="tab-roles" class="tab-content hidden">
+          <div class="max-w-3xl space-y-5">
+            <div class="flex items-center justify-between">
+              <div class="text-base font-bold text-white">System Roles &amp; Access Control</div>
+              <a href="/lead-owners.html" class="btn-gradient px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Manage Lead Owners
+              </a>
             </div>
-            <button class="btn-gradient px-6 py-2 rounded-lg text-sm font-medium mt-2">Save Configuration</button>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="chart-card border-l-4 border-indigo-500 space-y-3">
+                <div class="flex items-center justify-between">
+                  <div class="font-bold text-white text-sm">System Administrator</div>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-400">ADMIN</span>
+                </div>
+                <p class="text-xs text-slate-400">Full system access: Manage lead owners, configure webhooks, view analytics, and edit settings.</p>
+              </div>
+
+              <div class="chart-card border-l-4 border-emerald-500 space-y-3">
+                <div class="flex items-center justify-between">
+                  <div class="font-bold text-white text-sm">Lead Owner</div>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">LEAD_OWNER</span>
+                </div>
+                <p class="text-xs text-slate-400">Sales executive access: Receive auto-assigned leads, log call activities, schedule appointments, and update deal pipeline.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- 5. EMAIL & SMTP TAB -->
+        <div id="tab-email" class="tab-content hidden">
+          <div class="max-w-2xl space-y-5">
+            <div class="text-base font-bold text-white">SMTP Email Gateway Settings</div>
+            <form id="email-form" onsubmit="saveEmailSettings(event)" class="chart-card space-y-4">
+              <div class="grid grid-cols-3 gap-4">
+                <div class="col-span-2">
+                  <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">SMTP Host</label>
+                  <input type="text" id="email-smtp-host" class="w-full input-glass px-4 py-2.5 rounded-xl text-sm" placeholder="smtp.gmail.com">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Port</label>
+                  <input type="text" id="email-smtp-port" class="w-full input-glass px-4 py-2.5 rounded-xl text-sm" placeholder="587">
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">SMTP Username</label>
+                <input type="text" id="email-smtp-user" class="w-full input-glass px-4 py-2.5 rounded-xl text-sm" placeholder="user@domain.com">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">SMTP Password</label>
+                <input type="password" id="email-smtp-pass" class="w-full input-glass px-4 py-2.5 rounded-xl text-sm" placeholder="••••••••">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Default Sender Email</label>
+                <input type="email" id="email-sender" class="w-full input-glass px-4 py-2.5 rounded-xl text-sm" placeholder="noreply@southeast.com">
+              </div>
+              <div class="pt-3 border-t border-slate-800 flex justify-end">
+                <button type="submit" class="btn-gradient px-6 py-2.5 rounded-xl text-xs font-bold">Save Email Settings</button>
+              </div>
+            </form>
           </div>
         </div>
 
@@ -58,5 +358,194 @@
     </div>
   </main>
 
+  <div id="toast-container"></div>
+  <script src="/assets/js/sidebar.js"></script>
+  <script type="module" src="/assets/js/app.js"></script>
+  <script>
+    const token = () => localStorage.getItem('crm_token');
+    const headers = () => ({ 'Authorization': `Bearer ${token()}`, 'Content-Type': 'application/json' });
+
+    const fetchAPI = async (url, opts = {}) => {
+      const res = await fetch(url, { headers: headers(), ...opts });
+      if (res.status === 401) { window.location.href = '/index.html'; return null; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || data.message || 'API Error');
+      return data;
+    };
+
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      
+      const content = document.getElementById(`tab-${tabName}`);
+      const navBtn = document.getElementById(`nav-${tabName}`);
+      if (content) content.classList.remove('hidden');
+      if (navBtn) navBtn.classList.add('active');
+    }
+
+    function copyToClipboard(inputId) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      input.select();
+      navigator.clipboard.writeText(input.value);
+      if (window.showToast) window.showToast('Copied to clipboard!', 'success');
+    }
+
+    async function loadMetaSettings() {
+      try {
+        const data = await fetchAPI('/api/settings/meta-webhook');
+        if (!data) return;
+        if (data.webhook_url) document.getElementById('meta-webhook-url').value = data.webhook_url;
+        document.getElementById('meta-verify-token').value = data.meta_verify_token || '';
+        document.getElementById('meta-app-secret').value = data.meta_app_secret || '';
+        document.getElementById('meta-app-id').value = data.meta_app_id || '';
+        document.getElementById('meta-page-access-token').value = data.meta_page_access_token || '';
+
+        const statusDot = document.getElementById('webhook-status-dot');
+        const statusText = document.getElementById('webhook-status-text');
+        const lastPayload = document.getElementById('webhook-last-payload');
+
+        if (data.status === 'active') {
+          statusDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+          statusText.textContent = 'Webhook Status: Active';
+        } else {
+          statusDot.className = 'w-2 h-2 rounded-full bg-rose-400';
+          statusText.textContent = 'Webhook Status: Inactive';
+        }
+
+        if (data.last_payload_received) {
+          lastPayload.textContent = `Last payload received: ${new Date(data.last_payload_received).toLocaleString()}`;
+        } else {
+          lastPayload.textContent = 'No incoming Meta lead payload received yet';
+        }
+      } catch (e) {
+        if (window.showToast) window.showToast(e.message, 'error');
+      }
+    }
+
+    async function saveMetaSettings(e) {
+      e.preventDefault();
+      const payload = {
+        meta_verify_token: document.getElementById('meta-verify-token').value,
+        meta_app_secret: document.getElementById('meta-app-secret').value,
+        meta_app_id: document.getElementById('meta-app-id').value,
+        meta_page_access_token: document.getElementById('meta-page-access-token').value,
+      };
+      try {
+        await fetchAPI('/api/settings/meta-webhook', { method: 'PUT', body: JSON.stringify(payload) });
+        if (window.showToast) window.showToast('Meta Webhook configuration saved!', 'success');
+        loadMetaSettings();
+      } catch (e) {
+        if (window.showToast) window.showToast(e.message, 'error');
+      }
+    }
+
+    async function testMetaWebhook() {
+      try {
+        const res = await fetchAPI('/api/settings/test-meta-webhook', { method: 'POST' });
+        if (res && res.message) {
+          if (window.showToast) window.showToast(res.message, 'success');
+        }
+      } catch (e) {
+        if (window.showToast) window.showToast(e.message, 'error');
+      }
+    }
+
+    async function loadGeneralSettings() {
+      try {
+        const data = await fetchAPI('/api/settings/general');
+        if (!data) return;
+        document.getElementById('gen-company-name').value = data.company_name || '';
+        document.getElementById('gen-admin-email').value = data.admin_email || '';
+        document.getElementById('gen-currency').value = data.currency_symbol || 'BDT';
+        if (data.timezone) document.getElementById('gen-timezone').value = data.timezone;
+      } catch (e) {
+        if (window.showToast) window.showToast(e.message, 'error');
+      }
+    }
+
+    async function saveGeneralSettings(e) {
+      e.preventDefault();
+      const payload = {
+        company_name: document.getElementById('gen-company-name').value,
+        admin_email: document.getElementById('gen-admin-email').value,
+        currency_symbol: document.getElementById('gen-currency').value,
+        timezone: document.getElementById('gen-timezone').value,
+      };
+      try {
+        await fetchAPI('/api/settings/general', { method: 'PUT', body: JSON.stringify(payload) });
+        if (window.showToast) window.showToast('General settings saved successfully!', 'success');
+      } catch (e) {
+        if (window.showToast) window.showToast(e.message, 'error');
+      }
+    }
+
+    async function loadSlaSettings() {
+      try {
+        const data = await fetchAPI('/api/settings/sla');
+        if (!data) return;
+        document.getElementById('sla-reminder-min').value = data.sla_reminder_minutes || 10;
+        document.getElementById('sla-alert-min').value = data.sla_manager_alert_minutes || 20;
+        document.getElementById('sla-escalate-min').value = data.sla_escalation_minutes || 30;
+        document.getElementById('sla-auto-reassign').checked = !!data.auto_reassign_sla_breach;
+      } catch (e) {
+        if (window.showToast) window.showToast(e.message, 'error');
+      }
+    }
+
+    async function saveSlaSettings(e) {
+      e.preventDefault();
+      const payload = {
+        sla_reminder_minutes: parseInt(document.getElementById('sla-reminder-min').value),
+        sla_manager_alert_minutes: parseInt(document.getElementById('sla-alert-min').value),
+        sla_escalation_minutes: parseInt(document.getElementById('sla-escalate-min').value),
+        auto_reassign_sla_breach: document.getElementById('sla-auto-reassign').checked
+      };
+      try {
+        await fetchAPI('/api/settings/sla', { method: 'PUT', body: JSON.stringify(payload) });
+        if (window.showToast) window.showToast('SLA configuration saved successfully!', 'success');
+      } catch (e) {
+        if (window.showToast) window.showToast(e.message, 'error');
+      }
+    }
+
+    async function loadEmailSettings() {
+      try {
+        const data = await fetchAPI('/api/settings/email-templates');
+        if (!data) return;
+        document.getElementById('email-smtp-host').value = data.smtp_host || '';
+        document.getElementById('email-smtp-port').value = data.smtp_port || '587';
+        document.getElementById('email-smtp-user').value = data.smtp_username || '';
+        document.getElementById('email-smtp-pass').value = data.smtp_password || '';
+        document.getElementById('email-sender').value = data.sender_email || '';
+      } catch (e) {
+        if (window.showToast) window.showToast(e.message, 'error');
+      }
+    }
+
+    async function saveEmailSettings(e) {
+      e.preventDefault();
+      const payload = {
+        smtp_host: document.getElementById('email-smtp-host').value,
+        smtp_port: document.getElementById('email-smtp-port').value,
+        smtp_username: document.getElementById('email-smtp-user').value,
+        smtp_password: document.getElementById('email-smtp-pass').value,
+        sender_email: document.getElementById('email-sender').value
+      };
+      try {
+        await fetchAPI('/api/settings/email-templates', { method: 'PUT', body: JSON.stringify(payload) });
+        if (window.showToast) window.showToast('Email gateway settings saved!', 'success');
+      } catch (e) {
+        if (window.showToast) window.showToast(e.message, 'error');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadMetaSettings();
+      loadGeneralSettings();
+      loadSlaSettings();
+      loadEmailSettings();
+    });
+  </script>
 </body>
 </html>

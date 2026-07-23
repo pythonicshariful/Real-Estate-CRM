@@ -432,11 +432,15 @@ def process_meta_webhook(payload_dict: dict, app=None):
                 db.session.add(inquiry)
                 db.session.flush()
 
+                # Auto-assign lead owner based on date/time schedule or equal round-robin
+                assigned_owner = assign_lead_owner_auto(app=app)
+
                 # Create Opportunity
                 opp = Opportunity(
                     inquiry_id=inquiry.id,
                     contact_id=contact.id,
-                    pipeline_stage=PipelineStage.NEW,
+                    assigned_to_id=assigned_owner.id if assigned_owner else None,
+                    pipeline_stage=PipelineStage.NEW if assigned_owner else PipelineStage.NEW,
                 )
                 db.session.add(opp)
                 db.session.flush()
@@ -572,38 +576,95 @@ def _fetch_meta_lead(app, leadgen_id: str) -> dict | None:
         return None
 
 
-def _find_available_executive(exclude_user_id: int | None):
-    """Find the executive with the most remaining lead capacity."""
-    from app.models import User, UserRole, Opportunity, PipelineStage
+def assign_lead_owner_auto(exclude_user_id: int | None = None, app=None):
+    """
+    Assign incoming Meta lead to a Lead Owner.
+    1. If a Lead Owner is within their configured date & time schedule, assign to them.
+    2. Otherwise, divide leads equally among all active Lead Owners (round-robin / lowest lead count).
+    """
+    from app.models import User, UserRole, Opportunity
     from app.extensions import db
     from sqlalchemy import func
+    from datetime import datetime
 
-    # Count active leads per exec
-    active_stages = [
-        PipelineStage.NEW, PipelineStage.ASSIGNED,
-        PipelineStage.FIRST_CONTACT_PENDING, PipelineStage.CONTACT_ATTEMPTED,
-        PipelineStage.CONNECTED, PipelineStage.QUALIFIED,
-    ]
-    lead_counts = (
-        db.session.query(Opportunity.assigned_to_id, func.count(Opportunity.id).label('cnt'))
-        .filter(Opportunity.pipeline_stage.in_(active_stages))
-        .filter(Opportunity.is_deleted == False)
-        .group_by(Opportunity.assigned_to_id)
-        .subquery()
-    )
-
-    execs = (
-        User.query
-        .outerjoin(lead_counts, User.id == lead_counts.c.assigned_to_id)
-        .filter(User.role == UserRole.EXECUTIVE)
-        .filter(User.is_active == True)
-        .filter(User.id != exclude_user_id)
-        .order_by(
-            (User.max_lead_capacity - func.coalesce(lead_counts.c.cnt, 0)).desc()
+    app = _get_app(app)
+    with app.app_context():
+        active_owners = (
+            User.query
+            .filter(User.role == UserRole.LEAD_OWNER)
+            .filter(User.is_active == True)
+            .filter(User.id != exclude_user_id if exclude_user_id else True)
+            .all()
         )
-        .first()
-    )
-    return execs
+
+        if not active_owners:
+            return None
+
+        now = datetime.now()
+        cur_date = now.date()
+        cur_time = now.time()
+
+        matching_scheduled_owners = []
+
+        for owner in active_owners:
+            has_date_config = owner.schedule_from_date is not None or owner.schedule_to_date is not None
+            has_time_config = owner.schedule_start_time is not None or owner.schedule_end_time is not None
+
+            if not has_date_config and not has_time_config:
+                continue
+
+            date_ok = True
+            if owner.schedule_from_date and cur_date < owner.schedule_from_date:
+                date_ok = False
+            if owner.schedule_to_date and cur_date > owner.schedule_to_date:
+                date_ok = False
+
+            time_ok = True
+            if owner.schedule_start_time and owner.schedule_end_time:
+                if owner.schedule_start_time <= owner.schedule_end_time:
+                    time_ok = owner.schedule_start_time <= cur_time <= owner.schedule_end_time
+                else:
+                    time_ok = cur_time >= owner.schedule_start_time or cur_time <= owner.schedule_end_time
+            elif owner.schedule_start_time:
+                time_ok = cur_time >= owner.schedule_start_time
+            elif owner.schedule_end_time:
+                time_ok = cur_time <= owner.schedule_end_time
+
+            if date_ok and time_ok:
+                matching_scheduled_owners.append(owner)
+
+        if len(matching_scheduled_owners) == 1:
+            logger.info(f"Auto-assigned lead to scheduled Lead Owner: {matching_scheduled_owners[0].full_name}")
+            return matching_scheduled_owners[0]
+
+        # If 0 or >1 scheduled owners match, divide equally among active owners (or matching scheduled owners)
+        candidate_pool = matching_scheduled_owners if len(matching_scheduled_owners) > 1 else active_owners
+        candidate_ids = [u.id for u in candidate_pool]
+
+        lead_counts = (
+            db.session.query(Opportunity.assigned_to_id, func.count(Opportunity.id).label('cnt'))
+            .filter(Opportunity.assigned_to_id.in_(candidate_ids))
+            .filter(Opportunity.is_deleted == False)
+            .group_by(Opportunity.assigned_to_id)
+            .subquery()
+        )
+
+        selected = (
+            User.query
+            .outerjoin(lead_counts, User.id == lead_counts.c.assigned_to_id)
+            .filter(User.id.in_(candidate_ids))
+            .order_by(func.coalesce(lead_counts.c.cnt, 0).asc(), User.id.asc())
+            .first()
+        )
+
+        if selected:
+            logger.info(f"Auto-assigned lead to Lead Owner (equal distribution): {selected.full_name}")
+        return selected
+
+
+def _find_available_executive(exclude_user_id: int | None):
+    return assign_lead_owner_auto(exclude_user_id=exclude_user_id)
+
 
 
 def _mark_sla_resolved(opportunity_id: int):

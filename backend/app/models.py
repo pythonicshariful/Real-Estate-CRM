@@ -142,6 +142,10 @@ class User(db.Model):
     avatar_url = db.Column(db.String(255))
     calendar_color = db.Column(db.String(7), default="#6366f1")
     max_lead_capacity = db.Column(db.Integer, default=30)
+    schedule_from_date = db.Column(db.Date, nullable=True)
+    schedule_to_date = db.Column(db.Date, nullable=True)
+    schedule_start_time = db.Column(db.Time, nullable=True)
+    schedule_end_time = db.Column(db.Time, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     last_login = db.Column(db.DateTime)
@@ -175,6 +179,10 @@ class User(db.Model):
             "is_active": self.is_active,
             "max_lead_capacity": self.max_lead_capacity,
             "calendar_color": self.calendar_color,
+            "schedule_from_date": self.schedule_from_date.isoformat() if self.schedule_from_date else None,
+            "schedule_to_date": self.schedule_to_date.isoformat() if self.schedule_to_date else None,
+            "schedule_start_time": self.schedule_start_time.strftime('%H:%M') if self.schedule_start_time else None,
+            "schedule_end_time": self.schedule_end_time.strftime('%H:%M') if self.schedule_end_time else None,
             "created_at": self.created_at.isoformat() if self.created_at else None
         }
 
@@ -694,4 +702,45 @@ class Invoice(db.Model):
             'paid_date': self.paid_date.isoformat() if self.paid_date else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
+
+
+# ---------------------------------------------------------------------------
+# System Settings
+# ---------------------------------------------------------------------------
+
+class SystemSetting(db.Model):
+    """System-wide configuration settings stored in DB."""
+    __tablename__ = 'system_settings'
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(100), unique=True, nullable=False)
+    value = db.Column(db.Text, nullable=True)
+    description = db.Column(db.String(255), nullable=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'key': self.key,
+            'value': self.value,
+            'description': self.description,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+    @classmethod
+    def get(cls, key, default=None):
+        setting = cls.query.filter_by(key=key).first()
+        return setting.value if setting and setting.value is not None else default
+
+    @classmethod
+    def set(cls, key, value, description=None):
+        setting = cls.query.filter_by(key=key).first()
+        if not setting:
+            setting = cls(key=key, value=str(value) if value is not None else '', description=description)
+            db.session.add(setting)
+        else:
+            setting.value = str(value) if value is not None else ''
+            if description:
+                setting.description = description
+        db.session.commit()
+        return setting
+
 

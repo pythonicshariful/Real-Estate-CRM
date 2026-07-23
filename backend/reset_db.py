@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from app import create_app
 from app.extensions import db
-from app.models import User, UserRole, Project
+from app.models import User, UserRole, Project, SystemSetting
 
 app = create_app()
 
@@ -18,6 +18,24 @@ with app.app_context():
     print("Creating all tables...")
     db.create_all()
 
+    # Seed Default System Settings
+    defaults = {
+        'company_name': 'Southeast Landmark CRM',
+        'admin_email': 'admin@southeast.com',
+        'currency_symbol': 'BDT',
+        'timezone': 'Asia/Dhaka',
+        'meta_verify_token': 'sl_crm_secure_webhook_token_2025',
+        'meta_app_secret': 'meta_app_secret_placeholder',
+        'meta_app_id': '',
+        'meta_page_access_token': '',
+        'sla_reminder_minutes': '10',
+        'sla_manager_alert_minutes': '20',
+        'sla_escalation_minutes': '30',
+        'auto_reassign_sla_breach': 'true'
+    }
+    for k, v in defaults.items():
+        SystemSetting.set(k, v)
+
     # Create Main Admin
     admin = User(
         email="admin@southeast.com",
@@ -26,13 +44,12 @@ with app.app_context():
         phone="+880-1700-000000",
         is_active=True,
         is_mfa_enabled=False,
-        calendar_color="#6366f1",
-        max_lead_capacity=999
+        calendar_color="#6366f1"
     )
     admin.set_password("Admin@123")
     db.session.add(admin)
 
-    # Create a sample Lead Owner
+    # Create sample Lead Owners
     lo1 = User(
         email="john@southeast.com",
         full_name="John Rahman",
@@ -40,8 +57,7 @@ with app.app_context():
         phone="+880-1711-111111",
         is_active=True,
         is_mfa_enabled=False,
-        calendar_color="#22c55e",  # Green
-        max_lead_capacity=50
+        calendar_color="#22c55e"  # Green
     )
     lo1.set_password("John@123")
     db.session.add(lo1)
@@ -53,8 +69,7 @@ with app.app_context():
         phone="+880-1722-222222",
         is_active=True,
         is_mfa_enabled=False,
-        calendar_color="#f59e0b",  # Amber
-        max_lead_capacity=50
+        calendar_color="#f59e0b"  # Amber
     )
     lo2.set_password("Sarah@123")
     db.session.add(lo2)
