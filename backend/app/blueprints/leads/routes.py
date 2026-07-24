@@ -1,8 +1,9 @@
-from flask import request, jsonify
+from flask import request, jsonify, current_app
 from app.blueprints.leads import leads_bp
-from app.models import Opportunity, Contact, CallLog, Appointment, PipelineStage, AppointmentStatus, Objection, Reservation, db, UserRole, LeadTemperature
+from app.models import Opportunity, Contact, CallLog, Appointment, PipelineStage, AppointmentStatus, Objection, Reservation, Note, PipelineHistory, db, UserRole, LeadTemperature, AuditLog
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from datetime import datetime
+import os
 
 def _is_admin(role):
     return role == UserRole.ADMIN.value
@@ -87,6 +88,17 @@ def create_lead():
         pipeline_stage=PipelineStage.NEW
     )
     db.session.add(opp)
+    db.session.flush() # flush to get opp.id
+    
+    audit = AuditLog(
+        user_id=user_id,
+        table_name='opportunities',
+        record_id=opp.id,
+        action='INSERT',
+        field_name='lead',
+        new_value=f"Created Lead: {contact.full_name}"
+    )
+    db.session.add(audit)
     db.session.commit()
     
     result = opp.to_dict()
@@ -127,6 +139,52 @@ def get_lead_profile(id):
     appointments = Appointment.query.filter_by(opportunity_id=id).order_by(Appointment.appointment_datetime.asc()).all()
     objections = Objection.query.filter_by(opportunity_id=id).all()
     reservations = Reservation.query.filter_by(opportunity_id=id).first()
+    notes = Note.query.filter_by(opportunity_id=id).order_by(Note.created_at.desc()).all()
+    history = PipelineHistory.query.filter_by(opportunity_id=id).order_by(PipelineHistory.changed_at.desc()).all()
+
+    # Consolidate Timeline
+    timeline_items = []
+    
+    # Calls
+    for c in call_logs:
+        timeline_items.append({
+            "type": "CALL",
+            "date": c.created_at.isoformat() if c.created_at else None,
+            "connected": c.connected,
+            "notes": c.notes,
+            "recording_url": c.recording_filename,
+        })
+        
+    # Notes
+    for n in notes:
+        timeline_items.append({
+            "type": "NOTE",
+            "date": n.created_at.isoformat() if n.created_at else None,
+            "content": n.content,
+        })
+        
+    # History
+    for h in history:
+        timeline_items.append({
+            "type": "STAGE_CHANGE",
+            "date": h.changed_at.isoformat() if h.changed_at else None,
+            "from_stage": h.from_stage.value if h.from_stage else None,
+            "to_stage": h.to_stage.value if h.to_stage else None,
+            "notes": h.notes,
+        })
+        
+    # Appointments
+    for a in appointments:
+        timeline_items.append({
+            "type": "APPOINTMENT",
+            "date": a.created_at.isoformat() if a.created_at else None,
+            "appointment_datetime": a.appointment_datetime.isoformat() if a.appointment_datetime else None,
+            "status": a.status.value if a.status else None,
+            "location": a.location,
+        })
+
+    # Sort timeline by date descending
+    timeline_items.sort(key=lambda x: x["date"] or "", reverse=True)
 
     profile = lead.to_dict()
     if contact:
@@ -162,8 +220,11 @@ def get_lead_profile(id):
         "unit_reference": reservations.unit_reference,
         "booking_amount": str(reservations.booking_amount),
     } if reservations else None
+    
+    profile["timeline"] = timeline_items
 
     return jsonify(profile)
+
 
 @leads_bp.route('/<int:id>', methods=['PUT'])
 @jwt_required()
@@ -179,12 +240,38 @@ def update_lead(id):
     data = request.json
     if 'pipeline_stage' in data:
         try:
-            lead.pipeline_stage = PipelineStage[data['pipeline_stage']]
+            old_stage = lead.pipeline_stage.value if lead.pipeline_stage else 'NEW'
+            new_stage = data['pipeline_stage']
+            lead.pipeline_stage = PipelineStage[new_stage]
+            
+            audit = AuditLog(
+                user_id=user_id,
+                table_name='opportunities',
+                record_id=lead.id,
+                action='UPDATE',
+                field_name='pipeline_stage',
+                old_value=old_stage,
+                new_value=new_stage
+            )
+            db.session.add(audit)
         except KeyError:
             return jsonify({"error": "Invalid stage"}), 400
     if 'next_action_deadline' in data and data['next_action_deadline']:
         try:
-            lead.next_action_deadline = datetime.fromisoformat(data['next_action_deadline'])
+            old_deadline = lead.next_action_deadline.isoformat() if lead.next_action_deadline else None
+            new_deadline = data['next_action_deadline']
+            lead.next_action_deadline = datetime.fromisoformat(new_deadline)
+            
+            audit = AuditLog(
+                user_id=user_id,
+                table_name='opportunities',
+                record_id=lead.id,
+                action='UPDATE',
+                field_name='next_action_deadline',
+                old_value=old_deadline,
+                new_value=new_deadline
+            )
+            db.session.add(audit)
         except ValueError:
             pass
     if 'manager_assessment' in data and _is_admin(role):
@@ -206,6 +293,19 @@ def delete_lead(id):
     
     lead.is_deleted = True
     lead.deleted_at = datetime.utcnow()
+    
+    # Audit log lead deletion
+    contact_name = lead.contact.full_name if lead.contact else "Unknown"
+    audit = AuditLog(
+        user_id=user_id,
+        table_name='opportunities',
+        record_id=lead.id,
+        action='DELETE',
+        field_name='is_deleted',
+        old_value='False',
+        new_value=f"Deleted Lead: {contact_name}"
+    )
+    db.session.add(audit)
     db.session.commit()
     return jsonify({"msg": "Lead deleted"})
 
@@ -257,28 +357,80 @@ def log_call(id):
     if not _check_lead_access(lead, role, user_id):
         return jsonify({"error": "Access denied"}), 403
     
-    data = request.json or {}
+    # Accept both JSON and multipart/form-data (form includes a file input)
+    if request.content_type and 'application/json' in request.content_type:
+        data = request.json or {}
+        connected = data.get('connected', False)
+        notes = data.get('notes', '')
+        next_deadline = data.get('next_action_deadline')
+    else:
+        data = request.form
+        connected = data.get('connected') == 'on'  # checkbox sends 'on' when checked
+        notes = data.get('notes', '')
+        next_deadline = data.get('next_action_deadline')
     log = CallLog(
         opportunity_id=id,
         logged_by_id=user_id,
-        connected=data.get('connected', False),
-        notes=data.get('notes', ''),
+        connected=connected,
+        notes=notes,
         call_type='OUTBOUND',
     )
     
-    if data.get('next_action_deadline'):
+    if next_deadline:
         try:
-            lead.next_action_deadline = datetime.fromisoformat(data['next_action_deadline'])
+            lead.next_action_deadline = datetime.fromisoformat(next_deadline)
         except ValueError:
             pass
     
     lead.last_activity_at = datetime.utcnow()
     
     db.session.add(log)
-    db.session.commit()
-    return jsonify({"id": log.id, "msg": "Call logged"}), 201
+    db.session.flush()
+    
+    contact_name = lead.contact.full_name if lead.contact else "Unknown"
+    audit = AuditLog(
+        user_id=user_id,
+        table_name='call_logs',
+        record_id=log.id,
+        action='INSERT',
+        field_name='call',
+        new_value=f"Logged Call (Connected: {connected}) for Lead: {contact_name}"
+    )
+    db.session.add(audit)
+    db.session.commit()  # commit first so we have log.id for the filename
+
+    # ── Handle optional recording file upload ──────────────────────────────
+    recording_url = None
+    recording_file = request.files.get('recording_file')
+    if recording_file and recording_file.filename:
+        import uuid
+        from werkzeug.utils import secure_filename
+        from app.tasks import upload_recording_to_mega
+
+        ext = os.path.splitext(secure_filename(recording_file.filename))[1] or '.mp3'
+        safe_name = f"call_{log.id}_{uuid.uuid4().hex[:8]}{ext}"
+        recordings_dir = current_app.config.get('RECORDINGS_FOLDER', 'uploads/recordings')
+        os.makedirs(recordings_dir, exist_ok=True)
+        local_path = os.path.join(recordings_dir, safe_name)
+
+        recording_file.save(local_path)
+        log.recording_filename = safe_name  # local fallback
+
+        # Try MEGA upload — never fail the whole request if it errors
+        mega_link = upload_recording_to_mega(local_path, safe_name)
+        if mega_link:
+            log.recording_filename = mega_link  # store the public MEGA link
+            recording_url = mega_link
+        else:
+            # Keep local file; expose via secure signed URL system
+            recording_url = None
+
+        db.session.commit()
+
+    return jsonify({"id": log.id, "msg": "Call logged", "recording_url": recording_url}), 201
 
 @leads_bp.route('/<int:id>/appointments', methods=['POST'])
+@leads_bp.route('/<int:id>/appointment', methods=['POST'])
 @jwt_required()
 def book_appointment(id):
     lead = Opportunity.query.get_or_404(id)
@@ -311,6 +463,18 @@ def book_appointment(id):
     lead.appointment_status = AppointmentStatus.SCHEDULED
     
     db.session.add(appt)
+    db.session.flush()
+    
+    contact_name = lead.contact.full_name if lead.contact else "Unknown"
+    audit = AuditLog(
+        user_id=user_id,
+        table_name='appointments',
+        record_id=appt.id,
+        action='INSERT',
+        field_name='appointment',
+        new_value=f"Booked Appointment for Lead: {contact_name} at {appt.appointment_datetime.isoformat()}"
+    )
+    db.session.add(audit)
     db.session.commit()
     return jsonify({"id": appt.id, "msg": "Appointment booked"}), 201
 
@@ -338,5 +502,17 @@ def add_note(id):
     )
     lead.last_activity_at = datetime.utcnow()
     db.session.add(log)
+    db.session.flush()
+    
+    contact_name = lead.contact.full_name if lead.contact else "Unknown"
+    audit = AuditLog(
+        user_id=user_id,
+        table_name='notes',
+        record_id=log.id,
+        action='INSERT',
+        field_name='note',
+        new_value=f"Added Activity Note: '{log.notes[:40]}...' for Lead: {contact_name}"
+    )
+    db.session.add(audit)
     db.session.commit()
     return jsonify({"id": log.id, "msg": "Note added"}), 201

@@ -57,6 +57,7 @@ async function handleLogin(email, password) {
     if (res.role) localStorage.setItem('crm_role', res.role);
     if (res.color) localStorage.setItem('crm_color', res.color);
     if (res.full_name) localStorage.setItem('crm_name', res.full_name);
+    if (res.avatar_url) localStorage.setItem('crm_avatar', res.avatar_url);
     
     // Redirect based on role
     const redirectTo = res.redirect_to || (res.role === 'ADMIN' ? 'admin-dashboard.html' : 'dashboard.html');
@@ -80,6 +81,7 @@ export function logout() {
   localStorage.removeItem('crm_role');
   localStorage.removeItem('crm_color');
   localStorage.removeItem('crm_name');
+  localStorage.removeItem('crm_avatar');
   window.location.href = '/index.html';
 }
 

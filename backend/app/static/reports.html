@@ -1,21 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reports & Analytics — Southeast CRM v2.0</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports & Analytics — Southeast CRM</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/assets/css/main.css">
-  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body class="flex h-screen overflow-hidden text-slate-100 bg-[#0a0a14]">
   <div id="sidebar-container"></div>
   <main class="flex-1 flex flex-col h-screen overflow-hidden">
     <header class="glass-dark border-b border-slate-800/60 min-h-14 py-2 md:py-0 flex items-center justify-between px-4 md:px-6 flex-shrink-0 flex-wrap gap-2">
-      <div><div class="text-sm font-bold text-white">Reports & Analytics</div><div class="text-xs text-slate-500">M-11: 20-Metric Analytics Framework · Speed-to-Lead · Show Rate · CAC · Revenue per 100 Leads</div></div>
+      <div>
+        <div class="text-sm font-bold text-white">Reports & Analytics</div>
+        <div class="text-xs text-slate-500">M-11: 20-Metric Analytics Framework · Speed-to-Lead · Show Rate · CAC · Revenue per 100 Leads</div>
+      </div>
       <div class="flex gap-2">
-        <select class="input-glass px-3 py-1.5 rounded-lg text-xs"><option>Last 30 Days</option><option>This Quarter</option><option>This Year</option></select>
-        <button class="btn-ghost px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg> Export CSV
+        <button onclick="window.location.reload()" class="btn-ghost px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          Refresh
         </button>
       </div>
     </header>
@@ -25,66 +29,188 @@
       <div>
         <div class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">M-11 — 20-Metric Framework</div>
         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2">
-          <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Speed-to-Lead</div><div class="text-xl font-black text-indigo-400">4.2m</div><div class="trend-up">Target: 5m ✓</div></div>
-          <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Contact Rate</div><div class="text-xl font-black text-emerald-400">68%</div><div class="trend-down">Target: 75%</div></div>
-          <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Show Rate</div><div class="text-xl font-black text-cyan-400">78%</div><div class="trend-up">Above avg ✓</div></div>
-          <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Conversion Rate</div><div class="text-xl font-black text-amber-400">3.1%</div><div class="trend-up">↑ 0.3%</div></div>
-          <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Avg Deal Size</div><div class="text-xl font-black text-violet-400" style="font-size:1rem">৳8.6M</div><div class="trend-up">↑ ৳0.4M</div></div>
-          <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">CAC</div><div class="text-xl font-black text-rose-400" style="font-size:1rem">৳42K</div><div class="trend-down">Target: ৳35K</div></div>
-          <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Rev/100 Leads</div><div class="text-xl font-black text-emerald-400" style="font-size:1rem">৳26.7M</div><div class="trend-up">↑ 8%</div></div>
-          <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Lead-to-Visit</div><div class="text-xl font-black text-indigo-400">18.9%</div><div class="trend-up">Improving</div></div>
-          <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Visit-to-Proposal</div><div class="text-xl font-black text-cyan-400">44.7%</div><div class="trend-flat">Stable</div></div>
-          <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Proposal-to-Close</div><div class="text-xl font-black text-emerald-400">36.8%</div><div class="trend-up">↑ 3%</div></div>
-          <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">SLA Compliance</div><div class="text-xl font-black text-emerald-400">92%</div><div class="trend-up">↑ 5%</div></div>
-          <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Avg Call Duration</div><div class="text-xl font-black text-sky-400">7.4m</div><div class="trend-up">Quality calls</div></div>
-          <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">First Call Resolve</div><div class="text-xl font-black text-violet-400">62%</div><div class="trend-up">↑ 4%</div></div>
-          <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Objections/Lead</div><div class="text-xl font-black text-amber-400">2.8</div><div class="trend-down">High — review</div></div>
-          <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Price Objection %</div><div class="text-xl font-black text-rose-400">38%</div><div class="trend-down">Main barrier</div></div>
-          <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Appt. No-Show</div><div class="text-xl font-black text-amber-400">22%</div><div class="trend-down">Needs work</div></div>
-          <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Reassigned Leads</div><div class="text-xl font-black text-rose-400">8%</div><div class="trend-down">SLA breaches</div></div>
-          <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Collection Rate</div><div class="text-xl font-black text-emerald-400">84%</div><div class="trend-up">↑ 2%</div></div>
-          <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Active Pipeline</div><div class="text-xl font-black text-indigo-400">৳184M</div><div class="trend-up">Total value</div></div>
-          <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">MoM Growth</div><div class="text-xl font-black text-cyan-400">+18%</div><div class="trend-up">Revenue growth</div></div>
+          
+          <div class="kpi-card">
+            <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Speed-to-Lead</div>
+            <div class="text-xl font-black text-indigo-400" id="kpi-speed-to-lead">—</div>
+            <div class="text-[10px] text-slate-600 mt-1">Avg response mins</div>
+          </div>
+          
+          <div class="kpi-card">
+            <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Contact Rate</div>
+            <div class="text-xl font-black text-emerald-400" id="kpi-contact-rate">—</div>
+            <div class="text-[10px] text-slate-600 mt-1">Connected calls %</div>
+          </div>
+          
+          <div class="kpi-card">
+            <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Show Rate</div>
+            <div class="text-xl font-black text-cyan-400" id="kpi-show-rate">—</div>
+            <div class="text-[10px] text-slate-600 mt-1">Completed appts %</div>
+          </div>
+          
+          <div class="kpi-card">
+            <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Conversion Rate</div>
+            <div class="text-xl font-black text-amber-400" id="kpi-conversion-rate">—</div>
+            <div class="text-[10px] text-slate-600 mt-1">Leads sold ratio</div>
+          </div>
+          
+          <div class="kpi-card">
+            <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Avg Deal Size</div>
+            <div class="text-xl font-black text-violet-400" style="font-size:1rem" id="kpi-avg-deal-size">—</div>
+            <div class="text-[10px] text-slate-600 mt-1">Sold unit avg value</div>
+          </div>
+          
+          <div class="kpi-card">
+            <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">CAC</div>
+            <div class="text-xl font-black text-rose-400" style="font-size:1rem" id="kpi-cac">—</div>
+            <div class="text-[10px] text-slate-600 mt-1">Customer Acq. Cost</div>
+          </div>
+          
+          <div class="kpi-card">
+            <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Rev/100 Leads</div>
+            <div class="text-xl font-black text-emerald-400" style="font-size:1rem" id="kpi-rev-100">—</div>
+            <div class="text-[10px] text-slate-600 mt-1">Revenue efficiency</div>
+          </div>
+          
+          <div class="kpi-card">
+            <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Lead-to-Visit</div>
+            <div class="text-xl font-black text-indigo-400" id="kpi-lead-to-visit">—</div>
+            <div class="text-[10px] text-slate-600 mt-1">Site visit reached %</div>
+          </div>
+          
+          <div class="kpi-card">
+            <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Visit-to-Proposal</div>
+            <div class="text-xl font-black text-cyan-400" id="kpi-visit-to-proposal">—</div>
+            <div class="text-[10px] text-slate-600 mt-1">Proposal presented %</div>
+          </div>
+          
+          <div class="kpi-card">
+            <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Proposal-to-Close</div>
+            <div class="text-xl font-black text-emerald-400" id="kpi-proposal-to-close">—</div>
+            <div class="text-[10px] text-slate-600 mt-1">Closing success %</div>
+          </div>
+          
+          <div class="kpi-card">
+            <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">SLA Compliance</div>
+            <div class="text-xl font-black text-emerald-400" id="kpi-sla-compliance">—</div>
+            <div class="text-[10px] text-slate-600 mt-1">SLA events resolved %</div>
+          </div>
+          
+          <div class="kpi-card">
+            <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Avg Call Duration</div>
+            <div class="text-xl font-black text-sky-400" id="kpi-avg-call-dur">—</div>
+            <div class="text-[10px] text-slate-600 mt-1">Average conversation</div>
+          </div>
+          
+          <div class="kpi-card">
+            <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">First Call Resolve</div>
+            <div class="text-xl font-black text-violet-400" id="kpi-first-call-resolve">—</div>
+            <div class="text-[10px] text-slate-600 mt-1">First call interest %</div>
+          </div>
+          
+          <div class="kpi-card">
+            <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Objections/Lead</div>
+            <div class="text-xl font-black text-amber-400" id="kpi-objections-lead">—</div>
+            <div class="text-[10px] text-slate-600 mt-1">Avg barrier count</div>
+          </div>
+          
+          <div class="kpi-card">
+            <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Price Objection %</div>
+            <div class="text-xl font-black text-rose-400" id="kpi-price-objection">—</div>
+            <div class="text-[10px] text-slate-600 mt-1">Cost barrier share</div>
+          </div>
+          
+          <div class="kpi-card">
+            <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Appt. No-Show</div>
+            <div class="text-xl font-black text-amber-400" id="kpi-appt-no-show">—</div>
+            <div class="text-[10px] text-slate-600 mt-1">Appt no-show rate %</div>
+          </div>
+          
+          <div class="kpi-card">
+            <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Reassigned Leads</div>
+            <div class="text-xl font-black text-rose-400" id="kpi-reassigned">—</div>
+            <div class="text-[10px] text-slate-600 mt-1">Leads reassigned %</div>
+          </div>
+          
+          <div class="kpi-card">
+            <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Collection Rate</div>
+            <div class="text-xl font-black text-emerald-400" id="kpi-collection-rate">—</div>
+            <div class="text-[10px] text-slate-600 mt-1">Invoiced amount paid %</div>
+          </div>
+          
+          <div class="kpi-card">
+            <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Active Pipeline</div>
+            <div class="text-xl font-black text-indigo-400" style="font-size:1rem" id="kpi-active-pipeline">—</div>
+            <div class="text-[10px] text-slate-600 mt-1">Est. active leads value</div>
+          </div>
+          
+          <div class="kpi-card">
+            <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">MoM Growth</div>
+            <div class="text-xl font-black text-cyan-400" id="kpi-mom-growth">—</div>
+            <div class="text-[10px] text-slate-600 mt-1">Lead count MoM change</div>
+          </div>
+
         </div>
       </div>
 
       <!-- Charts Row 1 -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div class="chart-card lg:col-span-2">
-          <div class="chart-title">Speed-to-Lead vs SLA Compliance Trend</div><div class="chart-subtitle">Weekly averages — dual axis</div>
-          
+          <div class="chart-title">Speed-to-Lead vs SLA Compliance Trend</div>
+          <div class="chart-subtitle">Weekly averages — dual axis</div>
+          <div class="relative h-60">
+            <canvas id="speedSlaChart"></canvas>
+          </div>
         </div>
         <div class="chart-card">
-          <div class="chart-title">Lead Outcome Distribution</div><div class="chart-subtitle">Final result of all leads</div>
-          
+          <div class="chart-title">Lead Outcome Distribution</div>
+          <div class="chart-subtitle">Final result of all leads</div>
+          <div class="relative h-60">
+            <canvas id="outcomeChart"></canvas>
+          </div>
         </div>
       </div>
 
       <!-- Charts Row 2 -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div class="chart-card">
-          <div class="chart-title">Objection Intelligence (M-08)</div><div class="chart-subtitle">Top objection categories</div>
-          
+          <div class="chart-title">Objection Intelligence (M-08)</div>
+          <div class="chart-subtitle">Top objection categories</div>
+          <div class="relative h-60">
+            <canvas id="objectionChart"></canvas>
+          </div>
         </div>
         <div class="chart-card">
-          <div class="chart-title">CAC Trend</div><div class="chart-subtitle">Customer acquisition cost monthly</div>
-          
+          <div class="chart-title">CAC Trend</div>
+          <div class="chart-subtitle">Customer acquisition cost monthly</div>
+          <div class="relative h-60">
+            <canvas id="cacChart"></canvas>
+          </div>
         </div>
         <div class="chart-card">
-          <div class="chart-title">Revenue per 100 Leads</div><div class="chart-subtitle">Monthly efficiency metric</div>
-          
+          <div class="chart-title">Revenue per 100 Leads</div>
+          <div class="chart-subtitle">Monthly efficiency metric</div>
+          <div class="relative h-60">
+            <canvas id="rev100Chart"></canvas>
+          </div>
         </div>
       </div>
 
       <!-- Charts Row 3 -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div class="chart-card">
-          <div class="chart-title">Show Rate by Source (M-07)</div><div class="chart-subtitle">Appointment show rates per lead source</div>
-          
+          <div class="chart-title">Show Rate by Source (M-07)</div>
+          <div class="chart-subtitle">Appointment show rates per lead source</div>
+          <div class="relative h-60">
+            <canvas id="showRateSourceChart"></canvas>
+          </div>
         </div>
         <div class="chart-card">
-          <div class="chart-title">Monthly Revenue — Full Year</div><div class="chart-subtitle">Bookings and collections area chart</div>
-          
+          <div class="chart-title">Monthly Revenue — Full Year</div>
+          <div class="chart-subtitle">Bookings and collections area chart</div>
+          <div class="relative h-60">
+            <canvas id="monthlyRevChart"></canvas>
+          </div>
         </div>
       </div>
     </div>
@@ -92,6 +218,239 @@
   <div id="toast-container"></div>
   <script src="/assets/js/sidebar.js"></script>
   <script type="module" src="/assets/js/app.js"></script>
-  
+
+  <script>
+    Chart.defaults.color = '#64748b';
+    Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+    Chart.defaults.font.family = 'Inter, sans-serif';
+    Chart.defaults.font.size = 10;
+
+    const token = () => localStorage.getItem('crm_token');
+    const api = async (url) => {
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token()}` } });
+      if (res.status === 401) { if (!localStorage.getItem('crm_token')) { window.location.href = '/index.html'; } return null; }
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      return res.json();
+    };
+
+    const currencyFormat = (val) => {
+      if (val >= 1000000) return '৳' + (val / 1000000).toFixed(1) + 'M';
+      if (val >= 1000) return '৳' + (val / 1000).toFixed(0) + 'K';
+      return '৳' + val;
+    };
+
+    async function loadKPIMetrics() {
+      const kpis = await api('/api/reports/kpis');
+      if (!kpis) return;
+
+      document.getElementById('kpi-speed-to-lead').textContent = kpis.speed_to_lead > 0 ? kpis.speed_to_lead + 'm' : '—';
+      document.getElementById('kpi-contact-rate').textContent = kpis.contact_rate + '%';
+      document.getElementById('kpi-show-rate').textContent = kpis.show_rate + '%';
+      document.getElementById('kpi-conversion-rate').textContent = kpis.conversion_rate + '%';
+      document.getElementById('kpi-avg-deal-size').textContent = kpis.avg_deal_size > 0 ? currencyFormat(kpis.avg_deal_size) : '—';
+      document.getElementById('kpi-cac').textContent = kpis.cac > 0 ? currencyFormat(kpis.cac) : '—';
+      document.getElementById('kpi-rev-100').textContent = kpis.rev_per_100_leads > 0 ? currencyFormat(kpis.rev_per_100_leads) : '—';
+      document.getElementById('kpi-lead-to-visit').textContent = kpis.lead_to_visit + '%';
+      document.getElementById('kpi-visit-to-proposal').textContent = kpis.visit_to_proposal + '%';
+      document.getElementById('kpi-proposal-to-close').textContent = kpis.proposal_to_close + '%';
+      document.getElementById('kpi-sla-compliance').textContent = kpis.sla_compliance + '%';
+      document.getElementById('kpi-avg-call-dur').textContent = kpis.avg_call_duration > 0 ? kpis.avg_call_duration + 'm' : '—';
+      document.getElementById('kpi-first-call-resolve').textContent = kpis.first_call_resolve + '%';
+      document.getElementById('kpi-objections-lead').textContent = kpis.objections_per_lead > 0 ? kpis.objections_per_lead : '—';
+      document.getElementById('kpi-price-objection').textContent = kpis.price_objection_percent + '%';
+      document.getElementById('kpi-appt-no-show').textContent = kpis.appt_no_show + '%';
+      document.getElementById('kpi-reassigned').textContent = kpis.reassigned_leads + '%';
+      document.getElementById('kpi-collection-rate').textContent = kpis.collection_rate + '%';
+      document.getElementById('kpi-active-pipeline').textContent = kpis.active_pipeline_val > 0 ? currencyFormat(kpis.active_pipeline_val) : '—';
+      document.getElementById('kpi-mom-growth').textContent = kpis.mom_growth >= 0 ? '+' + kpis.mom_growth + '%' : kpis.mom_growth + '%';
+    }
+
+    async function loadCharts() {
+      const data = await api('/api/reports/charts');
+      if (!data) return;
+
+      // ── 1. Speed vs SLA compliance Trend ──
+      const weekly = data.weekly_trends || { labels: [], speed: [], sla: [] };
+      new Chart(document.getElementById('speedSlaChart'), {
+        type: 'line',
+        data: {
+          labels: weekly.labels,
+          datasets: [
+            {
+              label: 'Speed-to-lead (mins)',
+              data: weekly.speed,
+              borderColor: '#6366f1',
+              backgroundColor: 'rgba(99, 102, 241, 0.1)',
+              yAxisID: 'ySpeed',
+              tension: 0.3,
+              fill: true
+            },
+            {
+              label: 'SLA Compliance (%)',
+              data: weekly.sla,
+              borderColor: '#10b981',
+              backgroundColor: 'transparent',
+              yAxisID: 'ySla',
+              tension: 0.3
+            }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: {
+            ySpeed: { type: 'linear', position: 'left', title: { display: true, text: 'Mins' }, grid: { drawOnChartArea: false } },
+            ySla: { type: 'linear', position: 'right', min: 0, max: 100, title: { display: true, text: 'Percent' }, grid: { drawOnChartArea: false } }
+          }
+        }
+      });
+
+      // ── 2. Lead Outcome Distribution ──
+      const outcome = data.lead_outcome || {};
+      const outcomeLabels = Object.keys(outcome);
+      const outcomeValues = Object.values(outcome);
+      new Chart(document.getElementById('outcomeChart'), {
+        type: 'doughnut',
+        data: {
+          labels: outcomeLabels,
+          datasets: [{
+            data: outcomeValues,
+            backgroundColor: ['#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#64748b']
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 8 } } }
+        }
+      });
+
+      // ── 3. Objection Intelligence ──
+      const objections = data.objection_intelligence || {};
+      new Chart(document.getElementById('objectionChart'), {
+        type: 'bar',
+        data: {
+          labels: Object.keys(objections),
+          datasets: [{
+            label: 'Objections',
+            data: Object.values(objections),
+            backgroundColor: '#f59e0b',
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      // ── 4. CAC Trend ──
+      const cacTrend = data.cac_trend || { months: [], values: [] };
+      new Chart(document.getElementById('cacChart'), {
+        type: 'line',
+        data: {
+          labels: cacTrend.months,
+          datasets: [{
+            label: 'CAC (৳)',
+            data: cacTrend.values,
+            borderColor: '#ef4444',
+            backgroundColor: 'rgba(239, 68, 68, 0.05)',
+            tension: 0.3,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      // ── 5. Revenue per 100 Leads ──
+      const revTrend = data.rev_per_100_leads_trend || [];
+      const revMonths = cacTrend.months; // reuse same 6 months
+      new Chart(document.getElementById('rev100Chart'), {
+        type: 'bar',
+        data: {
+          labels: revMonths,
+          datasets: [{
+            label: 'Rev per 100 Leads (৳)',
+            data: revTrend,
+            backgroundColor: '#8b5cf6',
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      // ── 6. Show Rate by Source ──
+      const showBySrc = data.show_rate_by_source || {};
+      new Chart(document.getElementById('showRateSourceChart'), {
+        type: 'bar',
+        data: {
+          labels: Object.keys(showBySrc),
+          datasets: [{
+            label: 'Show Rate (%)',
+            data: Object.values(showBySrc),
+            backgroundColor: '#06b6d4',
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { min: 0, max: 100 } }
+        }
+      });
+
+      // ── 7. Monthly Revenue ──
+      const rev = data.revenue_monthly || { bookings: [], collections: [] };
+      const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      new Chart(document.getElementById('monthlyRevChart'), {
+        type: 'line',
+        data: {
+          labels: monthNames,
+          datasets: [
+            {
+              label: 'Bookings (৳)',
+              data: rev.bookings,
+              borderColor: '#6366f1',
+              backgroundColor: 'rgba(99, 102, 241, 0.05)',
+              tension: 0.3,
+              fill: true
+            },
+            {
+              label: 'Collections (৳)',
+              data: rev.collections,
+              borderColor: '#8b5cf6',
+              backgroundColor: 'rgba(139, 92, 246, 0.05)',
+              tension: 0.3,
+              fill: true
+            }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: {
+            y: {
+              ticks: {
+                callback: function(value) {
+                  return currencyFormat(value);
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    (async () => {
+      if (!token()) { window.location.href = '/index.html'; return; }
+      await Promise.all([
+        loadKPIMetrics(),
+        loadCharts()
+      ]);
+    })();
+  </script>
 </body>
 </html>

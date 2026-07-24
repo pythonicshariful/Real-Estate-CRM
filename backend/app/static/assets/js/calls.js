@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const token = localStorage.getItem('crm_token');
-            const response = await fetch(`/api/leads/${leadId}/call-log`, {
+            const response = await fetch(`/api/leads/${leadId}/calls`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`

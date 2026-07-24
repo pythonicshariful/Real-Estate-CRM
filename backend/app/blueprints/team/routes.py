@@ -1,6 +1,6 @@
 from flask import request, jsonify
 from app.blueprints.team import team_bp
-from app.models import User, UserRole, db, CallLog, Note, Event, Appointment
+from app.models import User, UserRole, db, CallLog, Note, Event, Appointment, Opportunity, Task
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from datetime import datetime
 
@@ -33,6 +33,17 @@ def list_lead_owners():
     
     users = User.query.filter_by(role=UserRole.LEAD_OWNER).order_by(User.id.asc()).all()
     return jsonify([u.to_dict() for u in users]), 200
+
+@team_bp.route('/members', methods=['GET'])
+@jwt_required()
+def list_members():
+    users = User.query.filter_by(is_active=True).order_by(User.full_name.asc()).all()
+    return jsonify([{
+        "id": u.id,
+        "full_name": u.full_name,
+        "role": u.role.value if u.role else None,
+        "avatar_url": u.avatar_url
+    } for u in users]), 200
 
 @team_bp.route('/lead-owners', methods=['POST'])
 @jwt_required()
@@ -184,6 +195,34 @@ def get_lead_owner_activities(id):
     data['last_login'] = user.last_login.isoformat() if user.last_login else None
     
     return jsonify(data), 200
+
+@team_bp.route('/lead-owners/<int:id>/stats', methods=['GET'])
+@jwt_required()
+def get_lead_owner_stats(id):
+    claims = get_jwt()
+    err = _require_admin(claims)
+    if err: return err
+    
+    user_id = id
+    
+    total_leads = Opportunity.query.filter_by(assigned_to_id=user_id, is_deleted=False).count()
+    active_leads = Opportunity.query.filter_by(assigned_to_id=user_id, is_deleted=False).filter(~Opportunity.pipeline_stage.in_(['SOLD', 'CLOSED_LOST', 'INVALID'])).count()
+    completed_tasks = Task.query.filter_by(assigned_to_id=user_id, status='COMPLETED').count()
+    recent_calls = CallLog.query.filter_by(logged_by_id=user_id).order_by(CallLog.created_at.desc()).limit(10).all()
+    
+    calls_data = [{
+        "id": c.id,
+        "type": c.call_type,
+        "notes": c.notes,
+        "created_at": c.created_at.isoformat() if c.created_at else None,
+    } for c in recent_calls]
+    
+    return jsonify({
+        "total_leads": total_leads,
+        "active_leads": active_leads,
+        "completed_tasks": completed_tasks,
+        "recent_activities": calls_data
+    })
 
 # Keep old routes for backwards compat
 @team_bp.route('/users', methods=['GET'])

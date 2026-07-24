@@ -9,9 +9,8 @@ from datetime import datetime, timedelta
 
 from . import events_bp
 from ...extensions import db
-from ...models import Event, User
+from ...models import Event, User, Appointment, Task, Contact, Opportunity
 from ...utils.rbac import get_current_user_role, require_min_role
-
 
 @events_bp.route("/", methods=["GET"])
 @jwt_required()
@@ -21,34 +20,124 @@ def list_events():
     end_str = request.args.get("end")
     event_type = request.args.get("type")
 
-    query = Event.query
+    user_id = get_jwt_identity()
+    user_role = get_current_user_role()
 
+    # 1. Base query for Events
+    query_evt = Event.query
     if start_str:
         try:
             start_dt = datetime.fromisoformat(start_str)
-            query = query.filter(Event.start_datetime >= start_dt)
+            query_evt = query_evt.filter(Event.start_datetime >= start_dt)
         except ValueError:
             return jsonify({"error": "Invalid start date format (ISO 8601 required)"}), 400
-
     if end_str:
         try:
             end_dt = datetime.fromisoformat(end_str)
-            query = query.filter(Event.end_datetime <= end_dt)
+            query_evt = query_evt.filter(Event.end_datetime <= end_dt)
         except ValueError:
             return jsonify({"error": "Invalid end date format (ISO 8601 required)"}), 400
 
     if event_type:
-        query = query.filter(Event.event_type == event_type)
+        query_evt = query_evt.filter(Event.event_type == event_type)
 
-    user_id = get_jwt_identity()
-    user_role = get_current_user_role()
-
-    # Role-based filtering: Admin sees all, Lead Owners see their own
     if user_role != "ADMIN":
-        query = query.filter(Event.created_by_id == user_id)
+        query_evt = query_evt.filter(Event.created_by_id == user_id)
 
-    events = query.order_by(Event.start_datetime.asc()).all()
-    return jsonify([e.to_dict() for e in events]), 200
+    events = query_evt.order_by(Event.start_datetime.asc()).all()
+    out_list = [e.to_dict() for e in events]
+
+    # 2. Add Appointments (if no specific event_type filter or if type is APPOINTMENT)
+    if not event_type or event_type == "APPOINTMENT":
+        query_apt = Appointment.query
+        if start_str:
+            query_apt = query_apt.filter(Appointment.appointment_datetime >= start_dt)
+        if end_str:
+            query_apt = query_apt.filter(Appointment.appointment_datetime <= end_dt)
+        if user_role != "ADMIN":
+            # Scheduled by user OR linked lead is assigned to user
+            query_apt = query_apt.join(Opportunity, Appointment.opportunity_id == Opportunity.id).filter(
+                db.or_(Appointment.scheduled_by_id == user_id, Opportunity.assigned_to_id == user_id)
+            )
+            
+        appointments = query_apt.all()
+        for apt in appointments:
+            contact = Contact.query.get(apt.contact_id)
+            contact_name = contact.full_name if contact else "Unknown Contact"
+            opp = Opportunity.query.get(apt.opportunity_id)
+            owner_id = opp.assigned_to_id if opp else apt.scheduled_by_id
+            user = User.query.get(owner_id) if owner_id else None
+            out_list.append({
+                "id": f"apt_{apt.id}",
+                "title": f"Appointment with {contact_name}",
+                "description": f"Location: {apt.location or 'TBD'} | Status: {apt.status.value}",
+                "event_type": "APPOINTMENT",
+                "start": apt.appointment_datetime.isoformat(),
+                "end": (apt.appointment_datetime + timedelta(hours=1)).isoformat(),
+                "created_by_id": apt.scheduled_by_id,
+                "opportunity_id": apt.opportunity_id,
+                "contact_id": apt.contact_id,
+                "is_all_day": False,
+                "color": user.calendar_color if user else "#10b981"
+            })
+
+    # 3. Add Tasks / Reminders (if no specific event_type filter or if type is REMINDER)
+    if not event_type or event_type == "REMINDER":
+        query_tsk = Task.query
+        if start_str:
+            query_tsk = query_tsk.filter(Task.due_date >= start_dt)
+        if end_str:
+            query_tsk = query_tsk.filter(Task.due_date <= end_dt)
+        if user_role != "ADMIN":
+            query_tsk = query_tsk.filter((Task.assigned_to_id == user_id) | (Task.created_by_id == user_id))
+            
+        tasks = query_tsk.all()
+        for tsk in tasks:
+            user = User.query.get(tsk.assigned_to_id)
+            out_list.append({
+                "id": f"tsk_{tsk.id}",
+                "title": f"Task/Reminder: {tsk.title}",
+                "description": f"Priority: {tsk.priority.value} | Status: {tsk.status.value} | Details: {tsk.description or 'None'}",
+                "event_type": "REMINDER",
+                "start": tsk.due_date.isoformat(),
+                "end": (tsk.due_date + timedelta(minutes=30)).isoformat(),
+                "created_by_id": tsk.created_by_id,
+                "opportunity_id": tsk.opportunity_id,
+                "is_all_day": False,
+                "color": user.calendar_color if user else "#f59e0b"
+            })
+
+    # 4. Add Lead Next Action Deadlines (if no specific event_type filter or if type is REMINDER)
+    if not event_type or event_type == "REMINDER":
+        query_opp = Opportunity.query.filter(Opportunity.next_action_deadline.isnot(None), Opportunity.is_deleted == False)
+        if start_str:
+            query_opp = query_opp.filter(Opportunity.next_action_deadline >= start_dt)
+        if end_str:
+            query_opp = query_opp.filter(Opportunity.next_action_deadline <= end_dt)
+        if user_role != "ADMIN":
+            query_opp = query_opp.filter(Opportunity.assigned_to_id == user_id)
+            
+        opps = query_opp.all()
+        for opp in opps:
+            contact = Contact.query.get(opp.contact_id)
+            contact_name = contact.full_name if contact else "Unknown Contact"
+            action_type_name = opp.next_action_type.value if opp.next_action_type else "Follow-up"
+            user = User.query.get(opp.assigned_to_id)
+            out_list.append({
+                "id": f"opp_{opp.id}",
+                "title": f"Lead Reminder: {action_type_name} ({contact_name})",
+                "description": f"Lead: {contact_name} | Next Action: {action_type_name}",
+                "event_type": "REMINDER",
+                "start": opp.next_action_deadline.isoformat(),
+                "end": (opp.next_action_deadline + timedelta(minutes=30)).isoformat(),
+                "created_by_id": opp.assigned_to_id,
+                "opportunity_id": opp.id,
+                "contact_id": opp.contact_id,
+                "is_all_day": False,
+                "color": user.calendar_color if user else "#e11d48"
+            })
+
+    return jsonify(out_list), 200
 
 
 @events_bp.route("/", methods=["POST"])

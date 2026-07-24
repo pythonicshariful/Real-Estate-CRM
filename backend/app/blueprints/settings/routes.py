@@ -22,8 +22,38 @@ DEFAULT_SETTINGS = {
     'smtp_port': '587',
     'smtp_username': '',
     'smtp_password': '',
-    'sender_email': 'noreply@southeast.com'
+    'sender_email': 'noreply@southeast.com',
+    'company_logo': ''
 }
+
+import os
+from werkzeug.utils import secure_filename
+
+@settings_bp.route('/branding', methods=['GET'])
+def get_branding():
+    # Public endpoint for sidebar and login page
+    keys = ['company_name', 'company_logo']
+    return jsonify(_get_setting_dict(keys))
+
+@settings_bp.route('/branding/logo', methods=['POST'])
+@jwt_required()
+@require_role(UserRole.ADMIN)
+def upload_logo():
+    if 'logo' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    file = request.files['logo']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+    if file:
+        filename = secure_filename(file.filename)
+        # Use proper UPLOAD_FOLDER configuration
+        upload_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+        os.makedirs(upload_folder, exist_ok=True)
+        filepath = os.path.join(upload_folder, filename)
+        file.save(filepath)
+        logo_url = f'/uploads/{filename}'
+        SystemSetting.set('company_logo', logo_url)
+        return jsonify({'message': 'Logo uploaded successfully', 'company_logo': logo_url})
 
 def _get_setting_dict(keys):
     result = {}
@@ -55,7 +85,7 @@ def system_settings():
 @jwt_required()
 @require_role(UserRole.ADMIN)
 def general_settings():
-    keys = ['company_name', 'admin_email', 'currency_symbol', 'timezone']
+    keys = ['company_name', 'admin_email', 'currency_symbol', 'timezone', 'company_logo']
     if request.method == 'GET':
         return jsonify(_get_setting_dict(keys))
     

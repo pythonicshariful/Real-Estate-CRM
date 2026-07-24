@@ -5,72 +5,309 @@
   <title>Sales — Southeast CRM v2.0</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/assets/css/main.css">
-  
 </head>
 <body class="flex h-screen overflow-hidden text-slate-100 bg-[#0a0a14]">
   <div id="sidebar-container"></div>
   <main class="flex-1 flex flex-col h-screen overflow-hidden">
     <header class="glass-dark border-b border-slate-800/60 min-h-14 py-2 md:py-0 flex items-center justify-between px-4 md:px-6 flex-shrink-0 flex-wrap gap-2">
-      <div><div class="text-sm font-bold text-white">Sales Hub</div><div class="text-xs text-slate-500">Invoices · Orders · Store · Payments · Items · Contracts</div></div>
-      <button class="btn-gradient px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5">
+      <div>
+        <div class="text-sm font-bold text-white">Sales Hub</div>
+        <div class="text-xs text-slate-500">Invoices, billing and revenue collection performance</div>
+      </div>
+      <button onclick="openInvoiceModal()" class="btn-gradient px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg> New Invoice
       </button>
     </header>
-    <!-- Sub-tabs -->
-    <div class="glass-dark border-b border-slate-800/60 px-6 flex gap-1 flex-shrink-0">
-      <button id="tab-invoices" class="sub-tab active px-4 py-2.5 text-xs font-semibold text-white border-b-2 border-indigo-500" onclick="switchTab('invoices')">Invoices</button>
-      <button id="tab-orders" class="sub-tab px-4 py-2.5 text-xs font-medium text-slate-400 border-b-2 border-transparent hover:text-white" onclick="switchTab('orders')">Orders</button>
-      <button id="tab-payments" class="sub-tab px-4 py-2.5 text-xs font-medium text-slate-400 border-b-2 border-transparent hover:text-white" onclick="switchTab('payments')">Payments</button>
-      <button id="tab-items" class="sub-tab px-4 py-2.5 text-xs font-medium text-slate-400 border-b-2 border-transparent hover:text-white" onclick="switchTab('items')">Items</button>
-      <button id="tab-contracts" class="sub-tab px-4 py-2.5 text-xs font-medium text-slate-400 border-b-2 border-transparent hover:text-white" onclick="switchTab('contracts')">Contracts</button>
-    </div>
+
     <div class="flex-1 overflow-y-auto p-5 space-y-5">
       <!-- KPIs -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Total Revenue</div><div class="kpi-value text-amber-400" style="font-size:1.5rem">৳24.8M</div><div class="trend-up">↑ 18% this month</div></div>
-        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Invoices Issued</div><div class="kpi-value text-indigo-400">38</div><div class="trend-up">↑ 5 vs last month</div></div>
-        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Outstanding</div><div class="kpi-value text-rose-400" style="font-size:1.5rem">৳4.2M</div><div class="trend-down">8 overdue invoices</div></div>
-        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Contracts Active</div><div class="kpi-value text-emerald-400">22</div><div class="trend-up">Signed this quarter</div></div>
-      </div>
-      <!-- Charts -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div class="chart-card lg:col-span-2">
-          <div class="chart-title">Monthly Sales vs Target</div><div class="chart-subtitle">Revenue collection performance</div>
-          
+        <div class="kpi-card">
+          <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Total Revenue</div>
+          <div class="kpi-value text-amber-400" id="kpi-revenue">৳0</div>
         </div>
-        <div class="chart-card">
-          <div class="chart-title">Revenue by Property Type</div><div class="chart-subtitle">Sales breakdown by unit type</div>
-          
+        <div class="kpi-card">
+          <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Paid Invoices</div>
+          <div class="kpi-value text-emerald-400" id="kpi-paid">৳0</div>
         </div>
-      </div>
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div class="chart-card">
-          <div class="chart-title">Payment Collection Trend</div><div class="chart-subtitle">Monthly collections vs outstanding</div>
-          
+        <div class="kpi-card">
+          <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Outstanding</div>
+          <div class="kpi-value text-rose-400" id="kpi-outstanding">৳0</div>
         </div>
-        <div class="chart-card">
-          <div class="chart-title">Invoice Status</div><div class="chart-subtitle">Current invoice pipeline</div>
-          
+        <div class="kpi-card">
+          <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Draft</div>
+          <div class="kpi-value text-slate-400" id="kpi-draft">৳0</div>
         </div>
       </div>
+
       <!-- Invoices Table -->
       <div class="chart-card overflow-x-auto">
-        <div class="chart-title mb-4">Recent Invoices</div>
-        <table class="crm-table">
-          <thead><tr><th>Invoice #</th><th>Client</th><th>Unit</th><th>Amount</th><th>Due Date</th><th>Status</th><th></th></tr></thead>
-          <tbody>
-            <tr><td class="text-indigo-400 font-mono">#INV-2025-041</td><td class="font-medium text-white">Md. Akter Rahman</td><td>Block A, 3F</td><td class="font-semibold text-emerald-400">৳8,500,000</td><td>Jul 30, 2025</td><td><span class="badge badge-active">Paid</span></td><td><button class="btn-ghost px-2 py-1 rounded text-xs">View</button></td></tr>
-            <tr><td class="text-indigo-400 font-mono">#INV-2025-040</td><td class="font-medium text-white">Nasrin Begum</td><td>Block C, 2B</td><td class="font-semibold text-amber-400">৳12,200,000</td><td>Aug 15, 2025</td><td><span class="badge badge-pending">Partial</span></td><td><button class="btn-ghost px-2 py-1 rounded text-xs">View</button></td></tr>
-            <tr><td class="text-indigo-400 font-mono">#INV-2025-039</td><td class="font-medium text-white">Engr. Rafiqul Islam</td><td>Block B, 5A</td><td class="font-semibold text-rose-400">৳6,800,000</td><td>Jul 10, 2025</td><td><span class="badge badge-overdue">Overdue</span></td><td><button class="btn-ghost px-2 py-1 rounded text-xs">View</button></td></tr>
-            <tr><td class="text-indigo-400 font-mono">#INV-2025-038</td><td class="font-medium text-white">Kamal Uddin</td><td>Block A, 6D</td><td class="font-semibold text-emerald-400">৳9,100,000</td><td>Sep 1, 2025</td><td><span class="badge badge-confirmed">Invoiced</span></td><td><button class="btn-ghost px-2 py-1 rounded text-xs">View</button></td></tr>
+        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div class="chart-title">Recent Invoices</div>
+          <select id="filter-status" onchange="fetchInvoices()" class="input-glass px-2 py-1.5 rounded-lg text-xs">
+            <option value="">All Statuses</option>
+            <option value="DRAFT">Draft</option>
+            <option value="SENT">Sent</option>
+            <option value="PAID">Paid</option>
+            <option value="OVERDUE">Overdue</option>
+            <option value="CANCELLED">Cancelled</option>
+          </select>
+        </div>
+        <div class="overflow-x-auto w-full">
+<table class="crm-table w-full text-left border-collapse">
+          <thead>
+            <tr>
+              <th>Invoice #</th>
+              <th>Client</th>
+              <th>Amount</th>
+              <th>Issued Date</th>
+              <th>Due Date</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="invoices-table-body">
+            <tr><td colspan="7" class="text-center text-slate-500 py-10">Loading invoices...</td></tr>
           </tbody>
         </table>
+</div>
       </div>
     </div>
   </main>
+
+  <!-- Invoice Create Modal -->
+  <div id="invoice-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+    <div class="glass-dark border border-white/10 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl">
+      <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center">
+        <h3 class="font-bold text-white text-lg">Create New Invoice</h3>
+        <button onclick="closeInvoiceModal()" class="text-slate-400 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="invoice-form" class="p-6 space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Invoice Number</label>
+            <input type="text" id="inv-number" required class="w-full input-glass px-3 py-2 rounded-xl text-sm" placeholder="e.g. INV-2026-001">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Amount (BDT)</label>
+            <input type="number" step="0.01" id="inv-amount" required class="w-full input-glass px-3 py-2 rounded-xl text-sm" placeholder="e.g. 100000">
+          </div>
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Client / Contact</label>
+          <select id="inv-client" required class="w-full input-glass px-3 py-2 rounded-xl text-sm bg-slate-950">
+            <!-- Dynamically populated -->
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Issued Date</label>
+            <input type="date" id="inv-issued" required class="w-full input-glass px-3 py-2 rounded-xl text-sm">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Due Date</label>
+            <input type="date" id="inv-due" required class="w-full input-glass px-3 py-2 rounded-xl text-sm">
+          </div>
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Status</label>
+          <select id="inv-status" class="w-full input-glass px-3 py-2 rounded-xl text-sm bg-slate-950">
+            <option value="DRAFT" selected>Draft</option>
+            <option value="SENT">Sent</option>
+            <option value="PAID">Paid</option>
+            <option value="OVERDUE">Overdue</option>
+            <option value="CANCELLED">Cancelled</option>
+          </select>
+        </div>
+        
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-800">
+          <button type="button" onclick="closeInvoiceModal()" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-800 transition-colors">Cancel</button>
+          <button type="submit" class="btn-gradient px-6 py-2.5 rounded-xl text-sm font-semibold text-white">Create Invoice</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div id="toast-container"></div>
   <script src="/assets/js/sidebar.js"></script>
   <script type="module" src="/assets/js/app.js"></script>
   
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchInvoices();
+      fetchClients();
+      
+      document.getElementById('inv-issued').value = new Date().toISOString().substring(0, 10);
+      document.getElementById('inv-due').value = new Date().toISOString().substring(0, 10);
+
+      document.getElementById('invoice-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await saveInvoice();
+      });
+    });
+
+    async function fetchClients() {
+      try {
+        const res = await fetch('/api/contacts/', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('crm_token')}` }
+        });
+        if (!res.ok) throw new Error('Failed to fetch clients');
+        const clients = await res.json();
+        const select = document.getElementById('inv-client');
+        select.innerHTML = clients.map(c => `<option value="${c.id}">${c.full_name} (${c.phone_raw || 'No Phone'})</option>`).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function fetchInvoices() {
+      const status = document.getElementById('filter-status').value;
+      let url = `/api/finance/invoices/?`;
+      if (status) url += `status=${status}`;
+
+      try {
+        const res = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('crm_token')}` }
+        });
+        if (!res.ok) throw new Error('Failed to fetch invoices');
+        const invoices = await res.json();
+        renderInvoices(invoices);
+      } catch (err) {
+        if(window.showToast) window.showToast(err.message, 'error');
+        console.error(err);
+      }
+    }
+
+    function renderInvoices(invoices) {
+      const tbody = document.getElementById('invoices-table-body');
+      tbody.innerHTML = '';
+      
+      if (invoices.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-slate-500 py-10">No invoices found.</td></tr>`;
+        updateKPIValues(0, 0, 0, 0);
+        return;
+      }
+      
+      let revenue = 0, paid = 0, outstanding = 0, draft = 0;
+      
+      invoices.forEach(i => {
+        const amt = parseFloat(i.amount);
+        revenue += amt;
+        if (i.status === 'PAID') paid += amt;
+        else if (i.status === 'OVERDUE' || i.status === 'SENT') outstanding += amt;
+        else if (i.status === 'DRAFT') draft += amt;
+
+        let badgeColor = 'badge-pending';
+        if (i.status === 'PAID') badgeColor = 'badge-won';
+        else if (i.status === 'OVERDUE') badgeColor = 'badge-overdue';
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="font-mono text-indigo-400">#${i.invoice_number}</td>
+          <td class="font-medium text-white">${i.contact_name}</td>
+          <td class="font-semibold text-emerald-400">৳${amt.toLocaleString()}</td>
+          <td>${new Date(i.issued_date).toLocaleDateString()}</td>
+          <td>${new Date(i.due_date).toLocaleDateString()}</td>
+          <td><span class="badge ${badgeColor}">${i.status}</span></td>
+          <td>
+            ${i.status !== 'PAID' ? `<button onclick="markAsPaid(${i.id})" class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-1 rounded text-xs hover:bg-emerald-500/30">Mark Paid</button>` : '<span class="text-slate-500 text-xs">Completed</span>'}
+            <button onclick="deleteInvoice(${i.id})" class="text-slate-500 hover:text-rose-400 p-1 inline-block ml-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      updateKPIValues(revenue, paid, outstanding, draft);
+    }
+
+    function updateKPIValues(revenue, paid, outstanding, draft) {
+      document.getElementById('kpi-revenue').textContent = `৳${revenue.toLocaleString()}`;
+      document.getElementById('kpi-paid').textContent = `৳${paid.toLocaleString()}`;
+      document.getElementById('kpi-outstanding').textContent = `৳${outstanding.toLocaleString()}`;
+      document.getElementById('kpi-draft').textContent = `৳${draft.toLocaleString()}`;
+    }
+
+    window.openInvoiceModal = function() {
+      document.getElementById('invoice-form').reset();
+      document.getElementById('inv-issued').value = new Date().toISOString().substring(0, 10);
+      document.getElementById('inv-due').value = new Date().toISOString().substring(0, 10);
+      
+      const modal = document.getElementById('invoice-modal');
+      modal.classList.remove('hidden');
+      setTimeout(() => modal.classList.remove('opacity-0'), 10);
+    }
+
+    window.closeInvoiceModal = function() {
+      const modal = document.getElementById('invoice-modal');
+      modal.classList.add('opacity-0');
+      setTimeout(() => modal.classList.add('hidden'), 200);
+    }
+
+    async function saveInvoice() {
+      const data = {
+        invoice_number: document.getElementById('inv-number').value,
+        amount: parseFloat(document.getElementById('inv-amount').value),
+        contact_id: parseInt(document.getElementById('inv-client').value),
+        issued_date: document.getElementById('inv-issued').value,
+        due_date: document.getElementById('inv-due').value,
+        status: document.getElementById('inv-status').value
+      };
+      
+      try {
+        const res = await fetch('/api/finance/invoices/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('crm_token')}`
+          },
+          body: JSON.stringify(data)
+        });
+        
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'Failed to create invoice');
+        
+        if (window.showToast) window.showToast('Invoice created successfully!', 'success');
+        closeInvoiceModal();
+        fetchInvoices();
+      } catch (err) {
+        if (window.showToast) window.showToast(err.message, 'error');
+      }
+    }
+
+    window.markAsPaid = async function(id) {
+      try {
+        const res = await fetch(`/api/finance/invoices/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('crm_token')}`
+          },
+          body: JSON.stringify({ status: 'PAID' })
+        });
+        if (!res.ok) throw new Error('Failed to update invoice');
+        if (window.showToast) window.showToast('Invoice marked as Paid', 'success');
+        fetchInvoices();
+      } catch (err) {
+        if (window.showToast) window.showToast(err.message, 'error');
+      }
+    }
+
+    window.deleteInvoice = async function(id) {
+      if (!confirm('Are you sure you want to delete this invoice?')) return;
+      try {
+        const res = await fetch(`/api/finance/invoices/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('crm_token')}` }
+        });
+        if (!res.ok) throw new Error('Failed to delete invoice');
+        if (window.showToast) window.showToast('Invoice deleted', 'success');
+        fetchInvoices();
+      } catch (err) {
+        if (window.showToast) window.showToast(err.message, 'error');
+      }
+    }
+  </script>
 </body>
 </html>

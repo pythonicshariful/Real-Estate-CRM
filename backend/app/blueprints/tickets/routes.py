@@ -56,6 +56,33 @@ def create_ticket():
     )
     db.session.add(ticket)
     db.session.commit()
+
+    # Send telegram notification alert
+    try:
+        import requests
+        bot_token = "8156587833:AAEwTAIdqcTkT6U8fSj4uD49AdKklG2nfdc"
+        chat_id = "7809021498"
+        creator = User.query.get(user_id)
+        creator_name = creator.full_name if creator else f"User ID {user_id}"
+        
+        telegram_message = (
+            f"🚨 *New CRM Support Request*\n\n"
+            f"👤 *Submitting User:* {creator_name}\n"
+            f"🏷️ *Category/Subject:* {ticket.subject}\n"
+            f"📝 *Description:* {ticket.description}\n"
+            f"🎫 *Ticket ID:* #{ticket.id}"
+        )
+        telegram_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+        requests.post(telegram_url, json={
+            "chat_id": chat_id,
+            "text": telegram_message,
+            "parse_mode": "Markdown"
+        }, timeout=5)
+    except Exception as e:
+        # Fallback logging if telegram post fails
+        from flask import current_app
+        current_app.logger.error(f"Telegram alert failed: {e}")
+
     return jsonify(ticket.to_dict()), 201
 
 

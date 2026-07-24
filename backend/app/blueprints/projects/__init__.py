@@ -1,18 +1,5 @@
 from flask import Blueprint
+
 projects_bp = Blueprint('projects', __name__)
-from flask import Blueprint
-tasks_bp = Blueprint('tasks', __name__)
-from flask import Blueprint
-finance_bp = Blueprint('finance', __name__)
-from flask import Blueprint
-reports_bp = Blueprint('reports', __name__)
-from flask import Blueprint
-events_bp = Blueprint('events', __name__)
-from flask import Blueprint
-notes_bp = Blueprint('notes', __name__)
-from flask import Blueprint
-messages_bp = Blueprint('messages', __name__)
-from flask import Blueprint
-tickets_bp = Blueprint('tickets', __name__)
-from flask import Blueprint
-expenses_bp = Blueprint('expenses', __name__)
+
+from . import routes

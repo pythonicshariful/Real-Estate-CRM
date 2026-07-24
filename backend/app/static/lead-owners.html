@@ -49,8 +49,8 @@
         </div>
 
         <div class="glass-dark border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
+          <div class="overflow-x-auto w-full">
+<table class="w-full text-left text-xs">
               <thead class="bg-slate-900/80 text-slate-400 font-semibold border-b border-slate-800 uppercase tracking-wider">
                 <tr>
                   <th class="py-3.5 px-4">Lead Owner</th>
@@ -66,7 +66,7 @@
                 <!-- Dynamically populated -->
               </tbody>
             </table>
-          </div>
+</div>
         </div>
       </div>
 
@@ -232,7 +232,7 @@
 
     const fetchAPI = async (url, opts = {}) => {
       const res = await fetch(url, { headers: headers(), ...opts });
-      if (res.status === 401) { window.location.href = '/index.html'; return null; }
+      if (res.status === 401) { if (!localStorage.getItem('crm_token')) { window.location.href = '/index.html'; } return null; }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || data.message || 'API Error');
       return data;

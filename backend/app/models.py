@@ -183,6 +183,7 @@ class User(db.Model):
             "schedule_to_date": self.schedule_to_date.isoformat() if self.schedule_to_date else None,
             "schedule_start_time": self.schedule_start_time.strftime('%H:%M') if self.schedule_start_time else None,
             "schedule_end_time": self.schedule_end_time.strftime('%H:%M') if self.schedule_end_time else None,
+            "avatar_url": self.avatar_url,
             "created_at": self.created_at.isoformat() if self.created_at else None
         }
 
@@ -337,6 +338,23 @@ class AuditLog(db.Model):
         db.Index('idx_table_record', 'table_name', 'record_id'),
     )
 
+    user = db.relationship('User', backref=db.backref('audit_logs_rel', lazy=True))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'user_name': self.user.full_name if self.user else 'System',
+            'ip_address': self.ip_address,
+            'table_name': self.table_name,
+            'record_id': self.record_id,
+            'action': self.action,
+            'field_name': self.field_name,
+            'old_value': self.old_value,
+            'new_value': self.new_value,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
 
 class SLAEvent(db.Model):
     __tablename__ = 'sla_events'
@@ -482,6 +500,19 @@ class Note(db.Model):
     opportunity_id = db.Column(db.Integer, db.ForeignKey('opportunities.id'))
     contact_id = db.Column(db.Integer, db.ForeignKey('contacts.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        user = User.query.get(self.created_by_id)
+        return {
+            'id': self.id,
+            'content': self.content,
+            'is_private': self.is_private,
+            'created_by_id': self.created_by_id,
+            'created_by_name': user.full_name if user else None,
+            'opportunity_id': self.opportunity_id,
+            'contact_id': self.contact_id,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
 
 
 class Event(db.Model):

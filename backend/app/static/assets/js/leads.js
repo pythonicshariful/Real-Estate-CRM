@@ -76,17 +76,26 @@ document.addEventListener('DOMContentLoaded', () => {
             // Check for owner filter from URL param
             const urlParams = new URLSearchParams(window.location.search);
             const ownerParam = urlParams.get('owner');
+            const leadIdParam = urlParams.get('lead_id');
             
             let leads = await res.json();
             allLeadsData = leads;
             updateKPIs();
             
-            // Apply URL owner filter if present
+            // Set initial filter dropdown value if URL param is present
             if (ownerParam && IS_ADMIN) {
-                allLeadsData = leads.filter(l => String(l.assigned_to_id) === ownerParam);
+                const ownerFilter = document.getElementById('filter-owner');
+                if (ownerFilter) ownerFilter.value = ownerParam;
             }
             
             applyFilters();
+
+            if (leadIdParam) {
+                const leadId = parseInt(leadIdParam, 10);
+                if (!isNaN(leadId)) {
+                    openDrawer(leadId);
+                }
+            }
         } catch (error) {
             console.error(error);
             if(window.showToast) window.showToast(error.message, 'error');
@@ -97,15 +106,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const stageEl = document.getElementById('filter-stage');
         const tempEl = document.getElementById('filter-temp');
         const starredEl = document.getElementById('filter-starred');
+        const ownerEl = document.getElementById('filter-owner');
 
         const stage = stageEl ? stageEl.value : '';
         const temp = tempEl ? tempEl.value : '';
         const starred = starredEl ? starredEl.checked : false;
+        const owner = ownerEl ? ownerEl.value : '';
 
         filteredLeadsData = allLeadsData.filter(lead => {
             if (stage && lead.pipeline_stage !== stage) return false;
             if (temp && lead.lead_temperature !== temp) return false;
             if (starred && !lead.is_starred) return false;
+            if (owner && String(lead.assigned_to_id) !== owner) return false;
             return true;
         });
 
@@ -250,6 +262,8 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('filter-stage').value = '';
             document.getElementById('filter-temp').value = '';
             document.getElementById('filter-starred').checked = false;
+            const ownerFilter = document.getElementById('filter-owner');
+            if (ownerFilter) ownerFilter.value = '';
         });
 
         filterForm.addEventListener('submit', (e) => {
@@ -269,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             // Build CSV
-            const headers = ['ID', 'Name', 'Phone', 'Email', 'Source', 'Project', 'Stage', 'Temperature', 'Starred', 'Overdue', 'Created At'];
+            const headers = ['ID', 'Name', 'Phone', 'Email', 'Source', 'Project', 'Stage', 'Temperature', 'Lead Owner', 'Starred', 'Overdue', 'Created At'];
             const rows = filteredLeadsData.map(lead => {
                 const c = lead.contact || {};
                 return [
@@ -281,6 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     `"${lead.project_name || ''}"`,
                     `"${lead.pipeline_stage || ''}"`,
                     `"${lead.lead_temperature || ''}"`,
+                    `"${lead.assigned_to_name || 'Unassigned'}"`,
                     lead.is_starred ? 'Yes' : 'No',
                     lead.is_overdue ? 'Yes' : 'No',
                     `"${lead.created_at || ''}"`
@@ -744,13 +759,38 @@ document.addEventListener('DOMContentLoaded', () => {
     const cancelAddLeadBtn = document.getElementById('cancel-add-lead-btn');
     const addLeadForm = document.getElementById('add-lead-form');
 
-    const openAddLeadModal = () => {
+    const loadProjectsIntoDropdown = async () => {
+        try {
+            const select = document.getElementById('add-lead-project-select');
+            if (!select) return;
+            
+            const token = localStorage.getItem('crm_token');
+            const res = await fetch('/api/projects/', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const projects = await res.json();
+                select.innerHTML = '<option value="">-- None --</option>';
+                projects.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = p.name;
+                    select.appendChild(opt);
+                });
+            }
+        } catch (err) {
+            console.error("Failed to load projects for dropdown", err);
+        }
+    };
+
+    const openAddLeadModal = async () => {
         addLeadForm.reset();
         addLeadModal.classList.remove('hidden');
         requestAnimationFrame(() => {
             addLeadModal.classList.remove('opacity-0');
             addLeadModalContent.classList.remove('scale-95');
         });
+        await loadProjectsIntoDropdown();
     };
 
     const closeAddLeadModal = () => {
@@ -809,6 +849,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 submitBtn.disabled = false;
             }
         });
+    }
+
+    // Setup and Populate Lead Owner Filter dropdown (Admin only)
+    if (IS_ADMIN) {
+        const container = document.getElementById('filter-owner-container');
+        if (container) container.classList.remove('hidden');
+        
+        const select = document.getElementById('filter-owner');
+        if (select) {
+            const token = localStorage.getItem('crm_token');
+            fetch('/api/team/members', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(res => res.json())
+            .then(members => {
+                members.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.id;
+                    opt.textContent = m.full_name;
+                    select.appendChild(opt);
+                });
+                
+                // If URL owner filter is present, ensure select option matches
+                const urlParams = new URLSearchParams(window.location.search);
+                const ownerParam = urlParams.get('owner');
+                if (ownerParam) {
+                    select.value = ownerParam;
+                }
+            })
+            .catch(err => console.error("Failed to load members for filter", err));
+        }
     }
 
     // Initial Load

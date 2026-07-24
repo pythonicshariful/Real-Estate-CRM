@@ -102,7 +102,7 @@
     const token = () => localStorage.getItem('crm_token');
     const fetchAPI = async (url) => {
       const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token()}` } });
-      if (res.status === 401) { window.location.href = '/index.html'; return null; }
+      if (res.status === 401) { if (!localStorage.getItem('crm_token')) { window.location.href = '/index.html'; } return null; }
       if (!res.ok) throw new Error(`API error ${res.status}`);
       return res.json();
     };

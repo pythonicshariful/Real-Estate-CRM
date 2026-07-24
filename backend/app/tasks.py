@@ -683,3 +683,52 @@ def db_cast_date(column_expr):
     """SQLAlchemy date cast helper."""
     from sqlalchemy import func
     return func.date(column_expr)
+
+
+# ---------------------------------------------------------------------------
+# MEGA Cloud Storage — call recording upload
+# ---------------------------------------------------------------------------
+
+def upload_recording_to_mega(local_path: str, filename: str, app=None) -> str | None:
+    """
+    Upload a call recording file to MEGA cloud storage.
+
+    Returns:
+        str: Public MEGA share link if upload succeeded.
+        None: If MEGA credentials are missing or upload failed.
+
+    The upload is intentionally synchronous (runs in the request thread) because
+    it's fast for audio files (<50 MB). Move into a background thread if needed.
+    """
+    app = _get_app(app)
+    email = app.config.get('MEGA_EMAIL', '').strip()
+    password = app.config.get('MEGA_PASSWORD', '').strip()
+    folder_name = app.config.get('MEGA_FOLDER', 'CRM-Recordings')
+
+    if not email or not password:
+        logger.warning('MEGA_EMAIL / MEGA_PASSWORD not configured — skipping cloud upload')
+        return None
+
+    try:
+        from mega import Mega
+        mega = Mega()
+        m = mega.login(email, password)
+
+        # Find or create the target folder
+        folder = m.find(folder_name, exclude_deleted=True)
+        if folder is None:
+            folder = m.create_folder(folder_name)
+            # find() returns None, create_folder returns the new folder dict;
+            # re-fetch so we have a consistent object
+            folder = m.find(folder_name, exclude_deleted=True)
+
+        # Upload the file into the folder
+        uploaded = m.upload(local_path, folder[0] if isinstance(folder, tuple) else folder)
+        share_link = m.get_upload_link(uploaded)
+        logger.info(f'Recording uploaded to MEGA: {filename} → {share_link}')
+        return share_link
+
+    except Exception as e:
+        logger.error(f'MEGA upload failed for {filename}: {e}')
+        return None
+

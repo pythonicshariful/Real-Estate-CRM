@@ -7,7 +7,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from . import notes_bp
 from ...extensions import db
-from ...models import Note
+from ...models import Note, AuditLog, Opportunity
 from ...utils.rbac import get_current_user_role
 
 
@@ -55,6 +55,23 @@ def create_note():
         contact_id=data.get("contact_id"),
     )
     db.session.add(note)
+    db.session.flush()
+
+    opp_name = ""
+    if note.opportunity_id:
+        opp = Opportunity.query.get(note.opportunity_id)
+        if opp and opp.contact:
+            opp_name = f" for Lead: {opp.contact.full_name}"
+
+    audit = AuditLog(
+        user_id=user_id,
+        table_name='notes',
+        record_id=note.id,
+        action='INSERT',
+        field_name='note',
+        new_value=f"Added Note: '{note.content[:40]}...'{opp_name}"
+    )
+    db.session.add(audit)
     db.session.commit()
     return jsonify(note.to_dict()), 201
 
@@ -70,6 +87,24 @@ def update_note(note_id):
         return jsonify({"error": "Access denied: you can only edit your own notes"}), 403
 
     data = request.get_json()
+    
+    opp_name = ""
+    if note.opportunity_id:
+        opp = Opportunity.query.get(note.opportunity_id)
+        if opp and opp.contact:
+            opp_name = f" for Lead: {opp.contact.full_name}"
+
+    audit = AuditLog(
+        user_id=user_id,
+        table_name='notes',
+        record_id=note.id,
+        action='UPDATE',
+        field_name='content',
+        old_value=note.content,
+        new_value=f"Updated Note: '{data.get('content', '')[:40]}...'{opp_name}"
+    )
+    db.session.add(audit)
+
     if "content" in data:
         note.content = data["content"]
     if "is_private" in data:
@@ -89,6 +124,23 @@ def delete_note(note_id):
 
     if note.created_by_id != user_id and user_role != "ADMIN":
         return jsonify({"error": "Access denied"}), 403
+
+    opp_name = ""
+    if note.opportunity_id:
+        opp = Opportunity.query.get(note.opportunity_id)
+        if opp and opp.contact:
+            opp_name = f" for Lead: {opp.contact.full_name}"
+
+    audit = AuditLog(
+        user_id=note.created_by_id, # log the action for note owner or deleting admin
+        table_name='notes',
+        record_id=note.id,
+        action='DELETE',
+        field_name='content',
+        old_value=note.content,
+        new_value=f"Deleted Note: '{note.content[:40]}...'{opp_name}"
+    )
+    db.session.add(audit)
 
     db.session.delete(note)
     db.session.commit()

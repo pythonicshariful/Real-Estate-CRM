@@ -67,12 +67,29 @@ class Config:
         'UPLOAD_FOLDER',
         str(BASE_DIR / 'uploads')
     )
+    if not os.path.isabs(UPLOAD_FOLDER):
+        UPLOAD_FOLDER = str(BASE_DIR / UPLOAD_FOLDER)
+
     RECORDINGS_FOLDER = os.environ.get(
         'RECORDINGS_FOLDER',
         str(BASE_DIR / 'uploads' / 'recordings')
     )
+    if not os.path.isabs(RECORDINGS_FOLDER):
+        RECORDINGS_FOLDER = str(BASE_DIR / RECORDINGS_FOLDER)
+    AVATARS_FOLDER = os.environ.get(
+        'AVATARS_FOLDER',
+        str(BASE_DIR / 'uploads' / 'avatars')
+    )
     MAX_CONTENT_LENGTH = 50 * 1024 * 1024   # 50 MB max file upload
     RECORDING_LINK_EXPIRY_SECONDS = 900      # 15-minute signed URL
+
+    # ------------------------------------------------------------------
+    # MEGA Cloud Storage — for call recording uploads
+    # Create a free MEGA account at https://mega.nz and put credentials here
+    # ------------------------------------------------------------------
+    MEGA_EMAIL = os.environ.get('MEGA_EMAIL', '')
+    MEGA_PASSWORD = os.environ.get('MEGA_PASSWORD', '')
+    MEGA_FOLDER = os.environ.get('MEGA_FOLDER', 'CRM-Recordings')  # top-level MEGA folder
 
     # ------------------------------------------------------------------
     # Email (SMTP) — Gmail App Password recommended
@@ -99,7 +116,7 @@ class Config:
     # ------------------------------------------------------------------
     # JWT Settings
     # ------------------------------------------------------------------
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=1)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
     JWT_TOKEN_LOCATION = ['headers']
     JWT_HEADER_NAME = 'Authorization'
@@ -130,6 +147,11 @@ class DevelopmentConfig(Config):
         'DATABASE_URL',
         f"sqlite:///{BASE_DIR / 'crm_dev.db'}"
     )
+    # SQLite doesn't support the MySQL pool_recycle trick — use NullPool instead
+    # This prevents "no such table" errors caused by stale cross-thread connections
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'poolclass': __import__('sqlalchemy.pool', fromlist=['NullPool']).NullPool,
+    }
     SCHEDULER_JOBSTORES = {
         'default': {
             'type': 'sqlalchemy',

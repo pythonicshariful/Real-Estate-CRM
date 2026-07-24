@@ -86,10 +86,10 @@
           
           <div class="chart-card">
             <div class="chart-title mb-4">Submit a Support Request</div>
-            <form class="space-y-4" onsubmit="event.preventDefault(); showToast('Support request submitted. Ticket #TKT-143 created.', 'success')">
+            <form class="space-y-4" onsubmit="submitBugReport(event)">
               <div>
                 <label class="block text-xs font-semibold text-slate-400 mb-1">Issue Category</label>
-                <select class="input-glass w-full px-3 py-2 rounded-lg text-sm">
+                <select id="support-category" class="input-glass w-full px-3 py-2 rounded-lg text-sm">
                   <option>Bug / Glitch</option>
                   <option>Feature Request</option>
                   <option>Access / Permissions</option>
@@ -98,7 +98,7 @@
               </div>
               <div>
                 <label class="block text-xs font-semibold text-slate-400 mb-1">Description</label>
-                <textarea rows="4" class="input-glass w-full px-3 py-2 rounded-lg text-sm" placeholder="Please describe the issue in detail..."></textarea>
+                <textarea id="support-description" rows="4" class="input-glass w-full px-3 py-2 rounded-lg text-sm" placeholder="Please describe the issue in detail..."></textarea>
               </div>
               <button type="submit" class="btn-gradient w-full py-2.5 rounded-xl text-sm font-semibold">Submit Request</button>
             </form>
@@ -111,6 +111,48 @@
   <script src="/assets/js/sidebar.js"></script>
   <script type="module" src="/assets/js/app.js"></script>
   <script>
+    async function submitBugReport(e) {
+      e.preventDefault();
+      const category = document.getElementById('support-category').value;
+      const description = document.getElementById('support-description').value;
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+
+      if (!description.trim()) {
+        showToast('Please describe the issue in detail.', 'error');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+
+      try {
+        const token = localStorage.getItem('crm_token');
+        const res = await fetch('/api/tickets/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            subject: `[${category}] Support Request`,
+            description: description,
+            priority: 'MEDIUM'
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to submit request');
+
+        showToast(`Support request submitted. Ticket #${data.id} created and sent to Telegram!`, 'success');
+        document.getElementById('support-description').value = '';
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Request';
+      }
+    }
+
     function showToast(message, type = 'info') {
       const container = document.getElementById('toast-container');
       const toast = document.createElement('div');

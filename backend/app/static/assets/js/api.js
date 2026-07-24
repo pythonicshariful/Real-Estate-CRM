@@ -19,9 +19,7 @@ export async function apiFetch(endpoint, options = {}) {
     });
 
     if (res.status === 401) {
-      // Try refresh or logout
-      localStorage.removeItem('crm_token');
-      window.location.href = '/index.html';
+      // Token expired or invalid — throw so caller can decide what to do
       throw new Error('Unauthorized');
     }
 
@@ -32,7 +30,9 @@ export async function apiFetch(endpoint, options = {}) {
 
     return await res.json();
   } catch (err) {
-    console.error('API Error:', err);
+    if (err.message !== 'Unauthorized') {
+      console.error('API Error:', err);
+    }
     throw err;
   }
 }

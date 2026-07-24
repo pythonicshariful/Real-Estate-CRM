@@ -1,7 +1,11 @@
 from flask import request, jsonify
 from app.blueprints.auth import auth_bp
-from app.models import User, UserRole
+from app.models import User, UserRole, Opportunity, Task, CallLog
 from app.extensions import db
+import os
+import uuid
+from flask import current_app
+from werkzeug.utils import secure_filename
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity, get_jwt
 import pyotp
 import qrcode
@@ -21,6 +25,18 @@ def login():
     if not user.is_active:
         return jsonify({"msg": "Account deactivated. Please contact your Admin."}), 403
     
+    # Log login activity
+    from app.models import AuditLog
+    audit = AuditLog(
+        user_id=user.id,
+        table_name='users',
+        record_id=user.id,
+        action='LOGIN',
+        new_value=f"User {user.full_name} logged in"
+    )
+    db.session.add(audit)
+    db.session.commit()
+    
     redirect_to = 'admin-dashboard.html' if user.role == UserRole.ADMIN else 'dashboard.html'
     
     access_token = create_access_token(identity=str(user.id), additional_claims={
@@ -38,6 +54,7 @@ def login():
         role=user.role.value,
         full_name=user.full_name,
         color=user.calendar_color,
+        avatar_url=user.avatar_url
     )
 
 @auth_bp.route('/verify-mfa', methods=['POST'])
@@ -77,6 +94,19 @@ def setup_mfa():
 @jwt_required()
 def logout():
     # In production, implement token blocklisting here
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    if user:
+        from app.models import AuditLog
+        audit = AuditLog(
+            user_id=user.id,
+            table_name='users',
+            record_id=user.id,
+            action='LOGOUT',
+            new_value=f"User {user.full_name} logged out"
+        )
+        db.session.add(audit)
+        db.session.commit()
     return jsonify({"msg": "Successfully logged out"}), 200
 
 @auth_bp.route('/refresh', methods=['POST'])
@@ -120,3 +150,54 @@ def change_password():
     user.set_password(data.get('new_password'))
     db.session.commit()
     return jsonify({"msg": "Password changed successfully"})
+
+@auth_bp.route('/me/avatar', methods=['POST'])
+@jwt_required()
+def upload_avatar():
+    if 'avatar' not in request.files:
+        return jsonify({"msg": "No file part"}), 400
+    
+    file = request.files['avatar']
+    if file.filename == '':
+        return jsonify({"msg": "No selected file"}), 400
+        
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    
+    # Save the file
+    filename = secure_filename(file.filename)
+    unique_filename = f"{user.id}_{uuid.uuid4().hex}_{filename}"
+    upload_dir = current_app.config.get('AVATARS_FOLDER', 'uploads/avatars')
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    file_path = os.path.join(upload_dir, unique_filename)
+    file.save(file_path)
+    
+    user.avatar_url = f"/uploads/avatars/{unique_filename}"
+    db.session.commit()
+    
+    return jsonify({"msg": "Avatar updated", "avatar_url": user.avatar_url})
+
+@auth_bp.route('/me/stats', methods=['GET'])
+@jwt_required()
+def me_stats():
+    user_id = get_jwt_identity()
+    
+    total_leads = Opportunity.query.filter_by(assigned_to_id=user_id, is_deleted=False).count()
+    active_leads = Opportunity.query.filter_by(assigned_to_id=user_id, is_deleted=False).filter(~Opportunity.pipeline_stage.in_(['SOLD', 'CLOSED_LOST', 'INVALID'])).count()
+    completed_tasks = Task.query.filter_by(assigned_to_id=user_id, status='COMPLETED').count()
+    recent_calls = CallLog.query.filter_by(logged_by_id=user_id).order_by(CallLog.created_at.desc()).limit(10).all()
+    
+    calls_data = [{
+        "id": c.id,
+        "type": c.call_type,
+        "notes": c.notes,
+        "created_at": c.created_at.isoformat() if c.created_at else None,
+    } for c in recent_calls]
+    
+    return jsonify({
+        "total_leads": total_leads,
+        "active_leads": active_leads,
+        "completed_tasks": completed_tasks,
+        "recent_activities": calls_data
+    })

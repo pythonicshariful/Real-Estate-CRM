@@ -19,10 +19,10 @@
     
     <div class="relative z-10">
       <div class="text-center mb-8">
-        <div class="w-16 h-16 mx-auto mb-4 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg">
-          <span class="text-2xl font-bold tracking-tighter">SL</span>
+        <div id="login-logo-container" class="w-16 h-16 mx-auto mb-4 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg bg-cover bg-center">
+          <span id="login-logo-text" class="text-2xl font-bold tracking-tighter">SL</span>
         </div>
-        <h1 class="text-2xl font-semibold tracking-tight">Southeast Landmark Ltd.</h1>
+        <h1 id="login-company-name" class="text-2xl font-semibold tracking-tight">Southeast Landmark Ltd.</h1>
         <p class="text-sm text-slate-400 mt-1">Sales CRM v2.0</p>
       </div>
 
@@ -125,6 +125,23 @@
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
+
+    // Fetch dynamic branding
+    fetch('/api/settings/branding').then(r => r.json()).then(data => {
+      const nameEl = document.getElementById('login-company-name');
+      const logoContainer = document.getElementById('login-logo-container');
+      const logoText = document.getElementById('login-logo-text');
+      if (nameEl && data.company_name) {
+        nameEl.textContent = data.company_name;
+        document.title = document.title.replace('Southeast Landmark', data.company_name);
+      }
+      if (logoContainer && data.company_logo) {
+        logoContainer.style.backgroundImage = `url(${data.company_logo})`;
+        if (logoText) logoText.style.display = 'none';
+      } else if (nameEl && data.company_name && logoText) {
+        logoText.textContent = data.company_name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+      }
+    }).catch(e => console.error(e));
   </script>
 </body>
 </html>

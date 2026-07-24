@@ -1,52 +1,276 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Contacts - CRM</title>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clients — Southeast CRM v2.0</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/assets/css/main.css">
 </head>
-<body class="flex h-screen overflow-hidden text-slate-100 bg-[#0f0f1a]">
-  
+<body class="flex h-screen overflow-hidden text-slate-100 bg-[#0a0a14]">
+  <div id="sidebar-container"></div>
   <main class="flex-1 flex flex-col h-screen overflow-hidden">
-    <header class="glass-dark border-b border-slate-800 min-h-16 py-2 md:py-0 flex items-center justify-between px-4 md:px-6 flex-wrap gap-2">
-      <div class="text-lg font-semibold">Contact Database</div>
-      <button class="btn-gradient px-4 py-2 rounded-lg text-sm font-medium">+ New Contact</button>
+    <header class="glass-dark border-b border-slate-800/60 min-h-14 py-2 md:py-0 flex items-center justify-between px-4 md:px-6 flex-shrink-0 flex-wrap gap-2">
+      <div>
+        <div class="text-sm font-bold text-white">Client Database</div>
+        <div class="text-xs text-slate-500">View and edit registered clients and contact leads</div>
+      </div>
+      <button onclick="openClientModal()" class="btn-gradient px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg> Add Client
+      </button>
     </header>
-
+    
     <div class="p-4 border-b border-slate-800 flex gap-4">
-      <input type="text" placeholder="Search by name, phone, email..." class="input-glass px-4 py-2 rounded-lg text-sm flex-1">
-      <select class="input-glass px-3 py-2 rounded-lg text-sm">
-        <option>All Sources</option>
+      <input type="text" id="search-input" oninput="fetchClients()" placeholder="Search by name, phone, email..." class="input-glass px-4 py-2 rounded-lg text-sm flex-1">
+      <select id="filter-source" onchange="fetchClients()" class="input-glass px-3 py-2 rounded-lg text-sm">
+        <option value="">All Sources</option>
+        <option value="Facebook">Facebook</option>
+        <option value="Google">Google</option>
+        <option value="Manual">Manual</option>
+        <option value="Website">Website</option>
+        <option value="Referral">Referral</option>
       </select>
     </div>
 
     <div class="flex-1 overflow-y-auto p-4">
       <div class="glass rounded-xl overflow-hidden overflow-x-auto">
-        <table class="w-full text-left text-sm">
+        <div class="overflow-x-auto w-full">
+<table class="w-full text-left text-sm crm-table">
           <thead class="bg-white/5 text-slate-400">
             <tr>
               <th class="p-4 font-medium">Name</th>
+              <th class="p-4 font-medium">Email</th>
               <th class="p-4 font-medium">Phone</th>
               <th class="p-4 font-medium">Source</th>
-              <th class="p-4 font-medium">Opps</th>
-              <th class="p-4 font-medium">Last Activity</th>
+              <th class="p-4 font-medium">District/City</th>
+              <th class="p-4 font-medium">Actions</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-800">
-            <tr class="hover:bg-white/5 cursor-pointer transition">
-              <td class="p-4 font-medium text-white flex items-center gap-2">John Doe <span class="bg-yellow-500/20 text-yellow-300 text-[10px] px-1.5 py-0.5 rounded border border-yellow-500/30">Possible Duplicate</span></td>
-              <td class="p-4 text-slate-300">01711223344</td>
-              <td class="p-4"><span class="badge badge-active">Facebook</span></td>
-              <td class="p-4 font-medium">2</td>
-              <td class="p-4 text-slate-400">2 hrs ago</td>
-            </tr>
+          <tbody id="clients-table-body" class="divide-y divide-slate-800">
+            <tr><td colspan="6" class="text-center text-slate-500 py-10">Loading clients...</td></tr>
           </tbody>
         </table>
+</div>
       </div>
     </div>
   </main>
 
+  <!-- Client Create/Edit Modal -->
+  <div id="client-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+    <div class="glass-dark border border-white/10 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl">
+      <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center">
+        <h3 class="font-bold text-white text-lg" id="modal-title">New Client</h3>
+        <button onclick="closeClientModal()" class="text-slate-400 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="client-form" class="p-6 space-y-4">
+        <input type="hidden" id="client-id">
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Full Name</label>
+          <input type="text" id="client-name" required class="w-full input-glass px-3 py-2 rounded-xl text-sm" placeholder="e.g. John Doe">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Email</label>
+            <input type="email" id="client-email" class="w-full input-glass px-3 py-2 rounded-xl text-sm" placeholder="john@example.com">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Phone</label>
+            <input type="text" id="client-phone" required class="w-full input-glass px-3 py-2 rounded-xl text-sm" placeholder="017xxxxxxxx">
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-4">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Gender</label>
+            <select id="client-gender" class="w-full input-glass px-3 py-2 rounded-xl text-sm bg-slate-950">
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">District</label>
+            <input type="text" id="client-district" class="w-full input-glass px-3 py-2 rounded-xl text-sm" placeholder="Dhaka">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">City</label>
+            <input type="text" id="client-city" class="w-full input-glass px-3 py-2 rounded-xl text-sm" placeholder="Dhaka">
+          </div>
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Address</label>
+          <input type="text" id="client-address" class="w-full input-glass px-3 py-2 rounded-xl text-sm" placeholder="Street Address">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Source</label>
+            <select id="client-source" class="w-full input-glass px-3 py-2 rounded-xl text-sm bg-slate-950">
+              <option value="Manual">Manual</option>
+              <option value="Facebook">Facebook</option>
+              <option value="Google">Google</option>
+              <option value="Website">Website</option>
+              <option value="Referral">Referral</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Notes</label>
+          <textarea id="client-notes" class="w-full input-glass px-3 py-2 rounded-xl text-sm h-20" placeholder="Notes about this client..."></textarea>
+        </div>
+        
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-800">
+          <button type="button" onclick="closeClientModal()" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-800 transition-colors">Cancel</button>
+          <button type="submit" class="btn-gradient px-6 py-2.5 rounded-xl text-sm font-semibold text-white">Save Client</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="/assets/js/sidebar.js"></script>
+  <script type="module" src="/assets/js/app.js"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchClients();
+      
+      document.getElementById('client-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await saveClient();
+      });
+    });
+
+    async function fetchClients() {
+      const query = document.getElementById('search-input').value;
+      const source = document.getElementById('filter-source').value;
+      let url = `/api/contacts/?`;
+      if (query) url += `query=${query}&`;
+      if (source) url += `source=${source}&`;
+
+      try {
+        const res = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('crm_token')}` }
+        });
+        if (!res.ok) throw new Error('Failed to fetch clients');
+        const clients = await res.json();
+        renderClients(clients);
+      } catch (err) {
+        if(window.showToast) window.showToast(err.message, 'error');
+        console.error(err);
+      }
+    }
+
+    function renderClients(clients) {
+      const tbody = document.getElementById('clients-table-body');
+      tbody.innerHTML = '';
+      
+      if (clients.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-slate-500 py-10">No clients found.</td></tr>`;
+        return;
+      }
+      
+      clients.forEach(c => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><div class="font-medium text-white">${c.full_name}</div></td>
+          <td>${c.email || 'N/A'}</td>
+          <td>${c.phone_raw || 'N/A'}</td>
+          <td><span class="badge badge-active">${c.source || 'Manual'}</span></td>
+          <td>${c.city || 'N/A'}</td>
+          <td>
+            <button onclick='editClient(${JSON.stringify(c).replace(/'/g, "&#39;")})' class="text-slate-400 hover:text-white p-1 inline-block"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+            <button onclick="deleteClient(${c.id})" class="text-slate-400 hover:text-rose-400 p-1 inline-block ml-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    window.openClientModal = function() {
+      document.getElementById('client-form').reset();
+      document.getElementById('client-id').value = '';
+      document.getElementById('modal-title').textContent = 'New Client';
+      const modal = document.getElementById('client-modal');
+      modal.classList.remove('hidden');
+      setTimeout(() => modal.classList.remove('opacity-0'), 10);
+    }
+
+    window.closeClientModal = function() {
+      const modal = document.getElementById('client-modal');
+      modal.classList.add('opacity-0');
+      setTimeout(() => modal.classList.add('hidden'), 200);
+    }
+
+    window.editClient = function(c) {
+      document.getElementById('client-id').value = c.id;
+      document.getElementById('client-name').value = c.full_name;
+      document.getElementById('client-email').value = c.email || '';
+      document.getElementById('client-phone').value = c.phone_raw || '';
+      document.getElementById('client-gender').value = c.gender || 'Male';
+      document.getElementById('client-district').value = c.district || '';
+      document.getElementById('client-city').value = c.city || '';
+      document.getElementById('client-address').value = c.address || '';
+      document.getElementById('client-source').value = c.source || 'Manual';
+      document.getElementById('client-notes').value = c.notes || '';
+      
+      document.getElementById('modal-title').textContent = 'Edit Client';
+      const modal = document.getElementById('client-modal');
+      modal.classList.remove('hidden');
+      setTimeout(() => modal.classList.remove('opacity-0'), 10);
+    }
+
+    async function saveClient() {
+      const id = document.getElementById('client-id').value;
+      const data = {
+        full_name: document.getElementById('client-name').value,
+        email: document.getElementById('client-email').value,
+        phone_raw: document.getElementById('client-phone').value,
+        gender: document.getElementById('client-gender').value,
+        district: document.getElementById('client-district').value,
+        city: document.getElementById('client-city').value,
+        address: document.getElementById('client-address').value,
+        source: document.getElementById('client-source').value,
+        notes: document.getElementById('client-notes').value
+      };
+      
+      const method = id ? 'PUT' : 'POST';
+      const url = id ? `/api/contacts/${id}` : '/api/contacts/';
+      
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('crm_token')}`
+          },
+          body: JSON.stringify(data)
+        });
+        
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'Failed to save client');
+        
+        if (window.showToast) window.showToast('Client saved successfully!', 'success');
+        closeClientModal();
+        fetchClients();
+      } catch (err) {
+        if (window.showToast) window.showToast(err.message, 'error');
+      }
+    }
+
+    window.deleteClient = async function(id) {
+      if (!confirm('Are you sure you want to delete this client?')) return;
+      try {
+        const res = await fetch(`/api/contacts/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('crm_token')}` }
+        });
+        if (!res.ok) throw new Error('Failed to delete client');
+        if (window.showToast) window.showToast('Client deleted', 'success');
+        fetchClients();
+      } catch (err) {
+        if (window.showToast) window.showToast(err.message, 'error');
+      }
+    }
+  </script>
 </body>
 </html>

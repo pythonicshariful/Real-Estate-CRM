@@ -5,51 +5,276 @@
   <title>Expenses — Southeast CRM v2.0</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/assets/css/main.css">
-  
 </head>
 <body class="flex h-screen overflow-hidden text-slate-100 bg-[#0a0a14]">
   <div id="sidebar-container"></div>
   <main class="flex-1 flex flex-col h-screen overflow-hidden">
     <header class="glass-dark border-b border-slate-800/60 min-h-14 py-2 md:py-0 flex items-center justify-between px-4 md:px-6 flex-shrink-0 flex-wrap gap-2">
-      <div><div class="text-sm font-bold text-white">Expenses</div><div class="text-xs text-slate-500">Financial outflow tracking and budget management</div></div>
-      <button class="btn-gradient px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5">
+      <div>
+        <div class="text-sm font-bold text-white">Expenses</div>
+        <div class="text-xs text-slate-500">Financial outflow tracking and budget management</div>
+      </div>
+      <button onclick="openExpenseModal()" class="btn-gradient px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg> Log Expense
       </button>
     </header>
+    
     <div class="flex-1 overflow-y-auto p-5 space-y-5">
+      <!-- KPIs -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Total Expenses</div><div class="kpi-value text-rose-400" style="font-size:1.5rem">৳3.8M</div><div class="trend-down">This month</div></div>
-        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Marketing</div><div class="kpi-value text-indigo-400" style="font-size:1.5rem">৳1.4M</div><div class="trend-up">36.8% of total</div></div>
-        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Salaries</div><div class="kpi-value text-amber-400" style="font-size:1.5rem">৳1.1M</div><div class="trend-flat">Monthly payroll</div></div>
-        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Budget Left</div><div class="kpi-value text-emerald-400" style="font-size:1.5rem">৳0.9M</div><div class="trend-up">18.7% remaining</div></div>
-      </div>
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div class="chart-card">
-          <div class="chart-title">Expense Breakdown</div><div class="chart-subtitle">By category this month</div>
-          
+        <div class="kpi-card">
+          <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Total Expenses</div>
+          <div class="kpi-value text-rose-400" id="kpi-total">৳0</div>
         </div>
-        <div class="chart-card lg:col-span-2">
-          <div class="chart-title">Monthly Expenses by Category</div><div class="chart-subtitle">Stacked bar — Jan to Jul 2025</div>
-          
+        <div class="kpi-card">
+          <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Approved</div>
+          <div class="kpi-value text-emerald-400" id="kpi-approved">৳0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Pending</div>
+          <div class="kpi-value text-amber-400" id="kpi-pending">৳0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Rejected</div>
+          <div class="kpi-value text-slate-400" id="kpi-rejected">৳0</div>
         </div>
       </div>
+
+      <!-- Expense Table -->
       <div class="chart-card overflow-x-auto">
-        <div class="chart-title mb-4">Recent Expenses</div>
-        <table class="crm-table">
-          <thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount</th><th>Submitted By</th><th>Status</th></tr></thead>
-          <tbody>
-            <tr><td class="text-slate-400">Jul 18</td><td class="font-medium text-white">Facebook Ad Campaign — July</td><td>Marketing</td><td class="text-rose-400 font-semibold">৳320,000</td><td>Marketing Team</td><td><span class="badge badge-active">Approved</span></td></tr>
-            <tr><td class="text-slate-400">Jul 17</td><td class="font-medium text-white">Office Supplies — Q3</td><td>Office</td><td class="text-amber-400">৳18,500</td><td>Admin</td><td><span class="badge badge-active">Approved</span></td></tr>
-            <tr><td class="text-slate-400">Jul 15</td><td class="font-medium text-white">Sales Team Lunch</td><td>Misc</td><td class="text-slate-400">৳8,200</td><td>Rafi Islam</td><td><span class="badge badge-pending">Pending</span></td></tr>
-            <tr><td class="text-slate-400">Jul 14</td><td class="font-medium text-white">CRM Software Subscription</td><td>Tech</td><td class="text-indigo-400">৳45,000</td><td>IT Dept</td><td><span class="badge badge-active">Approved</span></td></tr>
+        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div class="chart-title font-bold">Recent Expenses</div>
+          <select id="filter-category" onchange="fetchExpenses()" class="input-glass px-2 py-1.5 rounded-lg text-xs">
+            <option value="">All Categories</option>
+            <option value="TRAVEL">Travel</option>
+            <option value="MARKETING">Marketing</option>
+            <option value="ENTERTAINMENT">Entertainment</option>
+            <option value="OFFICE_SUPPLIES">Office Supplies</option>
+            <option value="COMMUNICATION">Communication</option>
+            <option value="SITE_VISIT">Site Visit</option>
+            <option value="OTHER">Other</option>
+          </select>
+        </div>
+        <div class="overflow-x-auto w-full">
+<table class="crm-table w-full">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Description</th>
+              <th>Category</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="expenses-table-body">
+            <tr><td colspan="6" class="text-center text-slate-500 py-10">Loading expenses...</td></tr>
           </tbody>
         </table>
+</div>
       </div>
     </div>
   </main>
+
+  <!-- Expense Create Modal -->
+  <div id="expense-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+    <div class="glass-dark border border-white/10 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl">
+      <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center">
+        <h3 class="font-bold text-white text-lg">Log New Expense</h3>
+        <button onclick="closeExpenseModal()" class="text-slate-400 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="expense-form" class="p-6 space-y-4">
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Amount (BDT)</label>
+          <input type="number" step="0.01" id="exp-amount" required class="w-full input-glass px-3 py-2 rounded-xl text-sm" placeholder="e.g. 5000">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Category</label>
+            <select id="exp-category" required class="w-full input-glass px-3 py-2 rounded-xl text-sm bg-slate-950">
+              <option value="TRAVEL">Travel</option>
+              <option value="MARKETING">Marketing</option>
+              <option value="ENTERTAINMENT">Entertainment</option>
+              <option value="OFFICE_SUPPLIES">Office Supplies</option>
+              <option value="COMMUNICATION">Communication</option>
+              <option value="SITE_VISIT">Site Visit</option>
+              <option value="OTHER" selected>Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Date</label>
+            <input type="date" id="exp-date" required class="w-full input-glass px-3 py-2 rounded-xl text-sm">
+          </div>
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Description</label>
+          <input type="text" id="exp-description" required class="w-full input-glass px-3 py-2 rounded-xl text-sm" placeholder="Purpose of expense">
+        </div>
+        
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-800">
+          <button type="button" onclick="closeExpenseModal()" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-800 transition-colors">Cancel</button>
+          <button type="submit" class="btn-gradient px-6 py-2.5 rounded-xl text-sm font-semibold text-white">Log Expense</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div id="toast-container"></div>
   <script src="/assets/js/sidebar.js"></script>
   <script type="module" src="/assets/js/app.js"></script>
   
+  <script>
+    const isAdmin = localStorage.getItem('crm_role') === 'ADMIN';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchExpenses();
+      document.getElementById('exp-date').value = new Date().toISOString().substring(0, 10);
+      
+      document.getElementById('expense-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await saveExpense();
+      });
+    });
+
+    async function fetchExpenses() {
+      const category = document.getElementById('filter-category').value;
+      let url = `/api/expenses/?`;
+      if (category) url += `category=${category}`;
+
+      try {
+        const res = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('crm_token')}` }
+        });
+        if (!res.ok) throw new Error('Failed to fetch expenses');
+        const data = await res.json();
+        renderExpenses(data.expenses);
+      } catch (err) {
+        if(window.showToast) window.showToast(err.message, 'error');
+        console.error(err);
+      }
+    }
+
+    function renderExpenses(expenses) {
+      const tbody = document.getElementById('expenses-table-body');
+      tbody.innerHTML = '';
+      
+      if (expenses.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-slate-500 py-10">No expenses found.</td></tr>`;
+        updateKPIValues(0, 0, 0, 0);
+        return;
+      }
+      
+      let total = 0, approved = 0, pending = 0, rejected = 0;
+      
+      expenses.forEach(e => {
+        const amt = parseFloat(e.amount);
+        total += amt;
+        if (e.status === 'APPROVED') approved += amt;
+        else if (e.status === 'PENDING') pending += amt;
+        else if (e.status === 'REJECTED') rejected += amt;
+
+        let statusColor = 'badge-pending';
+        if (e.status === 'APPROVED') statusColor = 'badge-won';
+        else if (e.status === 'REJECTED') statusColor = 'badge-overdue';
+
+        let adminActionHtml = '';
+        if (isAdmin && e.status === 'PENDING') {
+          adminActionHtml = `
+            <button onclick="approveExpense(${e.id}, 'APPROVE')" class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded text-xs hover:bg-emerald-500/40">Approve</button>
+            <button onclick="approveExpense(${e.id}, 'REJECT')" class="bg-rose-500/20 text-rose-300 border border-rose-500/30 px-2 py-0.5 rounded text-xs hover:bg-rose-500/40 ml-1">Reject</button>
+          `;
+        }
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${new Date(e.expense_date).toLocaleDateString()}</td>
+          <td>
+            <div class="font-medium text-white">${e.description}</div>
+          </td>
+          <td><span class="text-xs font-semibold text-slate-300 bg-slate-800 px-2 py-0.5 rounded">${e.category}</span></td>
+          <td class="text-rose-400 font-semibold">৳${amt.toLocaleString()}</td>
+          <td><span class="badge ${statusColor}">${e.status}</span></td>
+          <td>${adminActionHtml || '<span class="text-slate-500 text-xs">No Action</span>'}</td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      updateKPIValues(total, approved, pending, rejected);
+    }
+
+    function updateKPIValues(total, approved, pending, rejected) {
+      document.getElementById('kpi-total').textContent = `৳${total.toLocaleString()}`;
+      document.getElementById('kpi-approved').textContent = `৳${approved.toLocaleString()}`;
+      document.getElementById('kpi-pending').textContent = `৳${pending.toLocaleString()}`;
+      document.getElementById('kpi-rejected').textContent = `৳${rejected.toLocaleString()}`;
+    }
+
+    window.openExpenseModal = function() {
+      document.getElementById('expense-form').reset();
+      document.getElementById('exp-date').value = new Date().toISOString().substring(0, 10);
+      const modal = document.getElementById('expense-modal');
+      modal.classList.remove('hidden');
+      setTimeout(() => modal.classList.remove('opacity-0'), 10);
+    }
+
+    window.closeExpenseModal = function() {
+      const modal = document.getElementById('expense-modal');
+      modal.classList.add('opacity-0');
+      setTimeout(() => modal.classList.add('hidden'), 200);
+    }
+
+    async function saveExpense() {
+      const data = {
+        amount: parseFloat(document.getElementById('exp-amount').value),
+        category: document.getElementById('exp-category').value,
+        expense_date: document.getElementById('exp-date').value,
+        description: document.getElementById('exp-description').value
+      };
+      
+      try {
+        const res = await fetch('/api/expenses/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('crm_token')}`
+          },
+          body: JSON.stringify(data)
+        });
+        
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'Failed to submit expense');
+        
+        if (window.showToast) window.showToast('Expense submitted successfully!', 'success');
+        closeExpenseModal();
+        fetchExpenses();
+      } catch (err) {
+        if (window.showToast) window.showToast(err.message, 'error');
+      }
+    }
+
+    window.approveExpense = async function(id, action) {
+      const notes = prompt(`Enter notes for ${action.toLowerCase()}:`);
+      try {
+        const res = await fetch(`/api/expenses/${id}/approve`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('crm_token')}`
+          },
+          body: JSON.stringify({ action, notes })
+        });
+        
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'Failed to update expense');
+        
+        if (window.showToast) window.showToast(`Expense ${action.toLowerCase()}d!`, 'success');
+        fetchExpenses();
+      } catch (err) {
+        if (window.showToast) window.showToast(err.message, 'error');
+      }
+    }
+  </script>
 </body>
 </html>

@@ -10,81 +10,179 @@
   <div id="sidebar-container"></div>
   <main class="flex-1 flex flex-col h-screen overflow-hidden">
     <header class="glass-dark border-b border-slate-800/60 min-h-14 py-2 md:py-0 flex items-center justify-between px-4 md:px-6 flex-shrink-0 flex-wrap gap-2">
-      <div><div class="text-sm font-bold text-white">Notes</div><div class="text-xs text-slate-500">Private and shared note-taking</div></div>
-      <div class="flex gap-2">
-        <div class="flex bg-white/5 rounded-lg p-0.5">
-          <button class="px-3 py-1 text-xs rounded-md bg-indigo-600 text-white font-medium">Private</button>
-          <button class="px-3 py-1 text-xs rounded-md text-slate-400 font-medium">Shared</button>
-        </div>
-        <button class="btn-gradient px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg> New Note
-        </button>
+      <div>
+        <div class="text-sm font-bold text-white">My Notes</div>
+        <div class="text-xs text-slate-500">Quick references, annotations and reminders</div>
       </div>
+      <button onclick="openNoteModal()" class="btn-gradient px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg> Add Note
+      </button>
     </header>
-    <div class="flex-1 overflow-y-auto p-5">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        <!-- Note Card 1 -->
-        <div class="bg-gradient-to-br from-indigo-500/10 to-violet-500/10 border border-indigo-500/20 rounded-2xl p-4 hover:border-indigo-500/40 transition-all cursor-pointer">
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Lead Note</span>
-            <span class="text-[10px] text-slate-500">Jul 18</span>
-          </div>
-          <div class="text-sm font-semibold text-white mb-2">Engr. Rafiqul — Shah Ali Bridge objection</div>
-          <div class="text-xs text-slate-400 line-clamp-3">Client raised concern about traffic near Shah Ali Bridge. Needs alternative route map. Follow up with location benefit sheet. Also mentioned price is ৳200K above his budget...</div>
-          <div class="mt-3 flex gap-1"><span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full">objection</span><span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full">M-08</span></div>
-        </div>
-        <!-- Note Card 2 -->
-        <div class="bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-2xl p-4 hover:border-amber-500/40 transition-all cursor-pointer">
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Strategy</span>
-            <span class="text-[10px] text-slate-500">Jul 16</span>
-          </div>
-          <div class="text-sm font-semibold text-white mb-2">Q3 Sales Strategy — Price Positioning</div>
-          <div class="text-xs text-slate-400 line-clamp-3">Target ৳150K/sqft for Block A premium units. Emphasize ROI: 12% annual appreciation over last 3 years. Key USPs: 5 min Uttara metro access, 24/7 security, rooftop...</div>
-          <div class="mt-3 flex gap-1"><span class="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full">strategy</span><span class="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full">private</span></div>
-        </div>
-        <!-- Note Card 3 -->
-        <div class="bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-2xl p-4 hover:border-emerald-500/40 transition-all cursor-pointer">
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Meeting</span>
-            <span class="text-[10px] text-slate-500">Jul 14</span>
-          </div>
-          <div class="text-sm font-semibold text-white mb-2">Management Meeting — SLA Review</div>
-          <div class="text-xs text-slate-400 line-clamp-3">SLA compliance up to 92% from 87%. Key issues: evening shift coverage. Decided to add 2 part-time executives for 6-10 PM slot. Next review in 2 weeks...</div>
-          <div class="mt-3 flex gap-1"><span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full">meeting</span><span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full">shared</span></div>
-        </div>
-        <!-- Note Card 4 -->
-        <div class="bg-gradient-to-br from-violet-500/10 to-purple-500/10 border border-violet-500/20 rounded-2xl p-4 hover:border-violet-500/40 transition-all cursor-pointer">
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-[10px] font-bold text-violet-400 uppercase tracking-wider">Coaching</span>
-            <span class="text-[10px] text-slate-500">Jul 12</span>
-          </div>
-          <div class="text-sm font-semibold text-white mb-2">Rafi Islam — 1:1 Coaching Notes</div>
-          <div class="text-xs text-slate-400 line-clamp-3">Coaching score: 8.2/10. Strength: excellent rapport building. Area for improvement: closing speed. Tends to extend negotiation unnecessarily. Action: role-play final close...</div>
-          <div class="mt-3 flex gap-1"><span class="text-[10px] bg-violet-500/20 text-violet-300 px-2 py-0.5 rounded-full">M-09</span><span class="text-[10px] bg-violet-500/20 text-violet-300 px-2 py-0.5 rounded-full">manager-only</span></div>
-        </div>
-        <!-- Note Card 5 -->
-        <div class="bg-gradient-to-br from-rose-500/10 to-pink-500/10 border border-rose-500/20 rounded-2xl p-4 hover:border-rose-500/40 transition-all cursor-pointer">
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-[10px] font-bold text-rose-400 uppercase tracking-wider">Reminder</span>
-            <span class="text-[10px] text-slate-500">Jul 10</span>
-          </div>
-          <div class="text-sm font-semibold text-white mb-2">Block C Launch Event — Prep Checklist</div>
-          <div class="text-xs text-slate-400 line-clamp-3">☐ Venue setup by 8 AM ☐ Brochures printed (500) ☐ Scale model polished ☐ Guest list finalized (120) ☐ Catering confirmed ☐ AV equipment tested...</div>
-          <div class="mt-3 flex gap-1"><span class="text-[10px] bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-full">event</span><span class="text-[10px] bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-full">checklist</span></div>
-        </div>
-        <!-- Add Note Card -->
-        <div class="border-2 border-dashed border-slate-700 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all min-h-[160px]">
-          <div class="w-10 h-10 rounded-full border-2 border-dashed border-slate-600 flex items-center justify-center">
-            <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-          </div>
-          <span class="text-xs text-slate-500">Add new note</span>
-        </div>
+    
+    <div class="flex-1 overflow-y-auto p-5 space-y-5">
+      <!-- Notes grid -->
+      <div id="notes-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="text-center text-slate-500 py-10 col-span-full">Loading notes...</div>
       </div>
     </div>
   </main>
+
+  <!-- Note Create/Edit Modal -->
+  <div id="note-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+    <div class="glass-dark border border-white/10 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl">
+      <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center">
+        <h3 class="font-bold text-white text-lg" id="modal-title">New Note</h3>
+        <button onclick="closeNoteModal()" class="text-slate-400 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="note-form" class="p-6 space-y-4">
+        <input type="hidden" id="note-id">
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Content</label>
+          <textarea id="note-content" required class="w-full input-glass px-3 py-2 rounded-xl text-sm h-36" placeholder="Write your note here..."></textarea>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="note-private" class="rounded border-slate-700 text-indigo-600 focus:ring-indigo-500/30">
+          <label for="note-private" class="text-xs text-slate-300">Keep this note private (only you can see it)</label>
+        </div>
+        
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-800">
+          <button type="button" onclick="closeNoteModal()" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-800 transition-colors">Cancel</button>
+          <button type="submit" class="btn-gradient px-6 py-2.5 rounded-xl text-sm font-semibold text-white">Save Note</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div id="toast-container"></div>
   <script src="/assets/js/sidebar.js"></script>
   <script type="module" src="/assets/js/app.js"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchNotes();
+      
+      document.getElementById('note-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await saveNote();
+      });
+    });
+
+    async function fetchNotes() {
+      try {
+        const res = await fetch('/api/notes/', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('crm_token')}` }
+        });
+        if (!res.ok) throw new Error('Failed to fetch notes');
+        const notes = await res.json();
+        renderNotes(notes);
+      } catch (err) {
+        if(window.showToast) window.showToast(err.message, 'error');
+        console.error(err);
+      }
+    }
+
+    function renderNotes(notes) {
+      const grid = document.getElementById('notes-grid');
+      grid.innerHTML = '';
+      
+      if (notes.length === 0) {
+        grid.innerHTML = `<div class="text-center text-slate-500 py-10 col-span-full">No notes found.</div>`;
+        return;
+      }
+      
+      notes.forEach(n => {
+        const dateStr = new Date(n.created_at).toLocaleDateString();
+        const card = document.createElement('div');
+        card.className = 'bg-white/4 border border-white/8 rounded-xl p-4 hover:border-indigo-500/30 transition-all flex flex-col justify-between group';
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-[10px] text-slate-500">${dateStr}</span>
+              <span class="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${n.is_private ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-500/20 text-emerald-300'}">${n.is_private ? 'Private' : 'Shared'}</span>
+            </div>
+            <div class="text-sm text-slate-200 whitespace-pre-wrap mb-4">${n.content}</div>
+          </div>
+          <div class="flex justify-end gap-2 border-t border-slate-800/40 pt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button onclick='editNote(${JSON.stringify(n).replace(/'/g, "&#39;")})' class="text-slate-400 hover:text-white p-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+            <button onclick="deleteNote(${n.id})" class="text-slate-400 hover:text-rose-400 p-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    window.openNoteModal = function() {
+      document.getElementById('note-form').reset();
+      document.getElementById('note-id').value = '';
+      document.getElementById('modal-title').textContent = 'New Note';
+      const modal = document.getElementById('note-modal');
+      modal.classList.remove('hidden');
+      setTimeout(() => modal.classList.remove('opacity-0'), 10);
+    }
+
+    window.closeNoteModal = function() {
+      const modal = document.getElementById('note-modal');
+      modal.classList.add('opacity-0');
+      setTimeout(() => modal.classList.add('hidden'), 200);
+    }
+
+    window.editNote = function(note) {
+      document.getElementById('note-id').value = note.id;
+      document.getElementById('note-content').value = note.content;
+      document.getElementById('note-private').checked = note.is_private;
+      document.getElementById('modal-title').textContent = 'Edit Note';
+      const modal = document.getElementById('note-modal');
+      modal.classList.remove('hidden');
+      setTimeout(() => modal.classList.remove('opacity-0'), 10);
+    }
+
+    async function saveNote() {
+      const id = document.getElementById('note-id').value;
+      const data = {
+        content: document.getElementById('note-content').value,
+        is_private: document.getElementById('note-private').checked
+      };
+      
+      const method = id ? 'PUT' : 'POST';
+      const url = id ? `/api/notes/${id}` : '/api/notes/';
+      
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('crm_token')}`
+          },
+          body: JSON.stringify(data)
+        });
+        
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'Failed to save note');
+        
+        if (window.showToast) window.showToast('Note saved successfully!', 'success');
+        closeNoteModal();
+        fetchNotes();
+      } catch (err) {
+        if (window.showToast) window.showToast(err.message, 'error');
+      }
+    }
+
+    window.deleteNote = async function(id) {
+      if (!confirm('Are you sure you want to delete this note?')) return;
+      try {
+        const res = await fetch(`/api/notes/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('crm_token')}` }
+        });
+        if (!res.ok) throw new Error('Failed to delete note');
+        if (window.showToast) window.showToast('Note deleted', 'success');
+        fetchNotes();
+      } catch (err) {
+        if (window.showToast) window.showToast(err.message, 'error');
+      }
+    }
+  </script>
 </body>
 </html>

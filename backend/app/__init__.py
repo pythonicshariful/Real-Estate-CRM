@@ -124,12 +124,25 @@ def create_app(config_name=None):
         return send_from_directory(app.static_folder, 'index.html')
 
     @app.route('/assets/<path:filename>')
+    @limiter.exempt
     def serve_assets(filename):
         """Serve assets directly from app/static/assets."""
         from flask import send_from_directory
         return send_from_directory(os.path.join(app.static_folder, 'assets'), filename)
 
+    @app.route('/uploads/<path:filename>')
+    @limiter.exempt
+    def serve_uploads(filename):
+        """Serve uploaded files."""
+        from flask import send_from_directory
+        import os
+        upload_folder = app.config.get('UPLOAD_FOLDER', 'uploads')
+        app.logger.info(f"Serving upload: folder={upload_folder}, filename={filename}")
+        app.logger.info(f"File exists? {os.path.exists(os.path.join(upload_folder, filename))}")
+        return send_from_directory(upload_folder, filename)
+
     @app.route('/<path:filename>')
+    @limiter.exempt
     def serve_static_page(filename):
         """Serve static HTML pages and root assets."""
         from flask import send_from_directory

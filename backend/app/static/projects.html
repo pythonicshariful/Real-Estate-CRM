@@ -5,88 +5,295 @@
   <title>Projects — Southeast CRM v2.0</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/assets/css/main.css">
-  
 </head>
 <body class="flex h-screen overflow-hidden text-slate-100 bg-[#0a0a14]">
   <div id="sidebar-container"></div>
   <main class="flex-1 flex flex-col h-screen overflow-hidden">
     <header class="glass-dark border-b border-slate-800/60 min-h-14 py-2 md:py-0 flex items-center justify-between px-4 md:px-6 flex-shrink-0 flex-wrap gap-2">
-      <div><div class="text-sm font-bold text-white">Projects</div><div class="text-xs text-slate-500">Track property developments and internal projects</div></div>
-      <button class="btn-gradient px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5">
+      <div>
+        <div class="text-sm font-bold text-white">Projects</div>
+        <div class="text-xs text-slate-500">Track property developments and internal projects</div>
+      </div>
+      <button id="new-project-btn" onclick="window.openProjectModal()" class="btn-gradient px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg> New Project
       </button>
     </header>
+    
     <div class="flex-1 overflow-y-auto p-5 space-y-5">
       <!-- KPIs -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Total Projects</div><div class="kpi-value text-indigo-400">12</div><div class="trend-up">4 active phases</div></div>
-        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">In Progress</div><div class="kpi-value text-cyan-400">7</div><div class="trend-flat">On schedule</div></div>
-        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Completed</div><div class="kpi-value text-emerald-400">4</div><div class="trend-up">This year</div></div>
-        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Overdue</div><div class="kpi-value text-rose-400">1</div><div class="trend-down">Needs attention</div></div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="kpi-container">
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Total Projects</div><div class="kpi-value text-indigo-400" id="kpi-total">0</div><div class="trend-flat">Overall</div></div>
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Active</div><div class="kpi-value text-cyan-400" id="kpi-active">0</div><div class="trend-up">In progress</div></div>
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Completed</div><div class="kpi-value text-emerald-400" id="kpi-completed">0</div><div class="trend-flat">Done</div></div>
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">On Hold</div><div class="kpi-value text-rose-400" id="kpi-onhold">0</div><div class="trend-down">Paused</div></div>
       </div>
-      <!-- Charts -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div class="chart-card">
-          <div class="chart-title">Project Status</div><div class="chart-subtitle">Current pipeline distribution</div>
-          
-        </div>
-        <div class="chart-card lg:col-span-2">
-          <div class="chart-title">Completion Progress by Project</div><div class="chart-subtitle">% complete for active projects</div>
-          
-        </div>
-      </div>
+      
       <!-- Projects Grid -->
       <div class="chart-card">
-        <div class="chart-title mb-4">Active Projects</div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <!-- Project Card -->
-          <div class="bg-white/4 border border-white/8 rounded-xl p-4 hover:border-indigo-500/30 transition-all">
-            <div class="flex items-center justify-between mb-3">
-              <div class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Residential</div>
-              <span class="badge badge-active">Active</span>
-            </div>
-            <div class="text-sm font-bold text-white mb-1">Southeast Heights — Block A</div>
-            <div class="text-xs text-slate-400 mb-3">Mirpur, Dhaka · 120 units · Phase 2</div>
-            <div class="progress-bar mb-1"><div class="progress-fill bg-indigo-500" style="width:75%"></div></div>
-            <div class="flex justify-between text-[10px] text-slate-500"><span>75% complete</span><span>Dec 2025</span></div>
-          </div>
-          <div class="bg-white/4 border border-white/8 rounded-xl p-4 hover:border-cyan-500/30 transition-all">
-            <div class="flex items-center justify-between mb-3">
-              <div class="text-xs font-bold text-cyan-400 uppercase tracking-wider">Commercial</div>
-              <span class="badge badge-active">Active</span>
-            </div>
-            <div class="text-sm font-bold text-white mb-1">Southeast Business Park</div>
-            <div class="text-xs text-slate-400 mb-3">Gulshan, Dhaka · 48 offices · Phase 1</div>
-            <div class="progress-bar mb-1"><div class="progress-fill bg-cyan-500" style="width:42%"></div></div>
-            <div class="flex justify-between text-[10px] text-slate-500"><span>42% complete</span><span>Jun 2026</span></div>
-          </div>
-          <div class="bg-white/4 border border-white/8 rounded-xl p-4 hover:border-rose-500/30 transition-all">
-            <div class="flex items-center justify-between mb-3">
-              <div class="text-xs font-bold text-rose-400 uppercase tracking-wider">Residential</div>
-              <span class="badge badge-overdue">Delayed</span>
-            </div>
-            <div class="text-sm font-bold text-white mb-1">Southeast Gardens — Tower B</div>
-            <div class="text-xs text-slate-400 mb-3">Mohammadpur · 80 units · Phase 3</div>
-            <div class="progress-bar mb-1"><div class="progress-fill bg-rose-500" style="width:58%"></div></div>
-            <div class="flex justify-between text-[10px] text-slate-500"><span>58% complete</span><span>Was: Mar 2025</span></div>
-          </div>
-          <div class="bg-white/4 border border-white/8 rounded-xl p-4 hover:border-emerald-500/30 transition-all">
-            <div class="flex items-center justify-between mb-3">
-              <div class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Mixed Use</div>
-              <span class="badge badge-pending">Planning</span>
-            </div>
-            <div class="text-sm font-bold text-white mb-1">Southeast Skyline Tower</div>
-            <div class="text-xs text-slate-400 mb-3">Uttara, Dhaka · 200 units · Pre-launch</div>
-            <div class="progress-bar mb-1"><div class="progress-fill bg-emerald-500" style="width:8%"></div></div>
-            <div class="flex justify-between text-[10px] text-slate-500"><span>8% (planning)</span><span>2027</span></div>
-          </div>
+        <div class="chart-title mb-4">All Projects</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="projects-grid">
+          <!-- Projects will be injected here -->
         </div>
       </div>
     </div>
   </main>
+
+  <!-- Project Modal -->
+  <div id="project-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl transform scale-95 transition-transform duration-200">
+      <div class="border-b border-slate-800 p-5 flex justify-between items-center bg-slate-900/50">
+        <h3 class="font-bold text-white text-lg" id="modal-title">New Project</h3>
+        <button onclick="closeProjectModal()" class="text-slate-400 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="project-form" class="p-6 space-y-4">
+        <input type="hidden" id="project-id">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Name</label>
+            <input type="text" id="project-name" required class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Code</label>
+            <input type="text" id="project-code" required class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+        </div>
+        
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Location</label>
+          <input type="text" id="project-location" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div class="grid grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Total Units</label>
+            <input type="number" id="project-total-units" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Avail Units</label>
+            <input type="number" id="project-avail-units" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Price / Sqft</label>
+            <input type="number" step="0.01" id="project-price" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Status</label>
+            <select id="project-status" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="ACTIVE">Active</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="ON_HOLD">On Hold</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Description</label>
+          <textarea id="project-description" rows="3" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500"></textarea>
+        </div>
+        
+        <div class="pt-4 flex justify-end gap-3 border-t border-slate-800">
+          <button type="button" onclick="closeProjectModal()" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-800 transition-colors">Cancel</button>
+          <button type="submit" class="btn-gradient px-6 py-2.5 rounded-xl text-sm font-bold">Save Project</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div id="toast-container"></div>
   <script src="/assets/js/sidebar.js"></script>
   <script type="module" src="/assets/js/app.js"></script>
   
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchProjects();
+      
+      const newBtn = document.getElementById('new-project-btn');
+      if (newBtn) {
+        newBtn.addEventListener('click', () => {
+          window.openProjectModal();
+        });
+      }
+
+      document.getElementById('project-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await saveProject();
+      });
+    });
+
+    async function fetchProjects() {
+      try {
+        const res = await fetch('/api/projects/', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('crm_token')}` }
+        });
+        if (!res.ok) throw new Error('Failed to fetch projects');
+        const projects = await res.json();
+        renderProjects(projects);
+        updateKPIs(projects);
+      } catch (err) {
+        if(window.showToast) window.showToast(err.message, 'error');
+        console.error(err);
+      }
+    }
+
+    function renderProjects(projects) {
+      const grid = document.getElementById('projects-grid');
+      grid.innerHTML = '';
+      
+      if (projects.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center text-slate-500 py-10">No projects found. Create one above.</div>`;
+        return;
+      }
+      
+      projects.forEach(p => {
+        let statusColor = 'indigo-400';
+        let borderColor = 'indigo-500/30';
+        let bgFill = 'indigo-500';
+        let badgeClass = 'badge-active';
+        let statusLabel = 'Active';
+        
+        if (p.status === 'COMPLETED') {
+          statusColor = 'emerald-400'; borderColor = 'emerald-500/30'; bgFill = 'emerald-500';
+          badgeClass = 'badge-active'; statusLabel = 'Completed';
+        } else if (p.status === 'ON_HOLD') {
+          statusColor = 'rose-400'; borderColor = 'rose-500/30'; bgFill = 'rose-500';
+          badgeClass = 'badge-overdue'; statusLabel = 'On Hold';
+        }
+        
+        const card = document.createElement('div');
+        card.className = `bg-white/4 border border-white/8 rounded-xl p-4 hover:border-${statusColor}/30 transition-all group`;
+        card.innerHTML = `
+          <div class="flex items-center justify-between mb-3">
+            <div class="text-xs font-bold text-${statusColor} uppercase tracking-wider">${p.code || 'N/A'}</div>
+            <div class="flex gap-2 items-center">
+                <span class="badge ${badgeClass}">${statusLabel}</span>
+                <div class="flex opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onclick='editProject(${JSON.stringify(p).replace(/'/g, "&#39;")})' class="text-slate-400 hover:text-white p-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
+                    <button onclick="deleteProject(${p.id})" class="text-slate-400 hover:text-rose-400 p-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                </div>
+            </div>
+          </div>
+          <div class="text-sm font-bold text-white mb-1">${p.name}</div>
+          <div class="text-xs text-slate-400 mb-3">${p.location || 'No location'} · ${p.total_units || 0} units</div>
+          
+          <div class="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center text-[10px] text-slate-500">
+            <span>Price: $${p.price_per_sqft || 0}/sqft</span>
+            <span>Avail: ${p.available_units || 0}</span>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function updateKPIs(projects) {
+      document.getElementById('kpi-total').textContent = projects.length;
+      document.getElementById('kpi-active').textContent = projects.filter(p => p.status === 'ACTIVE').length;
+      document.getElementById('kpi-completed').textContent = projects.filter(p => p.status === 'COMPLETED').length;
+      document.getElementById('kpi-onhold').textContent = projects.filter(p => p.status === 'ON_HOLD').length;
+    }
+
+    window.openProjectModal = function() {
+      console.log('openProjectModal called');
+      document.getElementById('project-form').reset();
+      document.getElementById('project-id').value = '';
+      document.getElementById('modal-title').textContent = 'New Project';
+      
+      const modal = document.getElementById('project-modal');
+      modal.classList.remove('hidden');
+      // Use requestAnimationFrame for smoother transition
+      requestAnimationFrame(() => {
+        modal.classList.remove('opacity-0');
+      });
+    }
+
+    window.closeProjectModal = function() {
+      const modal = document.getElementById('project-modal');
+      modal.classList.add('opacity-0');
+      setTimeout(() => modal.classList.add('hidden'), 200);
+    }
+
+    window.editProject = function(project) {
+      document.getElementById('project-id').value = project.id;
+      document.getElementById('project-name').value = project.name || '';
+      document.getElementById('project-code').value = project.code || '';
+      document.getElementById('project-location').value = project.location || '';
+      document.getElementById('project-total-units').value = project.total_units || '';
+      document.getElementById('project-avail-units').value = project.available_units || '';
+      document.getElementById('project-price').value = project.price_per_sqft || '';
+      document.getElementById('project-status').value = project.status || 'ACTIVE';
+      document.getElementById('project-description').value = project.description || '';
+      
+      document.getElementById('modal-title').textContent = 'Edit Project';
+      
+      const modal = document.getElementById('project-modal');
+      modal.classList.remove('hidden');
+      setTimeout(() => modal.classList.remove('opacity-0'), 10);
+    }
+
+    async function saveProject() {
+      const id = document.getElementById('project-id').value;
+      const data = {
+        name: document.getElementById('project-name').value,
+        code: document.getElementById('project-code').value,
+        location: document.getElementById('project-location').value,
+        total_units: parseInt(document.getElementById('project-total-units').value) || null,
+        available_units: parseInt(document.getElementById('project-avail-units').value) || null,
+        price_per_sqft: parseFloat(document.getElementById('project-price').value) || null,
+        status: document.getElementById('project-status').value,
+        description: document.getElementById('project-description').value
+      };
+      
+      const method = id ? 'PUT' : 'POST';
+      const url = id ? `/api/projects/${id}` : '/api/projects/';
+      
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('crm_token')}`
+          },
+          body: JSON.stringify(data)
+        });
+        
+        const result = await res.json();
+        
+        if (!res.ok) {
+          throw new Error(result.error || 'Failed to save project');
+        }
+        
+        if(window.showToast) window.showToast('Project saved successfully!', 'success');
+        closeProjectModal();
+        fetchProjects();
+      } catch (err) {
+        if(window.showToast) window.showToast(err.message, 'error');
+        console.error(err);
+      }
+    }
+
+    window.deleteProject = async function(id) {
+      if (!confirm('Are you sure you want to delete this project?')) return;
+      
+      try {
+        const res = await fetch(`/api/projects/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('crm_token')}` }
+        });
+        
+        const result = await res.json();
+        
+        if (!res.ok) throw new Error(result.error || 'Failed to delete project');
+        
+        if(window.showToast) window.showToast('Project deleted', 'success');
+        fetchProjects();
+      } catch (err) {
+        if(window.showToast) window.showToast(err.message, 'error');
+      }
+    }
+  </script>
 </body>
 </html>
