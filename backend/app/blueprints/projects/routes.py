@@ -3,9 +3,7 @@ from app.blueprints.projects import projects_bp
 from app.models import Project, ProjectStatus, db, UserRole
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from datetime import datetime
-
-def _is_admin(role):
-    return role == UserRole.ADMIN.value
+from app.utils.rbac import is_admin
 
 @projects_bp.route('/', methods=['GET'])
 @jwt_required()

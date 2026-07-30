@@ -142,7 +142,7 @@ def set_typing():
     if is_typing and recipient_id:
         _typing_states[user_id] = {
             "partner_id": int(recipient_id),
-            "timestamp": datetime.utcnow()
+            "timestamp": datetime.now(timezone.utc)
         }
     else:
         _typing_states.pop(user_id, None)
@@ -162,7 +162,7 @@ def get_typing_state():
     state = _typing_states.get(partner_id)
     if state and state["partner_id"] == user_id:
         # Check if the typing action was within the last 4 seconds
-        time_diff = (datetime.utcnow() - state["timestamp"]).total_seconds()
+        time_diff = (datetime.now(timezone.utc) - state["timestamp"]).total_seconds()
         if time_diff < 4.0:
             return jsonify({"is_typing": True}), 200
             

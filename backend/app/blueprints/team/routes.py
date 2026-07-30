@@ -2,7 +2,7 @@ from flask import request, jsonify
 from app.blueprints.team import team_bp
 from app.models import User, UserRole, db, CallLog, Note, Event, Appointment, Opportunity, Task
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
-from datetime import datetime
+from datetime import datetime, timezone
 
 def _parse_date(val):
     if not val: return None
@@ -61,6 +61,11 @@ def create_lead_owner():
 
     if not email or not password or not full_name:
         return jsonify({'error': 'Email, full name, and password are required'}), 400
+        
+    from app.utils.security import validate_password
+    is_valid, msg = validate_password(password)
+    if not is_valid:
+        return jsonify({'error': msg}), 400
 
     if User.query.filter_by(email=email).first():
         return jsonify({'error': f"User with email '{email}' already exists"}), 409
@@ -125,7 +130,7 @@ def toggle_lead_owner_status(id):
     user = User.query.get_or_404(id)
     user.is_active = not user.is_active
     if not user.is_active:
-        user.deactivated_at = datetime.utcnow()
+        user.deactivated_at = datetime.now(timezone.utc)
         user.deactivated_by_id = int(get_jwt_identity())
     else:
         user.deactivated_at = None
@@ -143,8 +148,10 @@ def reset_lead_owner_password(id):
     user = User.query.get_or_404(id)
     data = request.get_json() or {}
     new_password = data.get('new_password', '')
-    if len(new_password) < 6:
-        return jsonify({'error': 'Password must be at least 6 characters'}), 400
+    from app.utils.security import validate_password
+    is_valid, msg = validate_password(new_password)
+    if not is_valid:
+        return jsonify({'error': msg}), 400
     
     user.set_password(new_password)
     db.session.commit()

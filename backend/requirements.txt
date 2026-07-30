@@ -22,6 +22,7 @@ alembic==1.13.2
 
 # In-process task scheduling (replaces Celery + Redis)
 APScheduler==3.10.4
+filelock==3.15.4
 
 # Authentication & Security
 pyotp==2.9.0             # TOTP MFA

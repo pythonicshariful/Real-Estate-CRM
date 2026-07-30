@@ -2,11 +2,9 @@ from flask import jsonify, request
 from app.blueprints.dashboard import dashboard_bp
 from app.models import Opportunity, Contact, PipelineStage, User, UserRole, db
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from sqlalchemy import func
 
-def _is_admin(role):
-    return role == UserRole.ADMIN.value
 
 @dashboard_bp.route('/badges', methods=['GET'])
 @jwt_required()
@@ -43,11 +41,11 @@ def dashboard_stats():
     
     base_query = Opportunity.query.filter_by(is_deleted=False)
     
-    if _is_admin(role):
+    if is_admin(role):
         # Admin sees all stats + per-owner breakdown
         total_leads = base_query.count()
         overdue = base_query.filter(
-            Opportunity.next_action_deadline < datetime.utcnow(),
+            Opportunity.next_action_deadline < datetime.now(timezone.utc),
             Opportunity.next_action_deadline.isnot(None)
         ).count()
         
@@ -70,7 +68,7 @@ def dashboard_stats():
                 "color": owner.calendar_color,
                 "total_leads": owner_leads.count(),
                 "overdue": owner_leads.filter(
-                    Opportunity.next_action_deadline < datetime.utcnow(),
+                    Opportunity.next_action_deadline < datetime.now(timezone.utc),
                     Opportunity.next_action_deadline.isnot(None)
                 ).count(),
                 "new_today": owner_leads.filter(
@@ -97,7 +95,7 @@ def dashboard_stats():
         my_q = base_query.filter_by(assigned_to_id=user_id)
         total_leads = my_q.count()
         overdue = my_q.filter(
-            Opportunity.next_action_deadline < datetime.utcnow(),
+            Opportunity.next_action_deadline < datetime.now(timezone.utc),
             Opportunity.next_action_deadline.isnot(None)
         ).count()
         new_today = my_q.filter(
@@ -147,7 +145,7 @@ def dashboard_funnel():
     user_id = int(get_jwt_identity())
     
     base_query = Opportunity.query.filter_by(is_deleted=False)
-    if not _is_admin(role):
+    if not is_admin(role):
         base_query = base_query.filter_by(assigned_to_id=user_id)
     
     stages = [s.value for s in PipelineStage]
@@ -168,17 +166,21 @@ def recent_activity():
     
     limit = int(request.args.get('limit', 20))
     
-    query = CallLog.query
-    if not _is_admin(role):
-        query = query.filter_by(logged_by_id=user_id)
+    query = db.session.query(CallLog, Opportunity, Contact, User).outerjoin(
+        Opportunity, CallLog.opportunity_id == Opportunity.id
+    ).outerjoin(
+        Contact, Opportunity.contact_id == Contact.id
+    ).outerjoin(
+        User, CallLog.logged_by_id == User.id
+    )
     
-    logs = query.order_by(CallLog.created_at.desc()).limit(limit).all()
+    if not is_admin(role):
+        query = query.filter(CallLog.logged_by_id == user_id)
+    
+    logs_data = query.order_by(CallLog.created_at.desc()).limit(limit).all()
     
     result = []
-    for log in logs:
-        opp = Opportunity.query.get(log.opportunity_id)
-        contact = Contact.query.get(opp.contact_id) if opp else None
-        owner = User.query.get(log.logged_by_id)
+    for log, opp, contact, owner in logs_data:
         result.append({
             "id": log.id,
             "lead_name": contact.full_name if contact else "Unknown",
@@ -192,20 +194,7 @@ def recent_activity():
     
     return jsonify(result)
 
-@dashboard_bp.route('/heatmap', methods=['GET'])
-@jwt_required()
-def dashboard_heatmap():
-    return jsonify({"heatmap": []})
 
-@dashboard_bp.route('/attendance', methods=['GET'])
-@jwt_required()
-def dashboard_attendance():
-    return jsonify({"attendance": []})
-
-@dashboard_bp.route('/team-performance', methods=['GET'])
-@jwt_required()
-def team_performance():
-    return jsonify({"team": []})
 
 @dashboard_bp.route('/sla-overdue', methods=['GET'])
 @jwt_required()
@@ -216,21 +205,23 @@ def sla_overdue():
     user_id = int(get_jwt_identity())
     limit = int(request.args.get('limit', 10))
 
-    q = Opportunity.query.filter(
+    q = db.session.query(Opportunity, Contact, User).outerjoin(
+        Contact, Opportunity.contact_id == Contact.id
+    ).outerjoin(
+        User, Opportunity.assigned_to_id == User.id
+    ).filter(
         Opportunity.is_deleted == False,
-        Opportunity.next_action_deadline < datetime.utcnow(),
+        Opportunity.next_action_deadline < datetime.now(timezone.utc),
         Opportunity.next_action_deadline.isnot(None),
         ~Opportunity.pipeline_stage.in_([PipelineStage.SOLD, PipelineStage.CLOSED_LOST, PipelineStage.INVALID])
     )
-    if not _is_admin(role):
-        q = q.filter_by(assigned_to_id=user_id)
+    if not is_admin(role):
+        q = q.filter(Opportunity.assigned_to_id == user_id)
 
     overdue_leads = q.order_by(Opportunity.next_action_deadline.asc()).limit(limit).all()
     result = []
-    for opp in overdue_leads:
-        contact = Contact.query.get(opp.contact_id)
-        owner = User.query.get(opp.assigned_to_id)
-        minutes_late = int((datetime.utcnow() - opp.next_action_deadline).total_seconds() / 60) if opp.next_action_deadline else 0
+    for opp, contact, owner in overdue_leads:
+        minutes_late = int((datetime.now(timezone.utc) - opp.next_action_deadline).total_seconds() / 60) if opp.next_action_deadline else 0
         result.append({
             "id": opp.id,
             "lead_name": contact.full_name if contact else "Unknown",

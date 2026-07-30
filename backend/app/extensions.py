@@ -21,8 +21,7 @@ mail = Mail()
 cors = CORS()
 limiter = Limiter(
     key_func=get_remote_address,
-    default_limits=["200 per hour", "50 per minute"],
-    storage_uri="memory://",   # In-memory rate limiting — fine for single-process
+    default_limits=["200 per hour", "50 per minute"]
 )
 
 # APScheduler — replaces Celery entirely

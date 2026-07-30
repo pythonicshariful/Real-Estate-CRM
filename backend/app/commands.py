@@ -23,6 +23,12 @@ def create_admin_command(email, password, name):
         click.echo(f"❌ User with email '{email}' already exists.", err=True)
         return
 
+    from app.utils.security import validate_password
+    is_valid, msg = validate_password(password)
+    if not is_valid:
+        click.echo(f"❌ Invalid password: {msg}", err=True)
+        return
+
     admin = User(
         email=email,
         full_name=name,

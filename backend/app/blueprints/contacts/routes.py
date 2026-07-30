@@ -2,7 +2,7 @@ from flask import request, jsonify
 from app.blueprints.contacts import contacts_bp
 from app.models import Contact, db
 from flask_jwt_extended import jwt_required
-from datetime import datetime
+from datetime import datetime, timezone
 
 def contact_to_dict(contact):
     return {
@@ -115,7 +115,7 @@ def update_contact(id):
 def delete_contact(id):
     contact = Contact.query.get_or_404(id)
     contact.is_deleted = True
-    contact.deleted_at = datetime.utcnow()
+    contact.deleted_at = datetime.now(timezone.utc)
     db.session.commit()
     return jsonify({"message": "Contact deleted successfully"}), 200
 

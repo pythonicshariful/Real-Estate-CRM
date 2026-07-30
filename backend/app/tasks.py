@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 SLA & Background Tasks using APScheduler.
 Replaces Celery entirely — no Redis or separate worker process needed.

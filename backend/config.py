@@ -136,6 +136,9 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     REMEMBER_COOKIE_HTTPONLY = True
     WTF_CSRF_ENABLED = False     # Using JWT, not session CSRF
+    MAX_LOGIN_ATTEMPTS = int(os.environ.get('MAX_LOGIN_ATTEMPTS', 5))
+    ACCOUNT_LOCKOUT_MINUTES = int(os.environ.get('ACCOUNT_LOCKOUT_MINUTES', 30))
+    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', '*')
 
 
 class DevelopmentConfig(Config):
@@ -165,6 +168,7 @@ class ProductionConfig(Config):
     SESSION_COOKIE_SECURE = True
     JWT_COOKIE_SECURE = True
     PREFERRED_URL_SCHEME = 'https'
+    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', '').split(',') if os.environ.get('CORS_ORIGINS') else []
 
 
 class TestingConfig(Config):

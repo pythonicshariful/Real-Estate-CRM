@@ -7,23 +7,42 @@ import uuid
 from flask import current_app
 from werkzeug.utils import secure_filename
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity, get_jwt
+from app.extensions import limiter
+from datetime import datetime, timedelta, timezone
 import pyotp
 import qrcode
 import io
 import base64
 
 @auth_bp.route('/login', methods=['POST'])
+@limiter.limit("5 per minute")
 def login():
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
     
     user = User.query.filter_by(email=email).first()
-    if not user or not user.check_password(password):
+    if not user:
+        return jsonify({"msg": "Bad email or password"}), 401
+
+    if user.lockout_until and user.lockout_until > datetime.now(timezone.utc):
+        return jsonify({"msg": "Account is locked due to too many failed attempts. Please try again later."}), 403
+
+    if not user.check_password(password):
+        user.failed_login_attempts += 1
+        max_attempts = current_app.config.get('MAX_LOGIN_ATTEMPTS', 5)
+        if user.failed_login_attempts >= max_attempts:
+            lockout_mins = current_app.config.get('ACCOUNT_LOCKOUT_MINUTES', 30)
+            user.lockout_until = datetime.now(timezone.utc) + timedelta(minutes=lockout_mins)
+        db.session.commit()
         return jsonify({"msg": "Bad email or password"}), 401
         
     if not user.is_active:
         return jsonify({"msg": "Account deactivated. Please contact your Admin."}), 403
+    
+    user.failed_login_attempts = 0
+    user.lockout_until = None
+    user.last_login = datetime.now(timezone.utc)
     
     # Log login activity
     from app.models import AuditLog
@@ -39,17 +58,19 @@ def login():
     
     redirect_to = 'admin-dashboard.html' if user.role == UserRole.ADMIN else 'dashboard.html'
     
+    mfa_required = user.is_mfa_enabled
+    
     access_token = create_access_token(identity=str(user.id), additional_claims={
         'role': user.role.value,
         'color': user.calendar_color,
         'full_name': user.full_name,
-        'mfa_pending': False
+        'mfa_pending': mfa_required
     })
     refresh_token = create_refresh_token(identity=str(user.id))
     return jsonify(
         access_token=access_token,
         refresh_token=refresh_token,
-        mfa_required=False,
+        mfa_required=mfa_required,
         redirect_to=redirect_to,
         role=user.role.value,
         full_name=user.full_name,
@@ -93,7 +114,11 @@ def setup_mfa():
 @auth_bp.route('/logout', methods=['POST'])
 @jwt_required()
 def logout():
-    # In production, implement token blocklisting here
+    jti = get_jwt()['jti']
+    from app.models import TokenBlocklist
+    blocklist_entry = TokenBlocklist(jti=jti)
+    db.session.add(blocklist_entry)
+
     user_id = int(get_jwt_identity())
     user = User.query.get(user_id)
     if user:
@@ -106,7 +131,8 @@ def logout():
             new_value=f"User {user.full_name} logged out"
         )
         db.session.add(audit)
-        db.session.commit()
+        
+    db.session.commit()
     return jsonify({"msg": "Successfully logged out"}), 200
 
 @auth_bp.route('/refresh', methods=['POST'])
@@ -146,8 +172,14 @@ def change_password():
     
     if not user.check_password(data.get('current_password')):
         return jsonify({"msg": "Incorrect current password"}), 401
+    
+    new_password = data.get('new_password')
+    from app.utils.security import validate_password
+    is_valid, msg = validate_password(new_password)
+    if not is_valid:
+        return jsonify({"msg": msg}), 400
         
-    user.set_password(data.get('new_password'))
+    user.set_password(new_password)
     db.session.commit()
     return jsonify({"msg": "Password changed successfully"})
 
@@ -160,6 +192,11 @@ def upload_avatar():
     file = request.files['avatar']
     if file.filename == '':
         return jsonify({"msg": "No selected file"}), 400
+        
+    allowed_extensions = {'.png', '.jpg', '.jpeg', '.webp'}
+    ext = os.path.splitext(file.filename)[1].lower()
+    if ext not in allowed_extensions:
+        return jsonify({"msg": "Invalid file type. Only PNG, JPG, JPEG, and WEBP are allowed."}), 400
         
     user_id = get_jwt_identity()
     user = User.query.get(user_id)

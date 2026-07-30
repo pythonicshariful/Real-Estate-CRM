@@ -2,15 +2,13 @@ from flask import request, jsonify, current_app
 from app.blueprints.leads import leads_bp
 from app.models import Opportunity, Contact, CallLog, Appointment, PipelineStage, AppointmentStatus, Objection, Reservation, Note, PipelineHistory, db, UserRole, LeadTemperature, AuditLog
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 
-def _is_admin(role):
-    return role == UserRole.ADMIN.value
 
 def _check_lead_access(lead, role, user_id):
     """Returns True if user can access this lead."""
-    if _is_admin(role):
+    if is_admin(role):
         return True
     return lead.assigned_to_id == user_id
 
@@ -21,30 +19,31 @@ def get_leads():
     role = claims.get('role')
     user_id = int(get_jwt_identity())
     
-    query = Opportunity.query.filter_by(is_deleted=False)
+    query = db.session.query(Opportunity, Contact).outerjoin(
+        Contact, Opportunity.contact_id == Contact.id
+    ).filter(Opportunity.is_deleted == False)
     
     # Lead Owners only see their own leads
-    if not _is_admin(role):
-        query = query.filter_by(assigned_to_id=user_id)
+    if not is_admin(role):
+        query = query.filter(Opportunity.assigned_to_id == user_id)
     
     # Optional filters
     stage = request.args.get('stage')
     if stage:
         try:
-            query = query.filter_by(pipeline_stage=PipelineStage[stage])
+            query = query.filter(Opportunity.pipeline_stage == PipelineStage[stage])
         except KeyError:
             pass
 
     owner_id = request.args.get('owner_id')
-    if owner_id and _is_admin(role):
-        query = query.filter_by(assigned_to_id=int(owner_id))
+    if owner_id and is_admin(role):
+        query = query.filter(Opportunity.assigned_to_id == int(owner_id))
         
-    leads = query.order_by(Opportunity.created_at.desc()).all()
+    leads_and_contacts = query.order_by(Opportunity.created_at.desc()).all()
     
     result = []
-    for lead in leads:
+    for lead, contact in leads_and_contacts:
         data = lead.to_dict()
-        contact = Contact.query.get(lead.contact_id)
         if contact:
             data["contact"] = {
                 "full_name": contact.full_name,
@@ -59,27 +58,37 @@ def get_leads():
 @leads_bp.route('/', methods=['POST'])
 @jwt_required()
 def create_lead():
-    data = request.json
-    if not data or not data.get('full_name') or not data.get('phone'):
-        return jsonify({"error": "Full name and phone are required"}), 400
+    from app.schemas import LeadCreateSchema
+    from marshmallow import ValidationError
+    from app.utils.security import sanitize_input
+    
+    schema = LeadCreateSchema()
+    try:
+        validated_data = schema.load(request.json or {})
+    except ValidationError as err:
+        return jsonify({"status": "error", "code": 400, "message": "Validation Error", "details": err.messages}), 400
         
     user_id = int(get_jwt_identity())
     
-    phone = data.get('phone')
+    phone = sanitize_input(validated_data['phone'])
+    full_name = sanitize_input(validated_data['full_name'])
+    email = sanitize_input(validated_data.get('email'))
+    source = sanitize_input(validated_data.get('source'))
+    
     contact = Contact.query.filter_by(phone_normalized=phone).first()
     
     if not contact:
         contact = Contact(
-            full_name=data.get('full_name'),
+            full_name=full_name,
             phone_raw=phone,
             phone_normalized=phone,
-            email=data.get('email'),
-            source=data.get('source', 'Manual Entry')
+            email=email,
+            source=source
         )
         db.session.add(contact)
         db.session.flush()
         
-    project_id = data.get('project_id') or None
+    project_id = validated_data.get('project_id')
         
     opp = Opportunity(
         contact_id=contact.id,
@@ -274,8 +283,9 @@ def update_lead(id):
             db.session.add(audit)
         except ValueError:
             pass
-    if 'manager_assessment' in data and _is_admin(role):
-        lead.manager_assessment = data['manager_assessment']
+    if 'manager_assessment' in data and is_admin(role):
+        from app.utils.security import sanitize_input
+        lead.manager_assessment = sanitize_input(data['manager_assessment'])
     
     db.session.commit()
     return jsonify(lead.to_dict())
@@ -292,7 +302,7 @@ def delete_lead(id):
         return jsonify({"error": "Access denied"}), 403
     
     lead.is_deleted = True
-    lead.deleted_at = datetime.utcnow()
+    lead.deleted_at = datetime.now(timezone.utc)
     
     # Audit log lead deletion
     contact_name = lead.contact.full_name if lead.contact else "Unknown"
@@ -357,16 +367,17 @@ def log_call(id):
     if not _check_lead_access(lead, role, user_id):
         return jsonify({"error": "Access denied"}), 403
     
+    from app.utils.security import sanitize_input
     # Accept both JSON and multipart/form-data (form includes a file input)
     if request.content_type and 'application/json' in request.content_type:
         data = request.json or {}
         connected = data.get('connected', False)
-        notes = data.get('notes', '')
+        notes = sanitize_input(data.get('notes', ''))
         next_deadline = data.get('next_action_deadline')
     else:
         data = request.form
         connected = data.get('connected') == 'on'  # checkbox sends 'on' when checked
-        notes = data.get('notes', '')
+        notes = sanitize_input(data.get('notes', ''))
         next_deadline = data.get('next_action_deadline')
     log = CallLog(
         opportunity_id=id,
@@ -382,7 +393,7 @@ def log_call(id):
         except ValueError:
             pass
     
-    lead.last_activity_at = datetime.utcnow()
+    lead.last_activity_at = datetime.now(timezone.utc)
     
     db.session.add(log)
     db.session.flush()
@@ -408,6 +419,11 @@ def log_call(id):
         from app.tasks import upload_recording_to_mega
 
         ext = os.path.splitext(secure_filename(recording_file.filename))[1] or '.mp3'
+        
+        allowed_audio_ext = {'.mp3', '.wav', '.ogg', '.m4a', '.mp4'}
+        if ext.lower() not in allowed_audio_ext:
+            return jsonify({"error": "Invalid recording file type"}), 400
+            
         safe_name = f"call_{log.id}_{uuid.uuid4().hex[:8]}{ext}"
         recordings_dir = current_app.config.get('RECORDINGS_FOLDER', 'uploads/recordings')
         os.makedirs(recordings_dir, exist_ok=True)
@@ -451,12 +467,15 @@ def book_appointment(id):
     except ValueError:
         return jsonify({"error": "Invalid datetime format"}), 400
     
+    from app.utils.security import sanitize_input
+    location = sanitize_input(data.get('location', ''))
+    
     appt = Appointment(
         opportunity_id=id,
         contact_id=lead.contact_id,
         scheduled_by_id=user_id,
         appointment_datetime=appt_dt,
-        location=data.get('location', ''),
+        location=location,
         status=AppointmentStatus.SCHEDULED
     )
     lead.pipeline_stage = PipelineStage.APPOINTMENT_SCHEDULED
@@ -493,25 +512,29 @@ def add_note(id):
     if not data.get('text'):
         return jsonify({"error": "Note text is required"}), 400
     
-    log = CallLog(
+    from app.utils.security import sanitize_input
+    text = sanitize_input(data.get('text'))
+    
+    note = Note(
         opportunity_id=id,
-        logged_by_id=user_id,
-        connected=False,
-        notes=data.get('text'),
-        call_type='NOTE',
+        created_by_id=user_id,
+        content=text,
+        is_private=False
     )
-    lead.last_activity_at = datetime.utcnow()
-    db.session.add(log)
+    from app.models import ActivityType
+    lead.last_activity_type = ActivityType.NOTE
+    lead.last_activity_at = datetime.now(timezone.utc)
+    db.session.add(note)
     db.session.flush()
     
     contact_name = lead.contact.full_name if lead.contact else "Unknown"
     audit = AuditLog(
         user_id=user_id,
         table_name='notes',
-        record_id=log.id,
+        record_id=note.id,
         action='INSERT',
-        field_name='note',
-        new_value=f"Added Activity Note: '{log.notes[:40]}...' for Lead: {contact_name}"
+        field_name='content',
+        new_value=f"Added Activity Note: '{note.content[:40]}...' for Lead: {contact_name}"
     )
     db.session.add(audit)
     db.session.commit()

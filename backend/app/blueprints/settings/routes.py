@@ -44,6 +44,12 @@ def upload_logo():
     file = request.files['logo']
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
+        
+    allowed_extensions = {'.png', '.jpg', '.jpeg', '.webp'}
+    ext = os.path.splitext(file.filename)[1].lower()
+    if ext not in allowed_extensions:
+        return jsonify({"error": "Invalid file type. Only PNG, JPG, JPEG, and WEBP are allowed."}), 400
+        
     if file:
         filename = secure_filename(file.filename)
         # Use proper UPLOAD_FOLDER configuration

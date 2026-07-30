@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Role-Based Access Control (RBAC) utilities.
 
@@ -21,8 +22,12 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 ROLE_HIERARCHY = {
-    "LEAD_OWNER": 1,
-    "ADMIN": 2,
+    "EXECUTIVE": 1,
+    "LEAD_OWNER": 2,
+    "MANAGER": 3,
+    "GM": 4,
+    "CEO": 5,
+    "ADMIN": 6,
 }
 
 MFA_REQUIRED_ROLES = {"ADMIN"}

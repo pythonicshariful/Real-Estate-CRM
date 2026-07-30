@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum as PyEnum
 from app.extensions import db
 import bcrypt
@@ -27,8 +27,12 @@ class PipelineStage(PyEnum):
     UNREACHABLE = "UNREACHABLE"
 
 class UserRole(PyEnum):
-    ADMIN = "ADMIN"
+    EXECUTIVE = "EXECUTIVE"
     LEAD_OWNER = "LEAD_OWNER"
+    MANAGER = "MANAGER"
+    GM = "GM"
+    CEO = "CEO"
+    ADMIN = "ADMIN"
 
 class ActivityType(PyEnum):
     CALL = "CALL"
@@ -127,7 +131,16 @@ class LeaveStatus(PyEnum):
     REJECTED = "REJECTED"
 
 
-class User(db.Model):
+class SoftDeleteMixin:
+    is_deleted = db.Column(db.Boolean, default=False, index=True)
+    deleted_at = db.Column(db.DateTime)
+
+    def soft_delete(self):
+        self.is_deleted = True
+        self.deleted_at = datetime.now(timezone.utc)
+
+
+class User(db.Model, SoftDeleteMixin):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -139,6 +152,8 @@ class User(db.Model):
     is_mfa_enabled = db.Column(db.Boolean, default=False)
     mfa_secret = db.Column(db.String(32))
     mfa_verified = db.Column(db.Boolean, default=False)
+    failed_login_attempts = db.Column(db.Integer, default=0)
+    lockout_until = db.Column(db.DateTime, nullable=True)
     avatar_url = db.Column(db.String(255))
     calendar_color = db.Column(db.String(7), default="#6366f1")
     max_lead_capacity = db.Column(db.Integer, default=30)
@@ -146,8 +161,8 @@ class User(db.Model):
     schedule_to_date = db.Column(db.Date, nullable=True)
     schedule_start_time = db.Column(db.Time, nullable=True)
     schedule_end_time = db.Column(db.Time, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=datetime.utcnow)
     last_login = db.Column(db.DateTime)
     deactivated_at = db.Column(db.DateTime)
     deactivated_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
@@ -188,7 +203,7 @@ class User(db.Model):
         }
 
 
-class Contact(db.Model):
+class Contact(db.Model, SoftDeleteMixin):
     __tablename__ = 'contacts'
     id = db.Column(db.Integer, primary_key=True)
     full_name = db.Column(db.String(150), nullable=False)
@@ -210,13 +225,11 @@ class Contact(db.Model):
     consent_given = db.Column(db.Boolean, default=False)
     consent_date = db.Column(db.DateTime)
     notes = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    is_deleted = db.Column(db.Boolean, default=False)
-    deleted_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
-    inquiries = db.relationship('Inquiry', backref='contact', lazy=True)
-    opportunities = db.relationship('Opportunity', backref='contact', lazy=True)
+    inquiries = db.relationship('Inquiry', backref='contact', lazy=True, cascade='all, delete-orphan')
+    opportunities = db.relationship('Opportunity', backref='contact', lazy=True, cascade='all, delete-orphan')
 
 
 class Inquiry(db.Model):
@@ -237,7 +250,7 @@ class Inquiry(db.Model):
     budget_min = db.Column(db.Numeric(12, 2))
     budget_max = db.Column(db.Numeric(12, 2))
     submitted_at = db.Column(db.DateTime)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     opportunities = db.relationship('Opportunity', backref='inquiry', lazy=True)
 
@@ -253,17 +266,17 @@ class Project(db.Model):
     available_units = db.Column(db.Integer)
     price_per_sqft = db.Column(db.Numeric(12, 2))
     status = db.Column(db.Enum(ProjectStatus), default=ProjectStatus.ACTIVE)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 
-class Opportunity(db.Model):
+class Opportunity(db.Model, SoftDeleteMixin):
     __tablename__ = 'opportunities'
     id = db.Column(db.Integer, primary_key=True)
     inquiry_id = db.Column(db.Integer, db.ForeignKey('inquiries.id'))
-    contact_id = db.Column(db.Integer, db.ForeignKey('contacts.id'), nullable=False)
-    assigned_to_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    contact_id = db.Column(db.Integer, db.ForeignKey('contacts.id'), nullable=False, index=True)
+    assigned_to_id = db.Column(db.Integer, db.ForeignKey('users.id'), index=True)
     assigned_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    pipeline_stage = db.Column(db.Enum(PipelineStage), default=PipelineStage.NEW)
+    pipeline_stage = db.Column(db.Enum(PipelineStage), default=PipelineStage.NEW, index=True)
     last_activity_type = db.Column(db.Enum(ActivityType))
     last_activity_outcome = db.Column(db.Enum(ActivityOutcome))
     last_activity_at = db.Column(db.DateTime)
@@ -278,18 +291,20 @@ class Opportunity(db.Model):
     final_result = db.Column(db.Enum(FinalResult))
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'))
     total_deal_value = db.Column(db.Numeric(15, 2))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    is_deleted = db.Column(db.Boolean, default=False)
-    deleted_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     assigned_to = db.relationship('User', foreign_keys=[assigned_to_id])
     project = db.relationship('Project')
+    call_logs = db.relationship('CallLog', backref='opportunity', lazy=True, cascade='all, delete-orphan')
+    appointments = db.relationship('Appointment', backref='opportunity', lazy=True, cascade='all, delete-orphan')
+    notes = db.relationship('Note', backref='opportunity', lazy=True, cascade='all, delete-orphan')
+    reservations = db.relationship('Reservation', backref='opportunity', lazy=True, cascade='all, delete-orphan')
 
     @property
     def is_overdue(self):
         if self.next_action_deadline:
-            return self.next_action_deadline < datetime.utcnow()
+            return self.next_action_deadline < datetime.now(timezone.utc)
         return False
         
     def to_dict(self):
@@ -317,7 +332,7 @@ class PipelineHistory(db.Model):
     from_stage = db.Column(db.Enum(PipelineStage))
     to_stage = db.Column(db.Enum(PipelineStage), nullable=False)
     changed_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    changed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    changed_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     notes = db.Column(db.Text)
 
 
@@ -332,7 +347,7 @@ class AuditLog(db.Model):
     field_name = db.Column(db.String(100))
     old_value = db.Column(db.Text)
     new_value = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     __table_args__ = (
         db.Index('idx_table_record', 'table_name', 'record_id'),
@@ -368,13 +383,15 @@ class SLAEvent(db.Model):
     resolved_at = db.Column(db.DateTime)
     status = db.Column(db.Enum(SLAStatus), default=SLAStatus.PENDING)
     escalated_to_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 
-class CallLog(db.Model):
+class CallLog(db.Model, SoftDeleteMixin):
     __tablename__ = 'call_logs'
     id = db.Column(db.Integer, primary_key=True)
-    opportunity_id = db.Column(db.Integer, db.ForeignKey('opportunities.id'), nullable=False)
-    logged_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    opportunity_id = db.Column(db.Integer, db.ForeignKey('opportunities.id'), nullable=False, index=True)
+    logged_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     call_type = db.Column(db.String(20)) # OUTBOUND, INBOUND
     connected = db.Column(db.Boolean, default=False)
     duration_band = db.Column(db.Enum(DurationBand))
@@ -384,16 +401,17 @@ class CallLog(db.Model):
     next_action_deadline = db.Column(db.DateTime)
     recording_filename = db.Column(db.String(255))
     recording_url_expires = db.Column(db.DateTime)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 
-class Appointment(db.Model):
+class Appointment(db.Model, SoftDeleteMixin):
     __tablename__ = 'appointments'
     id = db.Column(db.Integer, primary_key=True)
-    opportunity_id = db.Column(db.Integer, db.ForeignKey('opportunities.id'), nullable=False)
+    opportunity_id = db.Column(db.Integer, db.ForeignKey('opportunities.id'), nullable=False, index=True)
     contact_id = db.Column(db.Integer, db.ForeignKey('contacts.id'), nullable=False)
-    scheduled_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    appointment_datetime = db.Column(db.DateTime, nullable=False)
+    scheduled_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    appointment_datetime = db.Column(db.DateTime, nullable=False, index=True)
     location = db.Column(db.String(255))
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'))
     status = db.Column(db.Enum(AppointmentStatus), default=AppointmentStatus.SCHEDULED)
@@ -402,8 +420,8 @@ class Appointment(db.Model):
     debrief_submitted = db.Column(db.Boolean, default=False)
     debrief_notes = db.Column(db.Text)
     no_show_reason = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=datetime.utcnow)
 
 
 class Objection(db.Model):
@@ -416,10 +434,11 @@ class Objection(db.Model):
     competitor_name = db.Column(db.String(100))
     handling_notes = db.Column(db.Text)
     resolved = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 
-class Reservation(db.Model):
+class Reservation(db.Model, SoftDeleteMixin):
     __tablename__ = 'reservations'
     id = db.Column(db.Integer, primary_key=True)
     opportunity_id = db.Column(db.Integer, db.ForeignKey('opportunities.id'), nullable=False)
@@ -433,20 +452,22 @@ class Reservation(db.Model):
     approving_officer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     approved_at = db.Column(db.DateTime)
     notes = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 
-class Sale(db.Model):
+class Sale(db.Model, SoftDeleteMixin):
     __tablename__ = 'sales'
     id = db.Column(db.Integer, primary_key=True)
     reservation_id = db.Column(db.Integer, db.ForeignKey('reservations.id'), unique=True, nullable=False)
-    opportunity_id = db.Column(db.Integer, db.ForeignKey('opportunities.id'), unique=True, nullable=False)
+    opportunity_id = db.Column(db.Integer, db.ForeignKey('opportunities.id'), unique=True, nullable=False, index=True)
     contact_id = db.Column(db.Integer, db.ForeignKey('contacts.id'), nullable=False)
     total_sale_value = db.Column(db.Numeric(15, 2), nullable=False)
     verified_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     verified_at = db.Column(db.DateTime)
     commercial_verified = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 
 class Task(db.Model):
@@ -460,8 +481,8 @@ class Task(db.Model):
     due_date = db.Column(db.DateTime, nullable=False)
     priority = db.Column(db.Enum(TaskPriority), default=TaskPriority.MEDIUM)
     status = db.Column(db.Enum(TaskStatus), default=TaskStatus.PENDING)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=datetime.utcnow)
 
 
 class Team(db.Model):
@@ -469,15 +490,19 @@ class Team(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     manager_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 
 class TimeCard(db.Model):
     __tablename__ = 'time_cards'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    clock_in = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    clock_in = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     clock_out = db.Column(db.DateTime)
     notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 
 class Leave(db.Model):
@@ -489,26 +514,29 @@ class Leave(db.Model):
     end_date = db.Column(db.Date, nullable=False)
     status = db.Column(db.Enum(LeaveStatus), default=LeaveStatus.PENDING)
     approved_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 
-class Note(db.Model):
+class Note(db.Model, SoftDeleteMixin):
     __tablename__ = 'notes'
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
     is_private = db.Column(db.Boolean, default=False)
     created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_by = db.relationship('User', foreign_keys=[created_by_id])
     opportunity_id = db.Column(db.Integer, db.ForeignKey('opportunities.id'))
     contact_id = db.Column(db.Integer, db.ForeignKey('contacts.id'))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):
-        user = User.query.get(self.created_by_id)
         return {
             'id': self.id,
             'content': self.content,
             'is_private': self.is_private,
             'created_by_id': self.created_by_id,
-            'created_by_name': user.full_name if user else None,
+            'created_by_name': self.created_by.full_name if self.created_by else None,
             'opportunity_id': self.opportunity_id,
             'contact_id': self.contact_id,
             'created_at': self.created_at.isoformat() if self.created_at else None
@@ -524,10 +552,10 @@ class Event(db.Model):
     start_datetime = db.Column(db.DateTime, nullable=False)
     end_datetime = db.Column(db.DateTime, nullable=False)
     created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_by = db.relationship('User', foreign_keys=[created_by_id])
     is_all_day = db.Column(db.Boolean, default=False)
 
     def to_dict(self):
-        user = User.query.get(self.created_by_id)
         return {
             "id": self.id,
             "title": self.title,
@@ -537,7 +565,7 @@ class Event(db.Model):
             "end": self.end_datetime.isoformat() if self.end_datetime else None,
             "created_by_id": self.created_by_id,
             "is_all_day": self.is_all_day,
-            "color": user.calendar_color if user else "#6366f1"
+            "color": self.created_by.calendar_color if self.created_by else "#6366f1"
         }
 
 
@@ -546,7 +574,7 @@ class RecordingDownloadLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     call_log_id = db.Column(db.Integer, db.ForeignKey('call_logs.id'), nullable=False)
     downloaded_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    downloaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    downloaded_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     ip_address = db.Column(db.String(45))
 
 
@@ -564,7 +592,7 @@ class Message(db.Model):
     body = db.Column(db.Text, nullable=False)
     is_read = db.Column(db.Boolean, default=False)
     read_at = db.Column(db.DateTime, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     sender = db.relationship('User', foreign_keys=[sender_id], backref='sent_messages')
     recipient = db.relationship('User', foreign_keys=[recipient_id], backref='received_messages')
@@ -614,8 +642,8 @@ class Ticket(db.Model):
     opportunity_id = db.Column(db.Integer, db.ForeignKey('opportunities.id'), nullable=True)
     resolution_notes = db.Column(db.Text, nullable=True)
     resolved_at = db.Column(db.DateTime, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=datetime.utcnow)
 
     created_by = db.relationship('User', foreign_keys=[created_by_id])
     assigned_to = db.relationship('User', foreign_keys=[assigned_to_id])
@@ -670,8 +698,8 @@ class Expense(db.Model):
     receipt_filename = db.Column(db.String(255), nullable=True)
     status = db.Column(db.Enum(ExpenseStatus), default=ExpenseStatus.PENDING)
     approval_notes = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=datetime.utcnow)
 
     submitted_by = db.relationship('User', foreign_keys=[submitted_by_id])
 
@@ -718,7 +746,7 @@ class Invoice(db.Model):
     paid_date = db.Column(db.Date, nullable=True)
     notes = db.Column(db.Text, nullable=True)
     created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):
         return {
@@ -746,7 +774,7 @@ class SystemSetting(db.Model):
     key = db.Column(db.String(100), unique=True, nullable=False)
     value = db.Column(db.Text, nullable=True)
     description = db.Column(db.String(255), nullable=True)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=datetime.utcnow)
 
     def to_dict(self):
         return {
@@ -761,6 +789,7 @@ class SystemSetting(db.Model):
         setting = cls.query.filter_by(key=key).first()
         return setting.value if setting and setting.value is not None else default
 
+
     @classmethod
     def set(cls, key, value, description=None):
         setting = cls.query.filter_by(key=key).first()
@@ -773,5 +802,17 @@ class SystemSetting(db.Model):
                 setting.description = description
         db.session.commit()
         return setting
+
+
+class TokenBlocklist(db.Model):
+    __tablename__ = 'token_blocklist'
+    id = db.Column(db.Integer, primary_key=True)
+    jti = db.Column(db.String(36), nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    @classmethod
+    def is_jti_blacklisted(cls, jti):
+        return cls.query.filter_by(jti=jti).first() is not None
+
 
 

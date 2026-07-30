@@ -1,13 +1,12 @@
 from flask import jsonify, request
 from app.blueprints.reports import reports_bp
 from app.models import Opportunity, Contact, PipelineStage, User, CallLog, Appointment, AppointmentStatus, Objection, ObjectionCategory, Sale, Expense, ExpenseCategory, ExpenseStatus, Invoice, InvoiceStatus, SLAEvent, SLAStatus, ActivityOutcome, PipelineHistory, db
+from app.models import UserRole
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from datetime import datetime, timedelta, date
 from sqlalchemy import func
 from decimal import Decimal
-
-def _is_admin(role):
-    return role == "ADMIN"
+from app.utils.rbac import is_admin
 
 @reports_bp.route('/kpis', methods=['GET'])
 @jwt_required()
@@ -18,15 +17,18 @@ def get_reports_kpis():
 
     # Filter base queries by role if not admin
     def filter_by_role(q, user_id_col):
-        if not _is_admin(role):
+        if not is_admin(role):
             return q.filter(user_id_col == user_id)
         return q
 
-    # Base counts/sums
-    opps_q = Opportunity.query.filter_by(is_deleted=False)
-    if not _is_admin(role):
-        opps_q = opps_q.filter_by(assigned_to_id=user_id)
-    total_leads = opps_q.count()
+    # Opportunity Stage Grouping
+    stage_counts_q = db.session.query(Opportunity.pipeline_stage, func.count(Opportunity.id)).filter(Opportunity.is_deleted == False)
+    if not is_admin(role):
+        stage_counts_q = stage_counts_q.filter(Opportunity.assigned_to_id == user_id)
+    stage_counts_result = stage_counts_q.group_by(Opportunity.pipeline_stage).all()
+    stage_map = {row[0]: row[1] for row in stage_counts_result if row[0] is not None}
+    
+    total_leads = sum(stage_map.values())
 
     # 1. Speed-to-lead (Avg minutes from lead created_at to first CallLog created_at)
     speed_to_lead_min = 0.0
@@ -37,7 +39,7 @@ def get_reports_kpis():
     ).join(CallLog, CallLog.opportunity_id == Opportunity.id)\
      .filter(Opportunity.is_deleted == False)
 
-    if not _is_admin(role):
+    if not is_admin(role):
         first_calls = first_calls.filter(Opportunity.assigned_to_id == user_id)
     
     first_calls = first_calls.group_by(Opportunity.id).all()
@@ -55,7 +57,7 @@ def get_reports_kpis():
     # 2. Contact Rate (% of call logs connected vs total call logs)
     contact_rate = 0
     calls_q = CallLog.query
-    if not _is_admin(role):
+    if not is_admin(role):
         calls_q = calls_q.filter_by(logged_by_id=user_id)
     total_calls = calls_q.count()
     if total_calls > 0:
@@ -64,33 +66,37 @@ def get_reports_kpis():
 
     # 3. Show Rate (COMPLETED appointments / (COMPLETED + NO_SHOW))
     show_rate = 0
-    appts_q = Appointment.query
-    if not _is_admin(role):
-        appts_q = appts_q.filter_by(scheduled_by_id=user_id)
+    appts_q = db.session.query(Appointment.status, func.count(Appointment.id))
+    if not is_admin(role):
+        appts_q = appts_q.filter(Appointment.scheduled_by_id == user_id)
+    appts_res = appts_q.group_by(Appointment.status).all()
+    appt_map = {row[0]: row[1] for row in appts_res if row[0] is not None}
     
-    completed_appts = appts_q.filter(Appointment.status == AppointmentStatus.COMPLETED).count()
-    no_show_appts = appts_q.filter(Appointment.status == AppointmentStatus.NO_SHOW).count()
+    completed_appts = appt_map.get(AppointmentStatus.COMPLETED, 0)
+    no_show_appts = appt_map.get(AppointmentStatus.NO_SHOW, 0)
+    total_appts = sum(appt_map.values())
+    
     total_show_denom = completed_appts + no_show_appts
     if total_show_denom > 0:
         show_rate = round((completed_appts / total_show_denom) * 100)
 
     # 4. Conversion Rate (% of sold leads out of total leads)
     conversion_rate = 0.0
-    closed_won = opps_q.filter(Opportunity.pipeline_stage == PipelineStage.SOLD).count()
+    closed_won = stage_map.get(PipelineStage.SOLD, 0)
     if total_leads > 0:
         conversion_rate = round((closed_won / total_leads) * 100, 1)
 
     # 5. Avg Deal Size (total sale value / count of sales)
     avg_deal_size = 0.0
     sales_q = Sale.query
-    if not _is_admin(role):
+    if not is_admin(role):
         sales_q = sales_q.filter(Sale.opportunity_id.in_(
             db.session.query(Opportunity.id).filter(Opportunity.assigned_to_id == user_id)
         ))
     total_sales_count = sales_q.count()
     if total_sales_count > 0:
         sum_sales = db.session.query(func.sum(Sale.total_sale_value))
-        if not _is_admin(role):
+        if not is_admin(role):
             sum_sales = sum_sales.filter(Sale.opportunity_id.in_(
                 db.session.query(Opportunity.id).filter(Opportunity.assigned_to_id == user_id)
             ))
@@ -100,7 +106,7 @@ def get_reports_kpis():
     # 6. CAC (Total Marketing Expense / count of closed won sales)
     cac = 0.0
     marketing_expense_q = Expense.query.filter_by(category=ExpenseCategory.MARKETING, status=ExpenseStatus.APPROVED)
-    if not _is_admin(role):
+    if not is_admin(role):
         marketing_expense_q = marketing_expense_q.filter_by(submitted_by_id=user_id)
     total_marketing_cost = db.session.query(func.sum(Expense.amount)).filter(
         Expense.id.in_(db.session.query(marketing_expense_q.subquery().c.id))
@@ -115,7 +121,7 @@ def get_reports_kpis():
     rev_per_100_leads = 0.0
     if total_leads > 0:
         sum_sales = db.session.query(func.sum(Sale.total_sale_value))
-        if not _is_admin(role):
+        if not is_admin(role):
             sum_sales = sum_sales.filter(Sale.opportunity_id.in_(
                 db.session.query(Opportunity.id).filter(Opportunity.assigned_to_id == user_id)
             ))
@@ -129,7 +135,7 @@ def get_reports_kpis():
         PipelineStage.NEGOTIATION, PipelineStage.RESERVATION_RECEIVED,
         PipelineStage.DOCUMENTATION_IN_PROCESS, PipelineStage.SOLD
     ]
-    visits_count = opps_q.filter(Opportunity.pipeline_stage.in_(visit_or_further)).count()
+    visits_count = sum(stage_map.get(s, 0) for s in visit_or_further)
     if total_leads > 0:
         lead_to_visit = round((visits_count / total_leads) * 100, 1)
 
@@ -140,7 +146,7 @@ def get_reports_kpis():
         PipelineStage.RESERVATION_RECEIVED, PipelineStage.DOCUMENTATION_IN_PROCESS,
         PipelineStage.SOLD
     ]
-    proposal_count = opps_q.filter(Opportunity.pipeline_stage.in_(proposal_or_further)).count()
+    proposal_count = sum(stage_map.get(s, 0) for s in proposal_or_further)
     if visits_count > 0:
         visit_to_proposal = round((proposal_count / visits_count) * 100, 1)
 
@@ -152,7 +158,7 @@ def get_reports_kpis():
     # 11. SLA Compliance (% of SLAEvents not escalated/alerted)
     sla_compliance = 100
     sla_q = SLAEvent.query
-    if not _is_admin(role):
+    if not is_admin(role):
         sla_q = sla_q.filter(SLAEvent.opportunity_id.in_(
             db.session.query(Opportunity.id).filter(Opportunity.assigned_to_id == user_id)
         ))
@@ -188,7 +194,7 @@ def get_reports_kpis():
 
     # 14. Objections/Lead
     objections_q = Objection.query
-    if not _is_admin(role):
+    if not is_admin(role):
         objections_q = objections_q.filter_by(logged_by_id=user_id)
     total_objections = objections_q.count()
     objections_per_lead = 0.0
@@ -203,16 +209,14 @@ def get_reports_kpis():
 
     # 16. Appt. No-Show rate
     appt_no_show = 0
-    total_appts = appts_q.count()
     if total_appts > 0:
-        no_shows = appts_q.filter(Appointment.status == AppointmentStatus.NO_SHOW).count()
-        appt_no_show = round((no_shows / total_appts) * 100)
+        appt_no_show = round((no_show_appts / total_appts) * 100)
 
     # 17. Reassigned Leads %
     reassigned_leads = 0
     # Count opportunities with any pipeline stage change history
     history_q = PipelineHistory.query
-    if not _is_admin(role):
+    if not is_admin(role):
         history_q = history_q.filter(PipelineHistory.opportunity_id.in_(
             db.session.query(Opportunity.id).filter(Opportunity.assigned_to_id == user_id)
         ))
@@ -225,7 +229,7 @@ def get_reports_kpis():
     # 18. Collection Rate
     collection_rate = 0
     invoices_q = Invoice.query
-    if not _is_admin(role):
+    if not is_admin(role):
         invoices_q = invoices_q.filter(Invoice.opportunity_id.in_(
             db.session.query(Opportunity.id).filter(Opportunity.assigned_to_id == user_id)
         ))
@@ -250,11 +254,9 @@ def get_reports_kpis():
         PipelineStage.VISIT_COMPLETED, PipelineStage.PROPOSAL_PRESENTED, PipelineStage.NEGOTIATION,
         PipelineStage.RESERVATION_RECEIVED, PipelineStage.DOCUMENTATION_IN_PROCESS, PipelineStage.NURTURE
     ]
-    # Sum estimated opportunity values
-    active_opps_q = opps_q.filter(Opportunity.pipeline_stage.in_(active_stages))
-    # We will approximate based on sales values or project price per sqft if available
-    # Or just count of active leads * avg deal size (fallback if no direct value)
-    active_pipeline_val = active_opps_q.count() * (avg_deal_size or 8600000.0)
+    
+    active_leads_count = sum(stage_map.get(s, 0) for s in active_stages)
+    active_pipeline_val = active_leads_count * (avg_deal_size or 8600000.0)
 
     # 20. MoM Growth (dummy 0 for real database if no past month data)
     mom_growth = 0
@@ -305,7 +307,7 @@ def get_reports_charts():
 
     # Filters
     opps_q = Opportunity.query.filter_by(is_deleted=False)
-    if not _is_admin(role):
+    if not is_admin(role):
         opps_q = opps_q.filter_by(assigned_to_id=user_id)
 
     # 1. Lead Outcome Distribution
@@ -317,7 +319,7 @@ def get_reports_charts():
 
     # 2. Objection Intelligence (Objections by Category)
     objections_q = Objection.query
-    if not _is_admin(role):
+    if not is_admin(role):
         objections_q = objections_q.filter_by(logged_by_id=user_id)
     
     obj_counts = {}
@@ -331,7 +333,7 @@ def get_reports_charts():
     collections_monthly = [0]*12
 
     sales_q = Sale.query
-    if not _is_admin(role):
+    if not is_admin(role):
         sales_q = sales_q.filter(Sale.opportunity_id.in_(
             db.session.query(Opportunity.id).filter(Opportunity.assigned_to_id == user_id)
         ))
@@ -342,7 +344,7 @@ def get_reports_charts():
             bookings_monthly[m] += float(s.total_sale_value)
 
     invoices_q = Invoice.query.filter_by(status=InvoiceStatus.PAID)
-    if not _is_admin(role):
+    if not is_admin(role):
         invoices_q = invoices_q.filter(Invoice.opportunity_id.in_(
             db.session.query(Opportunity.id).filter(Opportunity.assigned_to_id == user_id)
         ))
@@ -385,7 +387,7 @@ def get_reports_charts():
             Expense.created_at >= datetime.combine(m_start, datetime.min.time()),
             Expense.created_at < datetime.combine(m_end, datetime.min.time())
         )
-        if not _is_admin(role):
+        if not is_admin(role):
             marketing_exp = marketing_exp.filter_by(submitted_by_id=user_id)
         total_cost = db.session.query(func.sum(Expense.amount)).filter(
             Expense.id.in_(db.session.query(marketing_exp.subquery().c.id))
@@ -402,7 +404,7 @@ def get_reports_charts():
     # Group appointments by opportunity -> lead_source
     show_rate_by_source = {}
     appts_q = Appointment.query
-    if not _is_admin(role):
+    if not is_admin(role):
         appts_q = appts_q.filter_by(scheduled_by_id=user_id)
     
     appts = appts_q.all()
@@ -440,7 +442,7 @@ def get_reports_charts():
             Sale.created_at >= datetime.combine(m_start, datetime.min.time()),
             Sale.created_at < datetime.combine(m_end, datetime.min.time())
         )
-        if not _is_admin(role):
+        if not is_admin(role):
             sales_in_month = sales_in_month.filter(Sale.opportunity_id.in_(
                 db.session.query(Opportunity.id).filter(Opportunity.assigned_to_id == user_id)
             ))
@@ -473,7 +475,7 @@ def get_reports_charts():
              Opportunity.created_at >= datetime.combine(w_start, datetime.min.time()),
              Opportunity.created_at < datetime.combine(w_end, datetime.min.time())
          )
-        if not _is_admin(role):
+        if not is_admin(role):
             wk_calls = wk_calls.filter(Opportunity.assigned_to_id == user_id)
         wk_calls = wk_calls.group_by(Opportunity.id).all()
         
@@ -489,7 +491,7 @@ def get_reports_charts():
             SLAEvent.assigned_at >= datetime.combine(w_start, datetime.min.time()),
             SLAEvent.assigned_at < datetime.combine(w_end, datetime.min.time())
         )
-        if not _is_admin(role):
+        if not is_admin(role):
             sla_wk_q = sla_wk_q.filter(SLAEvent.opportunity_id.in_(
                 db.session.query(Opportunity.id).filter(Opportunity.assigned_to_id == user_id)
             ))

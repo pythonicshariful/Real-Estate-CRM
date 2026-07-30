@@ -32,8 +32,12 @@ def create_app(config_name=None):
     migrate.init_app(app, db)
     jwt.init_app(app)
     mail.init_app(app)
+    cors.init_app(app, resources={r"/api/*": {"origins": app.config.get('CORS_ORIGINS', '*')}})
+    
+    # Configure rate limiter to use the database
+    from app.utils import limiter_storage # Registers the sqlalchemy storage schemes
+    app.config.setdefault('RATELIMIT_STORAGE_URI', app.config.get('SQLALCHEMY_DATABASE_URI'))
     limiter.init_app(app)
-    cors.init_app(app, resources={r"/api/*": {"origins": "*"}})
 
     # ------------------------------------------------------------------
     # Configure logging
@@ -54,50 +58,56 @@ def create_app(config_name=None):
     # ------------------------------------------------------------------
     # JWT error handlers
     # ------------------------------------------------------------------
+    @jwt.token_in_blocklist_loader
+    def check_if_token_revoked(jwt_header, jwt_payload):
+        from app.models import TokenBlocklist
+        jti = jwt_payload["jti"]
+        return TokenBlocklist.is_jti_blacklisted(jti)
+
     @jwt.expired_token_loader
     def expired_token_callback(jwt_header, jwt_payload):
-        return jsonify({'message': 'Token has expired', 'error': 'token_expired'}), 401
+        return jsonify({'status': 'error', 'code': 401, 'message': 'Token has expired', 'details': 'token_expired'}), 401
 
     @jwt.invalid_token_loader
     def invalid_token_callback(error):
-        return jsonify({'message': 'Invalid token', 'error': 'invalid_token'}), 401
+        return jsonify({'status': 'error', 'code': 401, 'message': 'Invalid token', 'details': 'invalid_token'}), 401
 
     @jwt.unauthorized_loader
     def missing_token_callback(error):
-        return jsonify({'message': 'No access token', 'error': 'authorization_required'}), 401
+        return jsonify({'status': 'error', 'code': 401, 'message': 'No access token', 'details': 'authorization_required'}), 401
 
     @jwt.revoked_token_loader
     def revoked_token_callback(jwt_header, jwt_payload):
-        return jsonify({'message': 'Token has been revoked', 'error': 'token_revoked'}), 401
+        return jsonify({'status': 'error', 'code': 401, 'message': 'Token has been revoked', 'details': 'token_revoked'}), 401
 
     # ------------------------------------------------------------------
     # HTTP error handlers
     # ------------------------------------------------------------------
     @app.errorhandler(400)
     def bad_request(e):
-        return jsonify({'error': 'Bad Request', 'message': str(e)}), 400
+        return jsonify({'status': 'error', 'code': 400, 'message': 'Bad Request', 'details': str(e)}), 400
 
     @app.errorhandler(401)
     def unauthorized(e):
-        return jsonify({'error': 'Unauthorized', 'message': str(e)}), 401
+        return jsonify({'status': 'error', 'code': 401, 'message': 'Unauthorized', 'details': str(e)}), 401
 
     @app.errorhandler(403)
     def forbidden(e):
-        return jsonify({'error': 'Forbidden', 'message': str(e)}), 403
+        return jsonify({'status': 'error', 'code': 403, 'message': 'Forbidden', 'details': str(e)}), 403
 
     @app.errorhandler(404)
     def not_found(e):
-        return jsonify({'error': 'Not Found', 'message': str(e)}), 404
+        return jsonify({'status': 'error', 'code': 404, 'message': 'Not Found', 'details': str(e)}), 404
 
     @app.errorhandler(429)
     def ratelimit_error(e):
-        return jsonify({'error': 'Too Many Requests', 'message': 'Slow down'}), 429
+        return jsonify({'status': 'error', 'code': 429, 'message': 'Too Many Requests', 'details': 'Slow down'}), 429
 
     @app.errorhandler(500)
     def internal_error(e):
         app.logger.error(f'Server Error: {e}')
         db.session.rollback()
-        return jsonify({'error': 'Internal Server Error', 'message': 'Something went wrong'}), 500
+        return jsonify({'status': 'error', 'code': 500, 'message': 'Internal Server Error', 'details': 'Something went wrong'}), 500
 
     # ------------------------------------------------------------------
     # Register all 17 module blueprints
@@ -158,6 +168,7 @@ def create_app(config_name=None):
 def _configure_scheduler(app):
     """Configure and start APScheduler with SQLAlchemy jobstore."""
     from app.tasks import check_sla_compliance, send_daily_summary
+    from filelock import FileLock, Timeout
 
     scheduler.app = app
     jobstore_url = app.config['SQLALCHEMY_DATABASE_URI']
@@ -191,8 +202,17 @@ def _configure_scheduler(app):
     )
 
     if not scheduler.running:
-        scheduler.start()
-        app.logger.info('APScheduler started — SLA timers active')
+        # Use filelock to ensure only one worker starts the scheduler
+        lock_file = os.path.join(app.config.get('UPLOAD_FOLDER', 'uploads'), 'scheduler.lock')
+        lock = FileLock(lock_file, timeout=0)
+        try:
+            lock.acquire()
+            # Store the lock on the app object so it's not garbage collected
+            app.scheduler_lock = lock
+            scheduler.start()
+            app.logger.info('APScheduler started — SLA timers active')
+        except Timeout:
+            app.logger.info('Scheduler lock already held by another worker. Skipping scheduler start.')
 
 
 def _register_blueprints(app):
