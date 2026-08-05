@@ -658,8 +658,12 @@ def assign_lead_owner_auto(exclude_user_id: int | None = None, app=None):
             logger.info(f"Auto-assigned lead to scheduled Lead Owner: {matching_scheduled_owners[0].full_name}")
             return matching_scheduled_owners[0]
 
-        # If 0 or >1 scheduled owners match, divide equally among active owners (or matching scheduled owners)
-        candidate_pool = matching_scheduled_owners if len(matching_scheduled_owners) > 1 else active_owners
+        if len(matching_scheduled_owners) > 1:
+            candidate_pool = matching_scheduled_owners
+        else:
+            logger.info("No active scheduled Lead Owners found. Leaving lead unassigned (Pending).")
+            return None
+            
         candidate_ids = [u.id for u in candidate_pool]
 
         lead_counts = (

@@ -117,7 +117,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (stage && lead.pipeline_stage !== stage) return false;
             if (temp && lead.lead_temperature !== temp) return false;
             if (starred && !lead.is_starred) return false;
-            if (owner && String(lead.assigned_to_id) !== owner) return false;
+            if (owner === 'none') {
+                if (lead.assigned_to_id !== null) return false;
+            } else if (owner && String(lead.assigned_to_id) !== owner) {
+                return false;
+            }
             return true;
         });
 
@@ -340,6 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             card.innerHTML = `
                 <div class="flex items-center gap-4">
+                  ${IS_ADMIN ? `<input type="checkbox" class="lead-checkbox w-4 h-4 rounded bg-slate-800 border-slate-700 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-slate-900 cursor-pointer" value="${lead.id}" onclick="event.stopPropagation()">` : ''}
                   <div class="w-12 h-12 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 font-bold text-sm shrink-0">
                     ${initials}
                   </div>
@@ -852,34 +857,131 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Setup and Populate Lead Owner Filter dropdown (Admin only)
+    // Setup and Populate Lead Owner Filter dropdown and Bulk Assign (Admin only)
     if (IS_ADMIN) {
+        const bulkAssignBtn = document.getElementById('bulk-assign-btn');
+        if (bulkAssignBtn) bulkAssignBtn.classList.remove('hidden');
+
         const container = document.getElementById('filter-owner-container');
         if (container) container.classList.remove('hidden');
         
         const select = document.getElementById('filter-owner');
-        if (select) {
+        const bulkSelect = document.getElementById('bulk-assign-owner');
+        
+        if (select || bulkSelect) {
             const token = localStorage.getItem('crm_token');
             fetch('/api/team/members', {
                 headers: { 'Authorization': `Bearer ${token}` }
             })
             .then(res => res.json())
             .then(members => {
+                // Add Pending to filter
+                if (select) {
+                    const pendingOpt = document.createElement('option');
+                    pendingOpt.value = 'none';
+                    pendingOpt.textContent = 'Pending (Unassigned)';
+                    select.appendChild(pendingOpt);
+                }
+
                 members.forEach(m => {
-                    const opt = document.createElement('option');
-                    opt.value = m.id;
-                    opt.textContent = m.full_name;
-                    select.appendChild(opt);
+                    if (select) {
+                        const opt = document.createElement('option');
+                        opt.value = m.id;
+                        opt.textContent = m.full_name;
+                        select.appendChild(opt);
+                    }
+                    if (bulkSelect) {
+                        const bulkOpt = document.createElement('option');
+                        bulkOpt.value = m.id;
+                        bulkOpt.textContent = m.full_name;
+                        bulkSelect.appendChild(bulkOpt);
+                    }
                 });
                 
                 // If URL owner filter is present, ensure select option matches
                 const urlParams = new URLSearchParams(window.location.search);
                 const ownerParam = urlParams.get('owner');
-                if (ownerParam) {
+                if (ownerParam && select) {
                     select.value = ownerParam;
                 }
             })
-            .catch(err => console.error("Failed to load members for filter", err));
+            .catch(err => console.error("Failed to load members for filter/bulk assign", err));
+        }
+
+        // Bulk Assign Modal Logic
+        const bulkAssignModal = document.getElementById('bulk-assign-modal');
+        const bulkAssignModalContent = document.getElementById('bulk-assign-modal-content');
+        const bulkAssignForm = document.getElementById('bulk-assign-form');
+        
+        const openBulkAssignModal = () => {
+            const selectedBoxes = document.querySelectorAll('.lead-checkbox:checked');
+            if (selectedBoxes.length === 0) {
+                if (window.showToast) window.showToast("Please select at least one lead.", "info");
+                return;
+            }
+            document.getElementById('bulk-assign-count').textContent = selectedBoxes.length;
+            bulkAssignForm.reset();
+            bulkAssignModal.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                bulkAssignModal.classList.remove('opacity-0');
+                bulkAssignModalContent.classList.remove('scale-95');
+            });
+        };
+
+        const closeBulkAssignModal = () => {
+            bulkAssignModal.classList.add('opacity-0');
+            bulkAssignModalContent.classList.add('scale-95');
+            setTimeout(() => {
+                bulkAssignModal.classList.add('hidden');
+            }, 200);
+        };
+
+        if (bulkAssignBtn) bulkAssignBtn.addEventListener('click', openBulkAssignModal);
+        document.getElementById('close-bulk-assign-modal')?.addEventListener('click', closeBulkAssignModal);
+        document.getElementById('cancel-bulk-assign-btn')?.addEventListener('click', closeBulkAssignModal);
+
+        if (bulkAssignForm) {
+            bulkAssignForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const selectedBoxes = document.querySelectorAll('.lead-checkbox:checked');
+                const leadIds = Array.from(selectedBoxes).map(cb => parseInt(cb.value, 10));
+                
+                let ownerId = document.getElementById('bulk-assign-owner').value;
+                if (ownerId === 'none') ownerId = null; // Unassign
+                else if (ownerId) ownerId = parseInt(ownerId, 10);
+                
+                const submitBtn = document.getElementById('save-bulk-assign-btn');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = 'Assigning...';
+                submitBtn.disabled = true;
+
+                try {
+                    const token = localStorage.getItem('crm_token');
+                    const res = await fetch('/api/leads/bulk-assign', {
+                        method: 'POST',
+                        headers: { 
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ lead_ids: leadIds, owner_id: ownerId })
+                    });
+                    
+                    if (!res.ok) {
+                        const errData = await res.json().catch(()=>({}));
+                        throw new Error(errData.error || errData.msg || "Failed to bulk assign leads");
+                    }
+                    
+                    if (window.showToast) window.showToast(`Successfully updated ${leadIds.length} lead(s).`, "success");
+                    closeBulkAssignModal();
+                    loadLeads();
+                } catch (err) {
+                    console.error(err);
+                    if (window.showToast) window.showToast(err.message, "error");
+                } finally {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            });
         }
     }
 

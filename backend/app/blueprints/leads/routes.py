@@ -1,6 +1,6 @@
 from flask import request, jsonify, current_app
 from app.blueprints.leads import leads_bp
-from app.models import Opportunity, Contact, CallLog, Appointment, PipelineStage, AppointmentStatus, Objection, Reservation, Note, PipelineHistory, db, UserRole, LeadTemperature, AuditLog
+from app.models import Opportunity, Contact, CallLog, Appointment, PipelineStage, AppointmentStatus, Objection, Reservation, Note, PipelineHistory, db, UserRole, LeadTemperature, AuditLog, User
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from datetime import datetime, timezone
 import os
@@ -540,3 +540,45 @@ def add_note(id):
     db.session.add(audit)
     db.session.commit()
     return jsonify({"id": log.id, "msg": "Note added"}), 201
+
+@leads_bp.route('/bulk-assign', methods=['POST'])
+@jwt_required()
+def bulk_assign_leads():
+    current_user_id = int(get_jwt_identity())
+    role = get_jwt().get('role')
+    if role != 'ADMIN':
+        return jsonify({"error": "Admin access required"}), 403
+
+    data = request.get_json()
+    lead_ids = data.get('lead_ids', [])
+    owner_id = data.get('owner_id')
+    
+    if not lead_ids:
+        return jsonify({"error": "lead_ids is required"}), 400
+
+    leads = Opportunity.query.filter(Opportunity.id.in_(lead_ids)).all()
+    if not leads:
+        return jsonify({"error": "No valid leads found"}), 404
+        
+    owner = db.session.query(User).get(owner_id) if owner_id else None
+    owner_name = owner.full_name if owner else "Unassigned"
+
+    for lead in leads:
+        old_owner = lead.assigned_to_id
+        lead.assigned_to_id = owner_id if owner_id else None
+        
+        # Add Audit log
+        contact_name = lead.contact.full_name if lead.contact else "Unknown"
+        audit = AuditLog(
+            user_id=current_user_id,
+            table_name='opportunities',
+            record_id=lead.id,
+            action='UPDATE',
+            field_name='assigned_to_id',
+            old_value=str(old_owner) if old_owner else "None",
+            new_value=str(owner_id) if owner_id else "None"
+        )
+        db.session.add(audit)
+        
+    db.session.commit()
+    return jsonify({"msg": f"Successfully assigned {len(leads)} leads to {owner_name}."}), 200
