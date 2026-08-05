@@ -47,7 +47,6 @@ Pillow>=10.4.0
 gunicorn>=22.0.0
 
 # Mega Storage — upload call recordings to MEGA cloud
-# tenacity must be >=8.0.0 to fix Python 3.11+ asyncio.coroutine removal
-# (mega.py declares <6.0 but that is broken on 3.11+; override it here)
-mega.py>=1.0.8
+# (mega.py is vendored locally to avoid cPanel pip dependency conflicts)
 tenacity>=8.0.0
+pycryptodome>=3.9.6
