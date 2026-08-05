@@ -30,7 +30,7 @@ def get_projects():
 @jwt_required()
 def create_project():
     claims = get_jwt()
-    if not _is_admin(claims.get('role')):
+    if not is_admin(claims.get('role')):
         return jsonify({'error': 'Unauthorized. Admin access required.'}), 403
 
     data = request.get_json()
@@ -60,7 +60,7 @@ def create_project():
 @jwt_required()
 def update_project(project_id):
     claims = get_jwt()
-    if not _is_admin(claims.get('role')):
+    if not is_admin(claims.get('role')):
         return jsonify({'error': 'Unauthorized. Admin access required.'}), 403
 
     project = Project.query.get_or_404(project_id)
@@ -96,7 +96,7 @@ def update_project(project_id):
 @jwt_required()
 def delete_project(project_id):
     claims = get_jwt()
-    if not _is_admin(claims.get('role')):
+    if not is_admin(claims.get('role')):
         return jsonify({'error': 'Unauthorized. Admin access required.'}), 403
 
     project = Project.query.get_or_404(project_id)

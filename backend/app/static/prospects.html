@@ -40,25 +40,32 @@
           
         </div>
       </div>
-      <div class="chart-card overflow-x-auto">
+      <div class="chart-card overflow-x-auto" id="estimates-table">
         <div class="chart-title mb-4">Recent Estimates</div>
         <div class="overflow-x-auto w-full">
-<table class="crm-table">
-          <thead><tr><th>Estimate #</th><th>Prospect</th><th>Unit Type</th><th>Estimated Value</th><th>Sent</th><th>Status</th></tr></thead>
+        <table class="crm-table">
+          <thead><tr><th>Estimate #</th><th>Prospect</th><th>Details</th><th>Estimated Value</th><th>Date</th></tr></thead>
           <tbody>
-            <tr><td class="text-violet-400 font-mono">#EST-082</td><td class="font-medium text-white">Dr. Shahidul Islam</td><td>3 BHK Apartment</td><td class="text-emerald-400 font-semibold">৳9,800,000</td><td>Jul 18</td><td><span class="badge badge-pending">Pending</span></td></tr>
-            <tr><td class="text-violet-400 font-mono">#EST-081</td><td class="font-medium text-white">Mrs. Farida Khanam</td><td>2 BHK Apartment</td><td class="text-emerald-400 font-semibold">৳7,200,000</td><td>Jul 15</td><td><span class="badge badge-won">Approved</span></td></tr>
-            <tr><td class="text-violet-400 font-mono">#EST-080</td><td class="font-medium text-white">Engr. Anwar Hossain</td><td>Commercial Space</td><td class="text-amber-400 font-semibold">৳18,500,000</td><td>Jul 12</td><td><span class="badge badge-active">Proposal Sent</span></td></tr>
-            <tr><td class="text-violet-400 font-mono">#EST-079</td><td class="font-medium text-white">Md. Zahirul Islam</td><td>4 BHK Duplex</td><td class="text-rose-400">৳14,000,000</td><td>Jul 8</td><td><span class="badge badge-lost">Declined</span></td></tr>
           </tbody>
         </table>
-</div>
+        </div>
+      </div>
+      <div class="chart-card overflow-x-auto hidden" id="proposals-table">
+        <div class="chart-title mb-4">Proposals</div>
+        <div class="overflow-x-auto w-full">
+        <table class="crm-table">
+          <thead><tr><th>Proposal #</th><th>Title</th><th>Contact</th><th>Value</th><th>Status</th></tr></thead>
+          <tbody>
+          </tbody>
+        </table>
+        </div>
       </div>
     </div>
   </main>
   <div id="toast-container"></div>
   <script src="/assets/js/sidebar.js"></script>
   <script type="module" src="/assets/js/app.js"></script>
+  <script type="module" src="/assets/js/prospects.js"></script>
   
 </body>
 </html>

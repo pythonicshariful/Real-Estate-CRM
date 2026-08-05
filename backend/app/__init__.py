@@ -234,6 +234,8 @@ def _register_blueprints(app):
     from app.blueprints.messages import messages_bp
     from app.blueprints.tickets import tickets_bp
     from app.blueprints.expenses import expenses_bp
+    from app.blueprints.prospects import prospects_bp
+    from app.blueprints.help import help_bp
 
     app.register_blueprint(auth_bp,      url_prefix='/api/auth')
     app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
@@ -252,3 +254,5 @@ def _register_blueprints(app):
     app.register_blueprint(messages_bp,  url_prefix='/api/messages')
     app.register_blueprint(tickets_bp,   url_prefix='/api/tickets')
     app.register_blueprint(expenses_bp,  url_prefix='/api/expenses')
+    app.register_blueprint(prospects_bp, url_prefix='/api/prospects')
+    app.register_blueprint(help_bp,      url_prefix='/api/help')

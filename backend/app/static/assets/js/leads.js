@@ -810,6 +810,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const formData = new FormData(addLeadForm);
             const data = Object.fromEntries(formData.entries());
+            if (!data.project_id) delete data.project_id;
             
             const submitBtn = document.getElementById('save-add-lead-btn');
             const originalText = submitBtn.innerHTML;

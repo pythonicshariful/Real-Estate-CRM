@@ -4,6 +4,7 @@ from app.models import Opportunity, Contact, CallLog, Appointment, PipelineStage
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from datetime import datetime, timezone
 import os
+from app.utils.rbac import is_admin
 
 
 def _check_lead_access(lead, role, user_id):

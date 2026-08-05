@@ -55,6 +55,8 @@ function setupTeamListeners() {
   }
 }
 
+document.addEventListener('DOMContentLoaded', setupTeamListeners);
+
 async function loadUsers() {
   const container = document.getElementById('team-users-list');
   if (!container) return;

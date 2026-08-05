@@ -88,3 +88,97 @@ def delete_invoice(inv_id):
     db.session.delete(invoice)
     db.session.commit()
     return jsonify({"message": "Invoice deleted successfully"}), 200
+
+# ---------------------------------------------------------------------------
+# Sales Hub Extensions (Orders, Items, Contracts)
+# ---------------------------------------------------------------------------
+
+from ...models import Order, OrderStatus, ProductItem, Contract
+
+@finance_bp.route("/orders/", methods=["GET"])
+@jwt_required()
+def list_orders():
+    orders = Order.query.order_by(Order.created_at.desc()).all()
+    result = []
+    for o in orders:
+        d = o.to_dict()
+        contact = Contact.query.get(o.contact_id)
+        d['contact_name'] = contact.full_name if contact else 'Unknown'
+        result.append(d)
+    return jsonify(result), 200
+
+@finance_bp.route("/orders/", methods=["POST"])
+@jwt_required()
+def create_order():
+    user_id = int(get_jwt_identity())
+    data = request.get_json()
+    if not data.get("contact_id") or not data.get("total_amount"):
+        return jsonify({"error": "contact_id and total_amount are required"}), 400
+    
+    order = Order(
+        contact_id=int(data["contact_id"]),
+        total_amount=float(data["total_amount"]),
+        status=OrderStatus[data.get("status", "PENDING")],
+        created_by_id=user_id
+    )
+    db.session.add(order)
+    db.session.commit()
+    return jsonify(order.to_dict()), 201
+
+@finance_bp.route("/items/", methods=["GET"])
+@jwt_required()
+def list_items():
+    items = ProductItem.query.order_by(ProductItem.created_at.desc()).all()
+    return jsonify([i.to_dict() for i in items]), 200
+
+@finance_bp.route("/items/", methods=["POST"])
+@jwt_required()
+def create_item():
+    data = request.get_json()
+    if not data.get("name") or not data.get("price"):
+        return jsonify({"error": "name and price are required"}), 400
+        
+    item = ProductItem(
+        name=data["name"],
+        description=data.get("description", ""),
+        price=float(data["price"]),
+        is_active=data.get("is_active", True)
+    )
+    db.session.add(item)
+    db.session.commit()
+    return jsonify(item.to_dict()), 201
+
+@finance_bp.route("/contracts/", methods=["GET"])
+@jwt_required()
+def list_contracts():
+    contracts = Contract.query.order_by(Contract.created_at.desc()).all()
+    result = []
+    for c in contracts:
+        d = c.to_dict()
+        contact = Contact.query.get(c.contact_id)
+        d['contact_name'] = contact.full_name if contact else 'Unknown'
+        result.append(d)
+    return jsonify(result), 200
+
+@finance_bp.route("/contracts/", methods=["POST"])
+@jwt_required()
+def create_contract():
+    user_id = int(get_jwt_identity())
+    data = request.get_json()
+    
+    if not data.get("contact_id") or not data.get("title"):
+        return jsonify({"error": "contact_id and title are required"}), 400
+        
+    contract = Contract(
+        contact_id=int(data["contact_id"]),
+        title=data["title"],
+        content=data.get("content", ""),
+        signed=data.get("signed", False),
+        created_by_id=user_id
+    )
+    if contract.signed:
+        contract.signed_at = datetime.now(timezone.utc)
+        
+    db.session.add(contract)
+    db.session.commit()
+    return jsonify(contract.to_dict()), 201

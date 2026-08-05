@@ -156,7 +156,11 @@
         if (!res.ok) throw new Error('Failed to fetch clients');
         const clients = await res.json();
         const select = document.getElementById('inv-client');
-        select.innerHTML = clients.map(c => `<option value="${c.id}">${c.full_name} (${c.phone_raw || 'No Phone'})</option>`).join('');
+        if (clients.length === 0) {
+            select.innerHTML = '<option value="">No contacts found. Create one first.</option>';
+        } else {
+            select.innerHTML = '<option value="">-- Select Contact --</option>' + clients.map(c => `<option value="${c.id}">${c.full_name} (${c.phone_raw || 'No Phone'})</option>`).join('');
+        }
       } catch (err) {
         console.error(err);
       }
@@ -254,6 +258,11 @@
         due_date: document.getElementById('inv-due').value,
         status: document.getElementById('inv-status').value
       };
+      
+      if (isNaN(data.contact_id)) {
+        if (window.showToast) window.showToast('Please select a valid client.', 'error');
+        return;
+      }
       
       try {
         const res = await fetch('/api/finance/invoices/', {

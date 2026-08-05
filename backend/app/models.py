@@ -815,4 +815,153 @@ class TokenBlocklist(db.Model):
         return cls.query.filter_by(jti=jti).first() is not None
 
 
+# ---------------------------------------------------------------------------
+# Prospects (Pre-sale Documentation)
+# ---------------------------------------------------------------------------
+class ProposalStatus(PyEnum):
+    DRAFT = "DRAFT"
+    SENT = "SENT"
+    VIEWED = "VIEWED"
+    ACCEPTED = "ACCEPTED"
+    REJECTED = "REJECTED"
 
+class Proposal(db.Model):
+    __tablename__ = 'proposals'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    contact_id = db.Column(db.Integer, db.ForeignKey('contacts.id'), nullable=False)
+    opportunity_id = db.Column(db.Integer, db.ForeignKey('opportunities.id'))
+    created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    content = db.Column(db.Text)
+    total_value = db.Column(db.Numeric(15, 2))
+    status = db.Column(db.Enum(ProposalStatus), default=ProposalStatus.DRAFT)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'contact_id': self.contact_id,
+            'opportunity_id': self.opportunity_id,
+            'total_value': float(self.total_value) if self.total_value else 0.0,
+            'status': self.status.value,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+class Estimate(db.Model):
+    __tablename__ = 'estimates'
+    id = db.Column(db.Integer, primary_key=True)
+    contact_id = db.Column(db.Integer, db.ForeignKey('contacts.id'), nullable=False)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'))
+    estimated_amount = db.Column(db.Numeric(15, 2))
+    details = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'contact_id': self.contact_id,
+            'project_id': self.project_id,
+            'estimated_amount': float(self.estimated_amount) if self.estimated_amount else 0.0,
+            'details': self.details,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+# ---------------------------------------------------------------------------
+# Help & Support (Knowledge Base)
+# ---------------------------------------------------------------------------
+class ArticleCategory(PyEnum):
+    FAQ = "FAQ"
+    GUIDE = "GUIDE"
+    POLICY = "POLICY"
+    TROUBLESHOOTING = "TROUBLESHOOTING"
+
+class Article(db.Model):
+    __tablename__ = 'articles'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    category = db.Column(db.Enum(ArticleCategory), default=ArticleCategory.FAQ)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    is_published = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'content': self.content,
+            'category': self.category.value,
+            'is_published': self.is_published,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+# ---------------------------------------------------------------------------
+# Sales Hub Extensions (Orders, Items, Contracts)
+# ---------------------------------------------------------------------------
+class ProductItem(db.Model):
+    __tablename__ = 'product_items'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text)
+    price = db.Column(db.Numeric(12, 2), nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'price': float(self.price),
+            'is_active': self.is_active
+        }
+
+class OrderStatus(PyEnum):
+    PENDING = "PENDING"
+    PROCESSING = "PROCESSING"
+    COMPLETED = "COMPLETED"
+    CANCELLED = "CANCELLED"
+
+class Order(db.Model):
+    __tablename__ = 'orders'
+    id = db.Column(db.Integer, primary_key=True)
+    contact_id = db.Column(db.Integer, db.ForeignKey('contacts.id'), nullable=False)
+    total_amount = db.Column(db.Numeric(15, 2), nullable=False)
+    status = db.Column(db.Enum(OrderStatus), default=OrderStatus.PENDING)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'contact_id': self.contact_id,
+            'total_amount': float(self.total_amount),
+            'status': self.status.value,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+class Contract(db.Model):
+    __tablename__ = 'contracts'
+    id = db.Column(db.Integer, primary_key=True)
+    contact_id = db.Column(db.Integer, db.ForeignKey('contacts.id'), nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    content = db.Column(db.Text)
+    signed = db.Column(db.Boolean, default=False)
+    signed_at = db.Column(db.DateTime)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'contact_id': self.contact_id,
+            'title': self.title,
+            'signed': self.signed,
+            'signed_at': self.signed_at.isoformat() if self.signed_at else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }

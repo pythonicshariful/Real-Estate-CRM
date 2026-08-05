@@ -4,6 +4,7 @@ from app.models import Opportunity, Contact, PipelineStage, User, UserRole, db
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from datetime import datetime, date, timezone
 from sqlalchemy import func
+from app.utils.rbac import is_admin
 
 
 @dashboard_bp.route('/badges', methods=['GET'])
