@@ -427,7 +427,7 @@ def process_meta_webhook(payload_dict: dict, app=None):
                     adset_id=adset_id,
                     ad_id=ad_id,
                     form_id=form_id,
-                    raw_payload=payload_dict,
+                    raw_payload={"webhook_payload": payload_dict, "lead_data": lead_data},
                     submitted_at=datetime.now(timezone.utc),
                 )
                 db.session.add(inquiry)

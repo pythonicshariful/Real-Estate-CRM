@@ -231,6 +231,21 @@ def get_lead_profile(id):
         "booking_amount": str(reservations.booking_amount),
     } if reservations else None
     
+    # Extract Custom Meta Questions
+    profile["custom_fields"] = []
+    if lead.inquiry and lead.inquiry.raw_payload:
+        rp = lead.inquiry.raw_payload
+        lead_data = rp.get("lead_data", {})
+        field_data = lead_data.get("field_data", [])
+        for f in field_data:
+            name = f.get("name")
+            vals = f.get("values", [])
+            if name not in ["full_name", "name", "email", "phone_number", "phone"] and vals:
+                profile["custom_fields"].append({
+                    "name": name,
+                    "value": vals[0]
+                })
+
     profile["timeline"] = timeline_items
 
     return jsonify(profile)

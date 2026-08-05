@@ -651,6 +651,24 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('drawer-project').textContent = data.project_name || '--';
         document.getElementById('drawer-source').textContent = c.source || '--';
 
+        // Render Custom Questions
+        const customQContainer = document.getElementById('drawer-custom-questions-container');
+        const customQGrid = document.getElementById('drawer-custom-questions');
+        customQGrid.innerHTML = '';
+        if (data.custom_fields && data.custom_fields.length > 0) {
+            customQContainer.classList.remove('hidden');
+            data.custom_fields.forEach(field => {
+                customQGrid.innerHTML += `
+                    <div class="bg-slate-900/50 rounded-xl p-3 border border-slate-800/60">
+                        <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">${field.name.replace(/_/g, ' ')}</div>
+                        <div class="text-sm font-medium text-slate-200">${field.value || '--'}</div>
+                    </div>
+                `;
+            });
+        } else {
+            customQContainer.classList.add('hidden');
+        }
+
         // Render Timeline
         const tlContainer = document.getElementById('drawer-timeline');
         const notesContainer = document.getElementById('drawer-notes-list');
