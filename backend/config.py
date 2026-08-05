@@ -57,6 +57,8 @@ class Config:
         'misfire_grace_time': 300,  # 5 minutes grace for missed jobs
     }
     SCHEDULER_TIMEZONE = 'Asia/Dhaka'
+    DISABLE_SCHEDULER = os.environ.get('DISABLE_SCHEDULER', 'False').lower() == 'true'
+
 
     # ------------------------------------------------------------------
     # Call Recording Storage — Local Filesystem
