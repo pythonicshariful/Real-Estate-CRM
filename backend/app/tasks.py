@@ -541,18 +541,38 @@ def verify_recording_token(token: str, app=None) -> dict | None:
 # ---------------------------------------------------------------------------
 
 def _send_email_notification(app, recipient_email: str, subject: str, body: str):
-    """Send an email notification via Flask-Mail."""
+    """Send an email notification using SMTP settings from SystemSetting."""
     try:
-        from flask_mail import Message as MailMessage
-        from app.extensions import mail
-
         with app.app_context():
-            msg = MailMessage(
-                subject=subject,
-                recipients=[recipient_email],
-                body=body,
-            )
-            mail.send(msg)
+            from app.models import SystemSetting
+            import smtplib
+            from email.mime.text import MIMEText
+            from email.mime.multipart import MIMEMultipart
+
+            host = SystemSetting.get('smtp_host', '').strip()
+            port = SystemSetting.get('smtp_port', '587').strip()
+            username = SystemSetting.get('smtp_username', '').strip()
+            password = SystemSetting.get('smtp_password', '').strip()
+            sender = SystemSetting.get('sender_email', 'noreply@southeast.com').strip()
+
+            if not host:
+                logger.warning("SMTP host not configured. Skipping email to " + recipient_email)
+                return
+
+            msg = MIMEMultipart()
+            msg['From'] = sender
+            msg['To'] = recipient_email
+            msg['Subject'] = subject
+            msg.attach(MIMEText(body, 'plain'))
+
+            port = int(port) if port.isdigit() else 587
+            
+            with smtplib.SMTP(host, port) as server:
+                server.starttls()
+                if username and password:
+                    server.login(username, password)
+                server.send_message(msg)
+                
     except Exception as e:
         logger.error(f'Failed to send email to {recipient_email}: {e}')
 
@@ -702,9 +722,11 @@ def upload_recording_to_mega(local_path: str, filename: str, app=None) -> str | 
     it's fast for audio files (<50 MB). Move into a background thread if needed.
     """
     app = _get_app(app)
-    email = app.config.get('MEGA_EMAIL', '').strip()
-    password = app.config.get('MEGA_PASSWORD', '').strip()
-    folder_name = app.config.get('MEGA_FOLDER', 'CRM-Recordings')
+    with app.app_context():
+        from app.models import SystemSetting
+        email = SystemSetting.get('mega_email', '').strip()
+        password = SystemSetting.get('mega_password', '').strip()
+        folder_name = SystemSetting.get('mega_folder', 'CRM-Recordings')
 
     if not email or not password:
         logger.warning('MEGA_EMAIL / MEGA_PASSWORD not configured — skipping cloud upload')

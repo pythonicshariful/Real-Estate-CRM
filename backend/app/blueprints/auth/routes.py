@@ -59,18 +59,45 @@ def login():
     redirect_to = 'admin-dashboard.html' if user.role == UserRole.ADMIN else 'dashboard.html'
     
     mfa_required = user.is_mfa_enabled
+    mfa_type = 'totp'
+    
+    from app.models import SystemSetting
+    smtp_host = SystemSetting.get('smtp_host', '').strip()
+    if smtp_host:
+        mfa_required = True
+        mfa_type = 'email'
+        import random
+        otp = f"{random.randint(0, 999999):06d}"
+        user.email_otp = otp
+        user.email_otp_expires_at = datetime.now(timezone.utc) + timedelta(minutes=5)
+        db.session.commit()
+        
+        from app.tasks import _send_email_notification
+        # Use a background task or inline call to send OTP
+        try:
+            _send_email_notification(
+                current_app._get_current_object(),
+                user.email,
+                "Your Login OTP",
+                f"Your one-time password for login is: {otp}\n\nIt is valid for 5 minutes."
+            )
+        except Exception as e:
+            # Logging error handled in tasks
+            pass
     
     access_token = create_access_token(identity=str(user.id), additional_claims={
         'role': user.role.value,
         'color': user.calendar_color,
         'full_name': user.full_name,
-        'mfa_pending': mfa_required
+        'mfa_pending': mfa_required,
+        'mfa_type': mfa_type
     })
     refresh_token = create_refresh_token(identity=str(user.id))
     return jsonify(
         access_token=access_token,
         refresh_token=refresh_token,
         mfa_required=mfa_required,
+        mfa_type=mfa_type,
         redirect_to=redirect_to,
         role=user.role.value,
         full_name=user.full_name,
@@ -88,9 +115,27 @@ def verify_mfa():
     user_id = get_jwt_identity()
     user = User.query.get(int(user_id))
     token = request.json.get('token')
+    mfa_type = claims.get('mfa_type', 'totp')
     
-    if not user.verify_totp(token):
-        return jsonify({"msg": "Invalid MFA token"}), 401
+    if mfa_type == 'email':
+        if not user.email_otp or user.email_otp != token:
+            return jsonify({"msg": "Invalid MFA token"}), 401
+        
+        # Make sure datetime is aware
+        now_utc = datetime.now(timezone.utc)
+        expires_at = user.email_otp_expires_at
+        if expires_at and expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+            
+        if expires_at and expires_at < now_utc:
+            return jsonify({"msg": "MFA token expired"}), 401
+            
+        user.email_otp = None
+        user.email_otp_expires_at = None
+        db.session.commit()
+    else:
+        if not user.verify_totp(token):
+            return jsonify({"msg": "Invalid MFA token"}), 401
         
     # Full auth
     access_token = create_access_token(identity=str(user.id), additional_claims={'role': user.role.value, 'mfa_pending': False})

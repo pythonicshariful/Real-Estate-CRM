@@ -23,7 +23,10 @@ DEFAULT_SETTINGS = {
     'smtp_username': '',
     'smtp_password': '',
     'sender_email': 'noreply@southeast.com',
-    'company_logo': ''
+    'company_logo': '',
+    'mega_email': '',
+    'mega_password': '',
+    'mega_folder': 'CRM-Recordings'
 }
 
 import os
@@ -190,6 +193,20 @@ def email_templates():
         if k in data:
             SystemSetting.set(k, str(data[k]))
     return jsonify({"message": "Email settings updated successfully", "settings": _get_setting_dict(keys)})
+
+@settings_bp.route('/mega-storage', methods=['GET', 'PUT'])
+@jwt_required()
+@require_role(UserRole.ADMIN)
+def mega_storage_settings():
+    keys = ['mega_email', 'mega_password', 'mega_folder']
+    if request.method == 'GET':
+        return jsonify(_get_setting_dict(keys))
+    
+    data = request.get_json() or {}
+    for k in keys:
+        if k in data:
+            SystemSetting.set(k, str(data[k]))
+    return jsonify({"message": "Mega storage settings updated successfully", "settings": _get_setting_dict(keys)})
 
 @settings_bp.route('/roles', methods=['GET', 'PUT'])
 @jwt_required()

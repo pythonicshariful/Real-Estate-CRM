@@ -154,6 +154,8 @@ class User(db.Model, SoftDeleteMixin):
     mfa_verified = db.Column(db.Boolean, default=False)
     failed_login_attempts = db.Column(db.Integer, default=0)
     lockout_until = db.Column(db.DateTime, nullable=True)
+    email_otp = db.Column(db.String(6), nullable=True)
+    email_otp_expires_at = db.Column(db.DateTime, nullable=True)
     avatar_url = db.Column(db.String(255))
     calendar_color = db.Column(db.String(7), default="#6366f1")
     max_lead_capacity = db.Column(db.Integer, default=30)
