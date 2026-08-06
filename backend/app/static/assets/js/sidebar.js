@@ -303,6 +303,31 @@
     const token = localStorage.getItem('crm_token');
     if (!token || token === 'undefined') return;
 
+    const setBadge = (id, count) => {
+      const el = document.getElementById(id);
+      if (el) {
+        if (count > 0) {
+          el.textContent = count;
+          el.classList.remove('hidden');
+        } else {
+          el.classList.add('hidden');
+        }
+      }
+    };
+
+    const cacheKey = 'crm_badges_cache';
+    const cacheStr = sessionStorage.getItem(cacheKey);
+    if (cacheStr) {
+       try {
+           const cacheData = JSON.parse(cacheStr);
+           if (Date.now() - cacheData.timestamp < 15000) {
+               setBadge('sidebar-badge-messages', cacheData.data.messages);
+               setBadge('sidebar-badge-tickets', cacheData.data.tickets);
+               return;
+           }
+       } catch (e) {}
+    }
+
     try {
       const res = await fetch('/api/dashboard/badges', {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -310,18 +335,8 @@
       if (!res.ok) return;
       const data = await res.json();
       
-      const setBadge = (id, count) => {
-        const el = document.getElementById(id);
-        if (el) {
-          if (count > 0) {
-            el.textContent = count;
-            el.classList.remove('hidden');
-          } else {
-            el.classList.add('hidden');
-          }
-        }
-      };
-
+      sessionStorage.setItem(cacheKey, JSON.stringify({timestamp: Date.now(), data: data}));
+      
       setBadge('sidebar-badge-messages', data.messages);
       setBadge('sidebar-badge-tickets', data.tickets);
     } catch (e) {
@@ -330,18 +345,13 @@
   }
 
   async function loadBranding() {
-    try {
-      const res = await fetch('/api/settings/branding');
-      if (!res.ok) return;
-      const data = await res.json();
-      
+    const applyBranding = (data) => {
       const nameEl = document.getElementById('sidebar-company-name');
       const logoContainer = document.getElementById('sidebar-logo-container');
       const logoText = document.getElementById('sidebar-logo-text');
       
       if (nameEl && data.company_name) {
         nameEl.textContent = data.company_name;
-        // Optionally update document title
         document.title = document.title.replace('Southeast CRM', data.company_name);
       }
       
@@ -364,6 +374,22 @@
           }
         }
       }
+    };
+
+    const cachedBranding = localStorage.getItem('crm_branding_cache');
+    if (cachedBranding) {
+      try {
+        applyBranding(JSON.parse(cachedBranding));
+      } catch (e) {}
+    }
+
+    try {
+      const res = await fetch('/api/settings/branding');
+      if (!res.ok) return;
+      const data = await res.json();
+      
+      localStorage.setItem('crm_branding_cache', JSON.stringify(data));
+      applyBranding(data);
     } catch (e) {
       // silently fail
     }
