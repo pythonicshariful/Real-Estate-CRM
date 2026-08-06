@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const IS_ADMIN = localStorage.getItem('crm_role') === 'ADMIN';
 
     let currentLeadId = null;
+    let currentLeadData = null;
     let allLeadsData = [];
     let filteredLeadsData = [];
     let currentPage = 1;
@@ -604,6 +605,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function populateDrawer(data) {
+        currentLeadData = data;
         const c = data.contact || {};
         document.getElementById('drawer-lead-name').textContent = c.full_name || `Lead #${data.id}`;
         
@@ -879,6 +881,112 @@ document.addEventListener('DOMContentLoaded', () => {
     if (IS_ADMIN) {
         const bulkAssignBtn = document.getElementById('bulk-assign-btn');
         if (bulkAssignBtn) bulkAssignBtn.classList.remove('hidden');
+
+        const editBtn = document.getElementById('drawer-edit-btn');
+        const deleteBtn = document.getElementById('drawer-delete-btn');
+        const editModal = document.getElementById('edit-lead-modal');
+        const editForm = document.getElementById('edit-lead-form');
+        const closeEditModalBtn = document.getElementById('close-edit-modal');
+        const cancelEditModalBtn = document.getElementById('cancel-edit-modal');
+
+        if (editBtn) {
+            editBtn.classList.remove('hidden');
+            editBtn.addEventListener('click', () => {
+                if (!currentLeadData) return;
+                const c = currentLeadData.contact || {};
+                document.getElementById('edit-lead-name').value = c.full_name || '';
+                document.getElementById('edit-lead-phone').value = c.phone_raw || '';
+                document.getElementById('edit-lead-email').value = c.email || '';
+                
+                editModal.classList.remove('hidden');
+                requestAnimationFrame(() => {
+                    editModal.classList.remove('opacity-0');
+                    document.getElementById('edit-lead-modal-content').classList.remove('scale-95');
+                });
+            });
+        }
+
+        const closeEditModal = () => {
+            editModal.classList.add('opacity-0');
+            document.getElementById('edit-lead-modal-content').classList.add('scale-95');
+            setTimeout(() => editModal.classList.add('hidden'), 200);
+        };
+
+        if (closeEditModalBtn) closeEditModalBtn.addEventListener('click', closeEditModal);
+        if (cancelEditModalBtn) cancelEditModalBtn.addEventListener('click', closeEditModal);
+
+        if (editForm) {
+            editForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const saveBtn = document.getElementById('save-edit-btn');
+                const originalText = saveBtn.innerHTML;
+                saveBtn.innerHTML = 'Saving...';
+                saveBtn.disabled = true;
+
+                try {
+                    const token = localStorage.getItem('crm_token');
+                    const data = {
+                        full_name: document.getElementById('edit-lead-name').value.trim(),
+                        phone: document.getElementById('edit-lead-phone').value.trim(),
+                        email: document.getElementById('edit-lead-email').value.trim()
+                    };
+
+                    const res = await fetch(`/api/leads/${currentLeadId}`, {
+                        method: 'PUT',
+                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+
+                    if (!res.ok) {
+                        const err = await res.json();
+                        throw new Error(err.error || "Failed to edit lead");
+                    }
+
+                    if (window.showToast) window.showToast("Lead updated successfully", "success");
+                    closeEditModal();
+                    
+                    // Reload drawer and list
+                    const updatedRes = await fetch(`/api/leads/${currentLeadId}/profile`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (updatedRes.ok) {
+                        populateDrawer(await updatedRes.json());
+                    }
+                    loadLeads();
+                } catch (err) {
+                    if (window.showToast) window.showToast(err.message, "error");
+                } finally {
+                    saveBtn.innerHTML = originalText;
+                    saveBtn.disabled = false;
+                }
+            });
+        }
+
+        if (deleteBtn) {
+            deleteBtn.classList.remove('hidden');
+            deleteBtn.addEventListener('click', async () => {
+                if (!confirm("Are you sure you want to delete this lead? This action cannot be undone.")) return;
+                
+                try {
+                    const token = localStorage.getItem('crm_token');
+                    const res = await fetch(`/api/leads/${currentLeadId}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+
+                    if (!res.ok) {
+                        const err = await res.json();
+                        throw new Error(err.error || "Failed to delete lead");
+                    }
+
+                    if (window.showToast) window.showToast("Lead deleted successfully", "success");
+                    closeDrawerBtn.click(); // Close the drawer
+                    loadLeads(); // Reload the list
+                } catch (err) {
+                    if (window.showToast) window.showToast(err.message, "error");
+                }
+            });
+        }
 
         const selectAllBtn = document.getElementById('select-all-btn');
         if (selectAllBtn) {

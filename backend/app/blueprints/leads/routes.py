@@ -263,6 +263,14 @@ def update_lead(id):
         return jsonify({"error": "Access denied"}), 403
     
     data = request.json
+    contact = lead.contact
+    if contact and is_admin(role):
+        if 'full_name' in data:
+            contact.full_name = data['full_name']
+        if 'email' in data:
+            contact.email = data['email']
+        if 'phone' in data:
+            contact.phone_raw = data['phone']
     if 'pipeline_stage' in data:
         try:
             old_stage = lead.pipeline_stage.value if lead.pipeline_stage else 'NEW'
