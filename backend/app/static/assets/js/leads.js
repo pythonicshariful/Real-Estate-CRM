@@ -880,6 +880,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const bulkAssignBtn = document.getElementById('bulk-assign-btn');
         if (bulkAssignBtn) bulkAssignBtn.classList.remove('hidden');
 
+        const selectAllBtn = document.getElementById('select-all-btn');
+        if (selectAllBtn) {
+            selectAllBtn.classList.remove('hidden');
+            selectAllBtn.addEventListener('click', () => {
+                const boxes = document.querySelectorAll('.lead-checkbox');
+                if (boxes.length === 0) return;
+                const allChecked = Array.from(boxes).every(b => b.checked);
+                boxes.forEach(b => b.checked = !allChecked);
+            });
+        }
+
         const container = document.getElementById('filter-owner-container');
         if (container) container.classList.remove('hidden');
         
