@@ -10,7 +10,9 @@ def verify_webhook():
     challenge = request.args.get('hub.challenge')
     
     if mode and token:
-        if mode == 'subscribe' and token == current_app.config['META_VERIFY_TOKEN']:
+        from app.models import SystemSetting
+        verify_token = SystemSetting.get('meta_verify_token') or current_app.config.get('META_VERIFY_TOKEN')
+        if mode == 'subscribe' and token == verify_token:
             return challenge, 200
         return 'Forbidden', 403
     return 'Bad Request', 400
@@ -24,7 +26,9 @@ def receive_webhook():
         return 'Missing signature', 400
         
     # Validate signature
-    secret = current_app.config['META_APP_SECRET'].encode('utf-8')
+    from app.models import SystemSetting
+    secret_str = SystemSetting.get('meta_app_secret') or current_app.config.get('META_APP_SECRET', '')
+    secret = secret_str.encode('utf-8')
     expected = 'sha256=' + hmac.new(secret, payload, hashlib.sha256).hexdigest()
     if not hmac.compare_digest(expected, signature):
         return 'Invalid signature', 403
