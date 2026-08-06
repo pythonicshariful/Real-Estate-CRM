@@ -306,7 +306,10 @@ class Opportunity(db.Model, SoftDeleteMixin):
     @property
     def is_overdue(self):
         if self.next_action_deadline:
-            return self.next_action_deadline < datetime.now(timezone.utc)
+            deadline = self.next_action_deadline
+            if deadline.tzinfo is None:
+                deadline = deadline.replace(tzinfo=timezone.utc)
+            return deadline < datetime.now(timezone.utc)
         return False
         
     def to_dict(self):
