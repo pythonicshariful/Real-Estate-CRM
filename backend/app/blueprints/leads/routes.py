@@ -496,7 +496,6 @@ def log_call(id):
 
         # Run MEGA upload in a background thread to prevent UI freezing
         import threading
-        from flask import current_app
         app_context = current_app._get_current_object()
         
         def background_mega_upload(app_ctx, log_id, filepath, fname):
