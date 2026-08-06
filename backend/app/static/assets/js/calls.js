@@ -38,7 +38,11 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadQuickNotes() {
         if (!quickNotesContainer) return;
         try {
-            const data = await fetchAPI('/api/settings/quick_notes');
+            const res = await fetch('/api/settings/quick_notes', {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('crm_token')}` }
+            });
+            if (!res.ok) throw new Error('Failed to fetch quick notes');
+            const data = await res.json();
             if (data && data.quick_notes) {
                 quickNotesContainer.innerHTML = '';
                 const notes = data.quick_notes.split(',').map(n => n.trim()).filter(n => n.length > 0);
