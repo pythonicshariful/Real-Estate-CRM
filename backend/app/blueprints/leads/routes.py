@@ -492,17 +492,29 @@ def log_call(id):
 
         recording_file.save(local_path)
         log.recording_filename = safe_name  # local fallback
-
-        # Try MEGA upload — never fail the whole request if it errors
-        mega_link = upload_recording_to_mega(local_path, safe_name)
-        if mega_link:
-            log.recording_filename = mega_link  # store the public MEGA link
-            recording_url = mega_link
-        else:
-            # Keep local file; expose via secure signed URL system
-            recording_url = None
-
         db.session.commit()
+
+        # Run MEGA upload in a background thread to prevent UI freezing
+        import threading
+        from flask import current_app
+        app_context = current_app._get_current_object()
+        
+        def background_mega_upload(app_ctx, log_id, filepath, fname):
+            with app_ctx.app_context():
+                from app.tasks import upload_recording_to_mega
+                from app.models import CallLog, db
+                link = upload_recording_to_mega(filepath, fname)
+                if link:
+                    call_log = CallLog.query.get(log_id)
+                    if call_log:
+                        call_log.recording_filename = link
+                        db.session.commit()
+                        
+        thread = threading.Thread(target=background_mega_upload, args=(app_context, log.id, local_path, safe_name))
+        thread.start()
+
+        # Tell UI that upload is processing
+        recording_url = "processing_in_background"
 
     return jsonify({"id": log.id, "msg": "Call logged", "recording_url": recording_url}), 201
 

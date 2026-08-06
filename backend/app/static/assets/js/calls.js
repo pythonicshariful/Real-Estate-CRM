@@ -117,7 +117,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
             
-            if (data.recording_url && data.recording_url.startsWith('http')) {
+            if (data.recording_url === "processing_in_background") {
+                window.showToast("Call logged! Recording is uploading in the background.", "success");
+            } else if (data.recording_url && data.recording_url.startsWith('http')) {
                 window.showToast("Call logged & recording uploaded to MEGA!", "success");
             } else if (data.recording_url) {
                 window.showToast(`Call logged, but upload warning: ${data.recording_url}`, "error");

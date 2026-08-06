@@ -62,7 +62,7 @@ def schedule_sla_chain(opportunity_id: int, app=None):
         id=f'sla_reminder_{opportunity_id}',
         replace_existing=True,
         args=[opportunity_id],
-        misfire_grace_time=300,
+        misfire_grace_time=86400,
     )
     scheduler.add_job(
         func=sla_manager_alert,
@@ -71,7 +71,7 @@ def schedule_sla_chain(opportunity_id: int, app=None):
         id=f'sla_manager_alert_{opportunity_id}',
         replace_existing=True,
         args=[opportunity_id],
-        misfire_grace_time=300,
+        misfire_grace_time=86400,
     )
     scheduler.add_job(
         func=sla_escalate,
@@ -80,7 +80,7 @@ def schedule_sla_chain(opportunity_id: int, app=None):
         id=f'sla_escalate_{opportunity_id}',
         replace_existing=True,
         args=[opportunity_id],
-        misfire_grace_time=300,
+        misfire_grace_time=86400,
     )
 
     logger.info(
