@@ -119,6 +119,31 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (data.recording_url === "processing_in_background") {
                 window.showToast("Call logged! Recording is uploading in the background.", "success");
+                
+                // Poll for background upload completion
+                if (data.id) {
+                    const pollInterval = setInterval(async () => {
+                        try {
+                            const statusRes = await fetch(`/api/leads/calls/${data.id}/status`, {
+                                headers: { 'Authorization': `Bearer ${token}` }
+                            });
+                            if (statusRes.ok) {
+                                const statusData = await statusRes.json();
+                                if (statusData.recording_url && statusData.recording_url !== "processing_in_background") {
+                                    clearInterval(pollInterval);
+                                    if (statusData.recording_url.startsWith('http')) {
+                                        window.showToast("MEGA upload complete!", "success");
+                                    } else {
+                                        window.showToast(`MEGA upload warning: ${statusData.recording_url}`, "error");
+                                    }
+                                    if (typeof loadLeads === 'function') loadLeads();
+                                }
+                            }
+                        } catch (e) {
+                            // ignore polling errors
+                        }
+                    }, 5000); // Poll every 5 seconds
+                }
             } else if (data.recording_url && data.recording_url.startsWith('http')) {
                 window.showToast("Call logged & recording uploaded to MEGA!", "success");
             } else if (data.recording_url) {

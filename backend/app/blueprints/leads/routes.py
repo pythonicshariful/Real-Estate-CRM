@@ -518,6 +518,13 @@ def log_call(id):
 
     return jsonify({"id": log.id, "msg": "Call logged", "recording_url": recording_url}), 201
 
+@leads_bp.route('/calls/<int:log_id>/status', methods=['GET'])
+@jwt_required()
+def get_call_log_status(log_id):
+    from app.models import CallLog
+    log = CallLog.query.get_or_404(log_id)
+    return jsonify({"id": log.id, "recording_url": log.recording_filename})
+
 @leads_bp.route('/<int:id>/appointments', methods=['POST'])
 @leads_bp.route('/<int:id>/appointment', methods=['POST'])
 @jwt_required()
