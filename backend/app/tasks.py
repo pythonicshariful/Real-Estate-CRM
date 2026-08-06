@@ -591,10 +591,14 @@ def _fetch_meta_lead(app, leadgen_id: str) -> dict | None:
             'access_token': token,
             'fields': 'field_data,created_time,ad_id,adset_id,campaign_id,form_id'
         }, timeout=10)
-        resp.raise_for_status()
+        
+        if not resp.ok:
+            logger.error(f'Meta Graph API error for leadgen {leadgen_id}: {resp.status_code} - {resp.text}')
+            resp.raise_for_status()
+            
         return resp.json()
     except Exception as e:
-        logger.error(f'Meta Graph API error for leadgen {leadgen_id}: {e}')
+        logger.error(f'Meta Graph API request failed for leadgen {leadgen_id}: {e}')
         return None
 
 
