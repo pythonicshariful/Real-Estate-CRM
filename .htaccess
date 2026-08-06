@@ -15,16 +15,14 @@
   RewriteEngine On
   
   # Attempt to serve backend uploads directly to bypass Python workers
-  RewriteCond %{REQUEST_URI} ^/uploads/ [NC]
-  RewriteCond %{DOCUMENT_ROOT}/backend%{REQUEST_URI} -f [OR]
-  RewriteCond %{DOCUMENT_ROOT}/backend%{REQUEST_URI} -d
-  RewriteRule ^(.*)$ /backend/$1 [L]
+  RewriteCond %{REQUEST_URI} ^/uploads/(.*) [NC]
+  RewriteCond %{DOCUMENT_ROOT}/public/uploads/%1 -f
+  RewriteRule ^uploads/(.*)$ public/uploads/$1 [L]
 
-  # Attempt to serve frontend assets directly
-  RewriteCond %{REQUEST_URI} ^/(assets|uploads|index\.html|.*\.html) [NC]
-  RewriteCond %{DOCUMENT_ROOT}/frontend/$1 -f [OR]
-  RewriteCond %{DOCUMENT_ROOT}/frontend/$1 -d
-  RewriteRule ^(.*)$ /frontend/$1 [L]
+  # Attempt to serve frontend assets and HTML directly
+  RewriteCond %{REQUEST_URI} ^/(assets|.*\.html) [NC]
+  RewriteCond %{DOCUMENT_ROOT}/backend/app/static/$1 -f
+  RewriteRule ^(.*)$ backend/app/static/$1 [L]
 </IfModule>
 
 # DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN

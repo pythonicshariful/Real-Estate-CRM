@@ -168,8 +168,6 @@ def create_app(config_name=None):
         from flask import send_from_directory
         import os
         upload_folder = app.config.get('UPLOAD_FOLDER', 'uploads')
-        app.logger.info(f"Serving upload: folder={upload_folder}, filename={filename}")
-        app.logger.info(f"File exists? {os.path.exists(os.path.join(upload_folder, filename))}")
         return send_from_directory(upload_folder, filename)
 
     @app.route('/<path:filename>')
