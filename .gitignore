@@ -35,7 +35,7 @@ brain/
 scratch/
 
 # Uploads / Media
-backend/uploads/
+backend/public/uploads/
 backend/recordings/
 *.log
 

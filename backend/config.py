@@ -67,20 +67,20 @@ class Config:
     # ------------------------------------------------------------------
     UPLOAD_FOLDER = os.environ.get(
         'UPLOAD_FOLDER',
-        str(BASE_DIR / 'uploads')
+        str(BASE_DIR / 'public' / 'uploads')
     )
     if not os.path.isabs(UPLOAD_FOLDER):
         UPLOAD_FOLDER = str(BASE_DIR / UPLOAD_FOLDER)
 
     RECORDINGS_FOLDER = os.environ.get(
         'RECORDINGS_FOLDER',
-        str(BASE_DIR / 'uploads' / 'recordings')
+        str(BASE_DIR / 'public' / 'uploads' / 'recordings')
     )
     if not os.path.isabs(RECORDINGS_FOLDER):
         RECORDINGS_FOLDER = str(BASE_DIR / RECORDINGS_FOLDER)
     AVATARS_FOLDER = os.environ.get(
         'AVATARS_FOLDER',
-        str(BASE_DIR / 'uploads' / 'avatars')
+        str(BASE_DIR / 'public' / 'uploads' / 'avatars')
     )
     MAX_CONTENT_LENGTH = 50 * 1024 * 1024   # 50 MB max file upload
     RECORDING_LINK_EXPIRY_SECONDS = 900      # 15-minute signed URL
