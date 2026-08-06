@@ -279,6 +279,8 @@ def check_sla_compliance(app=None):
     Catches any SLA events that the date-based jobs may have missed
     (e.g., if the server restarted and the job was lost before DB jobstore was set up).
     """
+    import time
+    start_time = time.time()
     app = _get_app(app)
     with app.app_context():
         from app.extensions import db
@@ -308,6 +310,12 @@ def check_sla_compliance(app=None):
                     sla_manager_alert(event.opportunity_id, app=app)
                 else:
                     sla_reminder(event.opportunity_id, app=app)
+                    
+        duration = (time.time() - start_time) * 1000
+        if pending_events:
+            logger.info(f'[SCHEDULER] Job: check_sla_compliance | Processed {len(pending_events)} events | Duration: {duration:.2f}ms')
+        else:
+            logger.info(f'[SCHEDULER] Job: check_sla_compliance | Duration: {duration:.2f}ms')
 
 
 def send_daily_summary(app=None):
@@ -586,11 +594,16 @@ def _fetch_meta_lead(app, leadgen_id: str) -> dict | None:
         return None
 
     url = f'https://graph.facebook.com/v19.0/{leadgen_id}'
+    import time
+    start_time = time.time()
     try:
         resp = requests.get(url, params={
             'access_token': token,
             'fields': 'field_data,created_time,ad_id,adset_id,campaign_id,form_id'
         }, timeout=10)
+        
+        duration = (time.time() - start_time) * 1000
+        logger.info(f'[API] Meta Graph API | Duration: {duration:.2f}ms | Status: {resp.status_code}')
         
         if not resp.ok:
             logger.error(f'Meta Graph API error for leadgen {leadgen_id}: {resp.status_code} - {resp.text}')
@@ -598,7 +611,8 @@ def _fetch_meta_lead(app, leadgen_id: str) -> dict | None:
             
         return resp.json()
     except Exception as e:
-        logger.error(f'Meta Graph API request failed for leadgen {leadgen_id}: {e}')
+        duration = (time.time() - start_time) * 1000
+        logger.error(f'[API] Meta Graph API request failed after {duration:.2f}ms for leadgen {leadgen_id}: {e}')
         return None
 
 

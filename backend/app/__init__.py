@@ -110,6 +110,27 @@ def create_app(config_name=None):
         return jsonify({'status': 'error', 'code': 500, 'message': 'Internal Server Error', 'details': 'Something went wrong'}), 500
 
     # ------------------------------------------------------------------
+    # Performance Profiling (Request Timing)
+    # ------------------------------------------------------------------
+    import time
+    from flask import g, request
+
+    @app.before_request
+    def start_timer():
+        g.start_time = time.time()
+        g.sql_time = 0.0
+        g.sql_queries = 0
+
+    @app.after_request
+    def log_request_performance(response):
+        if hasattr(g, 'start_time'):
+            duration = (time.time() - g.start_time) * 1000
+            sql_time = getattr(g, 'sql_time', 0.0)
+            sql_queries = getattr(g, 'sql_queries', 0)
+            app.logger.info(f'[PERF] {request.method} {request.path} | DB: {sql_time:.2f}ms ({sql_queries}q) | Total Request: {duration:.2f}ms')
+        return response
+
+    # ------------------------------------------------------------------
     # Register all 17 module blueprints
     # ------------------------------------------------------------------
     _register_blueprints(app)
