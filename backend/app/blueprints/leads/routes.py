@@ -265,12 +265,49 @@ def update_lead(id):
     data = request.json
     contact = lead.contact
     if contact and is_admin(role):
-        if 'full_name' in data:
-            contact.full_name = data['full_name']
-        if 'email' in data:
-            contact.email = data['email']
-        if 'phone' in data:
-            contact.phone_raw = data['phone']
+        new_name = data.get('full_name', contact.full_name)
+        new_email = data.get('email', contact.email)
+        new_phone = data.get('phone', contact.phone_raw)
+        
+        if new_name != contact.full_name or new_email != contact.email or new_phone != contact.phone_raw:
+            from app.utils.phone import normalize_phone
+            new_phone_norm = normalize_phone(new_phone) if new_phone else None
+            
+            # Check how many active opportunities share this contact
+            shared_count = Opportunity.query.filter_by(contact_id=contact.id).count()
+            
+            if shared_count > 1:
+                # Need to detach to avoid changing other leads
+                existing_contact = None
+                if new_phone_norm:
+                    existing_contact = Contact.query.filter_by(phone_normalized=new_phone_norm).first()
+                if not existing_contact and new_email:
+                    existing_contact = Contact.query.filter_by(email=new_email).first()
+                    
+                if existing_contact:
+                    lead.contact_id = existing_contact.id
+                    existing_contact.full_name = new_name
+                else:
+                    new_contact = Contact(
+                        full_name=new_name,
+                        email=new_email,
+                        phone_raw=new_phone,
+                        phone_normalized=new_phone_norm,
+                        source=contact.source,
+                        gender=contact.gender,
+                        address=contact.address,
+                        consent_given=contact.consent_given,
+                        consent_date=contact.consent_date
+                    )
+                    db.session.add(new_contact)
+                    db.session.flush()
+                    lead.contact_id = new_contact.id
+            else:
+                # Safe to update in-place
+                contact.full_name = new_name
+                contact.email = new_email
+                contact.phone_raw = new_phone
+                contact.phone_normalized = new_phone_norm
     if 'pipeline_stage' in data:
         try:
             old_stage = lead.pipeline_stage.value if lead.pipeline_stage else 'NEW'
