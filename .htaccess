@@ -13,6 +13,13 @@
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
+  
+  # Attempt to serve backend uploads directly to bypass Python workers
+  RewriteCond %{REQUEST_URI} ^/uploads/ [NC]
+  RewriteCond %{DOCUMENT_ROOT}/backend%{REQUEST_URI} -f [OR]
+  RewriteCond %{DOCUMENT_ROOT}/backend%{REQUEST_URI} -d
+  RewriteRule ^(.*)$ /backend/$1 [L]
+
   # Attempt to serve frontend assets directly
   RewriteCond %{REQUEST_URI} ^/(assets|uploads|index\.html|.*\.html) [NC]
   RewriteCond %{DOCUMENT_ROOT}/frontend/$1 -f [OR]
@@ -25,3 +32,7 @@ PassengerAppRoot "/home/alpheojj/Real-Estate-CRM"
 PassengerBaseURI "/"
 PassengerPython "/home/alpheojj/virtualenv/Real-Estate-CRM/3.13/bin/python"
 # DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
+
+<IfModule Litespeed>
+  SetEnv LSAPI_CHILDREN 20
+</IfModule>
