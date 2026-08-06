@@ -580,7 +580,8 @@ def _send_email_notification(app, recipient_email: str, subject: str, body: str)
 def _fetch_meta_lead(app, leadgen_id: str) -> dict | None:
     """Fetch full lead details from Meta Graph API."""
     import requests
-    token = app.config.get('META_PAGE_ACCESS_TOKEN')
+    from app.models import SystemSetting
+    token = SystemSetting.get('meta_page_access_token') or app.config.get('META_PAGE_ACCESS_TOKEN')
     if not token:
         return None
 
