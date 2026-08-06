@@ -87,9 +87,12 @@ async function loadUsers() {
       card.innerHTML = `
         <div class="flex items-start justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
-              ${initials}
-            </div>
+            ${user.avatar_url 
+              ? `<img src="${user.avatar_url}" alt="Avatar" class="w-12 h-12 rounded-xl object-cover shadow-lg">`
+              : `<div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                  ${initials}
+                 </div>`
+            }
             <div>
               <div class="font-semibold text-white text-base">${user.full_name || 'N/A'}</div>
               <div class="text-xs text-slate-400">${user.email}</div>
