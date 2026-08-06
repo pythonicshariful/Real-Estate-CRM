@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Meta Lead Ads & CRM Webhook Integration Guide</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 16mm 14mm;
+            background-color: #f8fafc;
+            @bottom-right {
+                content: "Page " counter(page) " of " counter(pages);
+                font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+                font-size: 8pt;
+                color: #64748b;
+            }
+            @bottom-left {
+                content: "NextGen CRM — Meta Lead Ads Setup Guide";
+                font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+                font-size: 8pt;
+                color: #64748b;
+            }
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #1e293b;
+            background-color: #f8fafc;
+            font-size: 9.5pt;
+            line-height: 1.5;
+        }
+
+        .header-banner {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #ffffff;
+            margin: -16mm -14mm 20px -14mm;
+            padding: 24px 18mm 20px 18mm;
+            border-bottom: 4px solid #2563eb;
+        }
+
+        .header-banner h1 {
+            margin: 0 0 6px 0;
+            font-size: 18pt;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: #ffffff;
+        }
+
+        .header-banner p {
+            margin: 0;
+            font-size: 10pt;
+            color: #94a3b8;
+        }
+
+        .badge {
+            display: inline-block;
+            background-color: #2563eb;
+            color: #ffffff;
+            font-size: 7.5pt;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        h2 {
+            font-size: 12pt;
+            color: #0f172a;
+            margin: 18px 0 8px 0;
+            padding-left: 10px;
+            border-left: 4px solid #2563eb;
+            page-break-after: avoid;
+            font-weight: 700;
+        }
+
+        h3 {
+            font-size: 10pt;
+            color: #334155;
+            margin: 12px 0 4px 0;
+            page-break-after: avoid;
+            font-weight: 600;
+        }
+
+        p {
+            margin: 0 0 8px 0;
+            color: #334155;
+        }
+
+        ol, ul {
+            margin: 0 0 10px 0;
+            padding-left: 18px;
+        }
+
+        li {
+            margin-bottom: 4px;
+            color: #334155;
+        }
+
+        code {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #e2e8f0;
+            color: #0f172a;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-size: 8.5pt;
+        }
+
+        pre {
+            background-color: #0f172a;
+            color: #f8fafc;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 8pt;
+            line-height: 1.4;
+            overflow-x: auto;
+            margin: 6px 0 12px 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .callout {
+            background-color: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 10px 12px;
+            margin: 10px 0;
+            border-radius: 0 6px 6px 0;
+            font-size: 9pt;
+        }
+
+        .callout-title {
+            font-weight: 700;
+            color: #1e40af;
+            margin-bottom: 2px;
+        }
+
+        .callout-warn {
+            background-color: #fef2f2;
+            border-left: 4px solid #ef4444;
+        }
+
+        .callout-warn .callout-title {
+            color: #991b1b;
+        }
+
+        .table-custom {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 8.5pt;
+        }
+
+        .table-custom th, .table-custom td {
+            border: 1px solid #cbd5e1;
+            padding: 6px 8px;
+            text-align: left;
+        }
+
+        .table-custom th {
+            background-color: #1e293b;
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .table-custom tr:nth-child(even) {
+            background-color: #f1f5f9;
+        }
+
+        .grid-container {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+            margin-bottom: 10px;
+        }
+
+        .grid-cell {
+            display: table-cell;
+            vertical-align: top;
+            padding-right: 10px;
+        }
+
+        .grid-cell:last-child {
+            padding-right: 0;
+        }
+
+        .step-num {
+            display: inline-block;
+            background-color: #0f172a;
+            color: #ffffff;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 18px;
+            font-size: 8pt;
+            font-weight: bold;
+            margin-right: 6px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-banner">
+        <div class="badge">Integration Guide & Documentation</div>
+        <h1>Meta Lead Ads to CRM Integration</h1>
+        <p>Complete A-to-Z Manual for Setting Up, Configuring Tokens, Subscribing Webhooks, and Testing</p>
+    </div>
+
+    <h2>1. Overview & Architecture</h2>
+    <p>This document details the complete end-to-end process for linking a Facebook Page's Instant Lead Forms to an automated CRM webhook endpoint using the Meta Graph API (v25.0).</p>
+
+    <div class="callout">
+        <div class="callout-title">Core Workflow Architecture</div>
+        User Fills Lead Form on Facebook &rarr; Meta Fires Webhook Payload &rarr; Python Backend Receives Event &rarr; CRM Fetches Lead Details via Graph API &rarr; Saved to Database.
+    </div>
+
+    <h2>2. Step-by-Step Setup Pipeline</h2>
+
+    <h3>Phase 1: Meta Business & App Setup</h3>
+    <ol>
+        <li><strong>Create Lead Form:</strong> Go to <code>Meta Business Suite</code> &rarr; <code>All Tools</code> &rarr; <code>Instant Forms</code> &rarr; Create a form (e.g., <em>Test Lead Form</em>) and publish it.</li>
+        <li><strong>Create Developer App:</strong> Go to <code>developers.facebook.com/apps</code> &rarr; Create App &rarr; Select <code>Others</code> &rarr; Choose <code>Business</code> app type.</li>
+        <li><strong>Link Business Portfolio:</strong> Select your Meta Business Portfolio during creation to prevent security access blocks.</li>
+        <li><strong>Note Credentials:</strong> Copy your <code>App ID</code> and <code>App Secret</code> from <em>Settings &gt; Basic</em>.</li>
+    </ol>
+
+    <h3>Phase 2: Webhook Subscription Configuration</h3>
+    <ol>
+        <li>In Meta App Dashboard, add the <strong>Webhooks</strong> product.</li>
+        <li>Change the dropdown at the top from <strong>User</strong> to <strong>Page</strong>.</li>
+        <li>Click <strong>Subscribe to this object</strong> and enter:
+            <ul>
+                <li><strong>Callback URL:</strong> <code>https://yourdomain.com/api/webhooks/meta</code></li>
+                <li><strong>Verify Token:</strong> Matches <code>META_VERIFY_TOKEN</code> in your CRM <code>.env</code>.</li>
+            </ul>
+        </li>
+        <li>Locate <strong><code>leadgen</code></strong> in the field list and click <strong>Subscribe</strong>.</li>
+    </ol>
+
+    <h2>3. Token Generation Pipeline (Permanent Page Access Token)</h2>
+
+    <p>Follow these exact terminal commands (Windows Command Prompt or Linux Terminal) to generate a page token that <strong>never expires</strong>.</p>
+
+    <h3>Step A: Obtain Short-Lived User Access Token</h3>
+    <p>Open <strong>Graph API Explorer</strong>, select your App, select permissions (<code>leads_retrieval</code>, <code>pages_read_engagement</code>, <code>pages_manage_ads</code>, <code>pages_manage_metadata</code>), and click <strong>Generate Access Token</strong>.</p>
+
+    <h3>Step B: Exchange for 60-Day Long-Lived Token</h3>
+    <pre>curl -X GET "https://graph.facebook.com/v25.0/oauth/access_token?grant_type=fb_exchange_token&client_id=YOUR_APP_ID&client_secret=YOUR_APP_SECRET&fb_exchange_token=SHORT_USER_TOKEN"</pre>
+
+    <h3>Step C: Fetch Permanent Page Token & Page ID</h3>
+    <pre>curl -X GET "https://graph.facebook.com/v25.0/me/accounts?access_token=LONG_LIVED_USER_TOKEN"</pre>
+
+    <h3>Step D: Link Webhook to Page (Crucial Step)</h3>
+    <pre>curl -X POST "https://graph.facebook.com/v25.0/YOUR_PAGE_ID/subscribed_apps?subscribed_fields=leadgen&access_token=PERMANENT_PAGE_TOKEN"</pre>
+    <p><em>Expected Output:</em> <code>{"success": true}</code></p>
+
+    <h2>4. Python Backend Webhook Implementation</h2>
+
+    <pre>from flask import Flask, request, jsonify
+import requests
+
+app = Flask(__name__)
+
+VERIFY_TOKEN = "YourSecureVerifyToken123"
+PAGE_ACCESS_TOKEN = "EAAR7zT2gSPI..."
+
+@app.route('/api/webhooks/meta', methods=['GET', 'POST'])
+def meta_webhook():
+    # Verification Handshake (GET)
+    if request.method == 'GET':
+        mode = request.args.get('hub.mode')
+        token = request.args.get('hub.verify_token')
+        challenge = request.args.get('hub.challenge')
+        
+        if mode == 'subscribe' and token == VERIFY_TOKEN:
+            return challenge, 200
+        return 'Forbidden', 403
+
+    # Incoming Lead Event (POST)
+    if request.method == 'POST':
+        data = request.get_json()
+        if data.get('object') == 'page':
+            for entry in data.get('entry', []):
+                for change in entry.get('changes', []):
+                    if change.get('field') == 'leadgen':
+                        leadgen_id = change['value']['leadgen_id']
+                        # Fetch full lead payload asynchronously
+                        fetch_lead_details(leadgen_id)
+            
+            # MUST return 200 OK immediately
+            return "EVENT_RECEIVED", 200
+            
+        return "Not Found", 404
+
+def fetch_lead_details(leadgen_id):
+    url = f"https://graph.facebook.com/v25.0/{leadgen_id}?access_token={PAGE_ACCESS_TOKEN}"
+    res = requests.get(url).json()
+    # Process field_data (Name, Email, Phone) and save to CRM DB</pre>
+
+    <h2>5. Testing & Troubleshooting Checklist</h2>
+
+    <table class="table-custom">
+        <thead>
+            <tr>
+                <th>Error Status / Message</th>
+                <th>Root Cause</th>
+                <th>Solution / Fix</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>(#200) Permission missing: leads_retrieval</code></td>
+                <td>Token was generated without explicit lead retrieval rights.</td>
+                <td>Re-generate User Token in Graph API Explorer with <code>leads_retrieval</code> checked.</td>
+            </tr>
+            <tr>
+                <td><code>webhooks.delivery.rejected</code></td>
+                <td>Server returned non-200 code or timed out before responding.</td>
+                <td>Ensure Flask route returns <code>"EVENT_RECEIVED", 200</code> immediately before heavy DB ops.</td>
+            </tr>
+            <tr>
+                <td><code>Required permissions are missing for the app</code></td>
+                <td>Lead Access Manager in Meta Business Manager is blocking the app.</td>
+                <td>Go to <em>Business Settings &gt; Integrations &gt; Leads access &gt; CRMs</em> and assign your App.</td>
+            </tr>
+            <tr>
+                <td><code>404 Not Found</code> in Testing Tool</td>
+                <td>Callback URL path mismatch or endpoint not live.</td>
+                <td>Verify cPanel app is running and URL path matches Flask route exactly.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="callout callout-warn">
+        <div class="callout-title">Testing Tool URL</div>
+        Always test leads using Meta's official testing page: <br>
+        <code>https://developers.facebook.com/tools/lead-ads-testing/</code>
+    </div>
+
+</body>
+</html>
