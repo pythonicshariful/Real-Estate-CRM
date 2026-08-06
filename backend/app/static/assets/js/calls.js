@@ -32,21 +32,52 @@ document.addEventListener('DOMContentLoaded', () => {
     cancelCallModalBtn.addEventListener('click', hideCallModal);
 
     // Quick Notes Logic
-    const quickNoteBtns = document.querySelectorAll('.quick-note-btn');
     const callNotesTextarea = document.getElementById('call-notes');
-    
-    quickNoteBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const currentText = callNotesTextarea.value.trim();
-            const noteText = btn.textContent;
-            if (currentText) {
-                callNotesTextarea.value = currentText + '\n' + noteText;
-            } else {
-                callNotesTextarea.value = noteText;
+    const quickNotesContainer = document.getElementById('quick-notes-container');
+
+    async function loadQuickNotes() {
+        if (!quickNotesContainer) return;
+        try {
+            const data = await fetchAPI('/api/settings/quick_notes');
+            if (data && data.quick_notes) {
+                quickNotesContainer.innerHTML = '';
+                const notes = data.quick_notes.split(',').map(n => n.trim()).filter(n => n.length > 0);
+                
+                // Color cycling classes for buttons
+                const colorClasses = [
+                    'hover:bg-indigo-500/20 hover:text-indigo-400 hover:border-indigo-500/50',
+                    'hover:bg-emerald-500/20 hover:text-emerald-400 hover:border-emerald-500/50',
+                    'hover:bg-amber-500/20 hover:text-amber-400 hover:border-amber-500/50',
+                    'hover:bg-rose-500/20 hover:text-rose-400 hover:border-rose-500/50',
+                    'hover:bg-cyan-500/20 hover:text-cyan-400 hover:border-cyan-500/50'
+                ];
+
+                notes.forEach((noteText, idx) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = `quick-note-btn px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-xs font-medium text-slate-300 transition-colors ${colorClasses[idx % colorClasses.length]}`;
+                    btn.textContent = noteText;
+                    
+                    btn.addEventListener('click', () => {
+                        const currentText = callNotesTextarea.value.trim();
+                        if (currentText) {
+                            callNotesTextarea.value = currentText + '\n' + noteText;
+                        } else {
+                            callNotesTextarea.value = noteText;
+                        }
+                        callNotesTextarea.focus();
+                    });
+                    
+                    quickNotesContainer.appendChild(btn);
+                });
             }
-            callNotesTextarea.focus();
-        });
-    });
+        } catch (e) {
+            console.error("Failed to load quick notes:", e);
+        }
+    }
+    
+    // Call loadQuickNotes to populate the buttons
+    loadQuickNotes();
 
     // Form submission
     callLogForm.addEventListener('submit', async (e) => {

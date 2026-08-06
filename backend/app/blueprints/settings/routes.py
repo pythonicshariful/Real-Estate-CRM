@@ -26,7 +26,8 @@ DEFAULT_SETTINGS = {
     'company_logo': '',
     'mega_email': '',
     'mega_password': '',
-    'mega_folder': 'CRM-Recordings'
+    'mega_folder': 'CRM-Recordings',
+    'quick_notes': 'Left Voicemail,Meeting Scheduled,Call Back Later,Send More Info,Not Interested,Wrong Number'
 }
 
 import os
@@ -36,6 +37,13 @@ from werkzeug.utils import secure_filename
 def get_branding():
     # Public endpoint for sidebar and login page
     keys = ['company_name', 'company_logo']
+    return jsonify(_get_setting_dict(keys))
+
+@settings_bp.route('/quick_notes', methods=['GET'])
+@jwt_required()
+def get_quick_notes():
+    # Public endpoint for all authenticated users to read quick notes
+    keys = ['quick_notes']
     return jsonify(_get_setting_dict(keys))
 
 @settings_bp.route('/branding/logo', methods=['POST'])

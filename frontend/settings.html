@@ -53,6 +53,10 @@
           <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
           Email & SMTP
         </button>
+        <button id="nav-quick-notes" onclick="switchTab('quick-notes')" class="tab-btn admin-only inline-flex md:flex w-auto md:w-full text-left px-4 py-2.5 rounded-xl text-xs text-slate-400 hover:bg-white/5 transition-all items-center gap-2.5">
+          <svg class="w-4 h-4 text-fuchsia-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+          Quick Notes
+        </button>
         <button id="nav-mega" onclick="switchTab('mega')" class="tab-btn admin-only inline-flex md:flex w-auto md:w-full text-left px-4 py-2.5 rounded-xl text-xs text-slate-400 hover:bg-white/5 transition-all items-center gap-2.5">
           <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
           Mega Storage
@@ -279,6 +283,7 @@
 
 
         <!-- 5. EMAIL & SMTP TAB -->
+        <!-- 5. EMAIL SETTINGS -->
         <div id="tab-email" class="tab-content hidden">
           <div class="max-w-2xl space-y-5">
             <div class="text-base font-bold text-white">SMTP Email Gateway Settings</div>
@@ -312,7 +317,34 @@
           </div>
         </div>
 
-        <!-- 6. MEGA STORAGE TAB -->
+        <!-- QUICK NOTES TAB -->
+        <div id="tab-quick-notes" class="tab-content hidden">
+          <div class="max-w-2xl space-y-5">
+            <div class="text-base font-bold text-white flex justify-between items-center">
+              <span>Quick Notes Configuration</span>
+              <button onclick="addQuickNoteField()" class="btn-ghost px-3 py-1.5 rounded-lg text-xs border border-slate-700 hover:border-indigo-500 text-indigo-400">
+                + Add Note
+              </button>
+            </div>
+            
+            <div class="chart-card space-y-4">
+              <div class="text-xs font-bold text-white uppercase tracking-wider mb-2 border-b border-slate-700/50 pb-2">Predefined Quick Notes</div>
+              <div class="text-xs text-slate-400 mb-4 bg-slate-800/30 p-3 rounded-xl border border-slate-700/50">
+                These are the quick-select buttons available in the "Log Call & Activity" modal on the Leads page.
+              </div>
+              <form id="quick-notes-form" class="space-y-4">
+                <div id="quick-notes-list" class="space-y-3">
+                  <!-- Dynamically populated -->
+                </div>
+                <div class="flex justify-end pt-4 border-t border-slate-800">
+                  <button type="submit" class="btn-gradient px-6 py-2 rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/20">Save Quick Notes</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- 7. MEGA STORAGE -->
         <div id="tab-mega" class="tab-content hidden">
           <div class="max-w-2xl space-y-5">
             <div class="text-base font-bold text-white">MEGA Cloud Storage Configuration</div>
@@ -538,6 +570,53 @@
       }
     }
 
+    async function loadQuickNotes() {
+      try {
+        const data = await fetchAPI('/api/settings/quick_notes');
+        if (!data) return;
+        
+        const listDiv = document.getElementById('quick-notes-list');
+        listDiv.innerHTML = ''; // clear
+        const notesStr = data.quick_notes || '';
+        const notes = notesStr.split(',').map(n => n.trim()).filter(n => n.length > 0);
+        
+        notes.forEach(note => {
+          listDiv.insertAdjacentHTML('beforeend', getQuickNoteRowHTML(note));
+        });
+      } catch (e) {
+        if (window.showToast) window.showToast(e.message, 'error');
+      }
+    }
+
+    function getQuickNoteRowHTML(value = '') {
+      return `
+        <div class="flex items-center gap-3 quick-note-row">
+          <input type="text" class="input-glass flex-1 rounded-xl px-4 py-2 text-sm text-white quick-note-input" value="${value}" placeholder="e.g. Left Voicemail" required>
+          <button type="button" onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-300 p-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
+        </div>
+      `;
+    }
+
+    function addQuickNoteField() {
+      document.getElementById('quick-notes-list').insertAdjacentHTML('beforeend', getQuickNoteRowHTML());
+    }
+
+    document.getElementById('quick-notes-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const inputs = document.querySelectorAll('.quick-note-input');
+      const notes = Array.from(inputs).map(i => i.value.trim()).filter(v => v.length > 0);
+      const payload = { quick_notes: notes.join(',') };
+      
+      try {
+        await fetchAPI('/api/settings/system', { method: 'PUT', body: JSON.stringify(payload) });
+        if (window.showToast) window.showToast('Quick Notes updated successfully!', 'success');
+      } catch (err) {
+        if (window.showToast) window.showToast(err.message, 'error');
+      }
+    });
+
     async function loadEmailSettings() {
       try {
         const data = await fetchAPI('/api/settings/email-templates');
@@ -661,6 +740,7 @@
         loadSlaSettings();
         loadEmailSettings();
         loadMegaSettings();
+        loadQuickNotes();
         
         // Auto-upload company logo on file selection
         const logoInput = document.getElementById('logo-input');
