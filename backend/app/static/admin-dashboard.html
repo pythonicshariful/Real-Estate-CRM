@@ -155,10 +155,12 @@
       container.innerHTML = owners.map(owner => `
         <div class="glass-dark border rounded-2xl p-5 hover:border-opacity-60 transition-all" style="border-color: ${owner.color}40">
           <div class="flex items-center gap-3 mb-4">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
-                 style="background: linear-gradient(135deg, ${owner.color}, ${owner.color}99)">
-              ${owner.name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase()}
-            </div>
+            ${owner.avatar_url 
+              ? `<img src="${owner.avatar_url}" alt="Avatar" class="w-10 h-10 rounded-xl object-cover flex-shrink-0">` 
+              : `<div class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0" style="background: linear-gradient(135deg, ${owner.color}, ${owner.color}99)">
+                  ${owner.name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase()}
+                 </div>`
+            }
             <div>
               <div class="font-bold text-white text-sm">${owner.name}</div>
               <div class="flex items-center gap-1.5 mt-0.5">
@@ -243,9 +245,12 @@
           const time = a.created_at ? new Date(a.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '--';
           return `
             <div class="flex items-start gap-3 p-3 rounded-xl bg-slate-900/40 hover:bg-slate-900/70 transition-colors">
-              <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0 mt-0.5" style="background: ${a.owner_color}">
-                ${a.logged_by.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()}
-              </div>
+              ${a.avatar_url 
+                ? `<img src="${a.avatar_url}" class="w-6 h-6 rounded-full object-cover flex-shrink-0 mt-0.5">`
+                : `<div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0 mt-0.5" style="background: ${a.owner_color}">
+                    ${a.logged_by.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()}
+                   </div>`
+              }
               <div class="flex-1 min-w-0">
                 <div class="text-xs text-white font-medium">${a.logged_by} <span class="text-slate-400 font-normal">logged a call on</span> ${a.lead_name}</div>
                 ${a.notes ? `<div class="text-[10px] text-slate-500 mt-0.5 truncate">${a.notes}</div>` : ''}

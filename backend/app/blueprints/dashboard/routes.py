@@ -67,6 +67,7 @@ def dashboard_stats():
                 "id": owner.id,
                 "name": owner.full_name,
                 "color": owner.calendar_color,
+                "avatar_url": owner.avatar_url,
                 "total_leads": owner_leads.count(),
                 "overdue": owner_leads.filter(
                     Opportunity.next_action_deadline < datetime.now(timezone.utc),
@@ -191,6 +192,7 @@ def recent_activity():
             "created_at": log.created_at.isoformat() if log.created_at else None,
             "logged_by": owner.full_name if owner else "Unknown",
             "owner_color": owner.calendar_color if owner else "#6366f1",
+            "avatar_url": owner.avatar_url if owner else None,
         })
     
     return jsonify(result)
