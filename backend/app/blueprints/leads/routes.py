@@ -160,7 +160,7 @@ def get_lead_profile(id):
         if not fname: return None
         if fname.startswith('http'): return fname
         import urllib.parse
-        return f"/uploads/call%20record/{urllib.parse.quote(fname)}"
+        return f"/uploads/recordings/{urllib.parse.quote(fname)}"
         
     for c in call_logs:
         timeline_items.append({
@@ -538,7 +538,7 @@ def log_call(id):
         db.session.commit()
 
         import urllib.parse
-        recording_url = f"/uploads/call%20record/{urllib.parse.quote(safe_name)}"
+        recording_url = f"/uploads/recordings/{urllib.parse.quote(safe_name)}"
         upload_error = None
 
         from app.models import SystemSetting
