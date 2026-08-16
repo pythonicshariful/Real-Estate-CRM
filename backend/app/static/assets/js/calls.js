@@ -100,22 +100,48 @@ document.addEventListener('DOMContentLoaded', () => {
         submitCallBtn.classList.add('opacity-70', 'cursor-not-allowed');
         uploadSpinner.classList.remove('hidden');
 
+        const uploadProgressContainer = document.getElementById('upload-progress-container');
+        const uploadProgressBar = document.getElementById('upload-progress-bar');
+        const uploadProgressText = document.getElementById('upload-progress-text');
+        
+        if (uploadProgressContainer && document.getElementById('recording-file').files.length > 0) {
+            uploadProgressContainer.classList.remove('hidden');
+            uploadProgressBar.style.width = '0%';
+            uploadProgressText.textContent = '0%';
+        }
+
         try {
             const token = localStorage.getItem('crm_token');
-            const response = await fetch(`/api/leads/${leadId}/calls`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                },
-                body: formData // Fetch API automatically sets Content-Type for FormData
+            
+            const data = await new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', `/api/leads/${leadId}/calls`, true);
+                xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+                
+                xhr.upload.onprogress = (event) => {
+                    if (event.lengthComputable && uploadProgressContainer) {
+                        const percentComplete = Math.round((event.loaded / event.total) * 100);
+                        uploadProgressBar.style.width = percentComplete + '%';
+                        uploadProgressText.textContent = percentComplete + '%';
+                    }
+                };
+                
+                xhr.onload = () => {
+                    try {
+                        const responseData = JSON.parse(xhr.responseText);
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            resolve(responseData);
+                        } else {
+                            reject(new Error(responseData.msg || responseData.error || "Failed to log call"));
+                        }
+                    } catch (err) {
+                        reject(new Error("Invalid server response"));
+                    }
+                };
+                
+                xhr.onerror = () => reject(new Error("Network Error"));
+                xhr.send(formData);
             });
-
-            if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(errData.msg || "Failed to log call");
-            }
-
-            const data = await response.json();
             
             if (data.recording_url === "processing_in_background") {
                 window.showToast("Call logged! Recording is uploading in the background.", "success");
@@ -161,13 +187,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
         } catch (error) {
-            console.error('Call Log Error:', error);
             window.showToast(error.message, "error");
         } finally {
-            // Restore UI state
             submitCallBtn.disabled = false;
             submitCallBtn.classList.remove('opacity-70', 'cursor-not-allowed');
             uploadSpinner.classList.add('hidden');
+            
+            const uploadProgressContainer = document.getElementById('upload-progress-container');
+            if (uploadProgressContainer) {
+                uploadProgressContainer.classList.add('hidden');
+            }
         }
     });
 
