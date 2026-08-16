@@ -143,37 +143,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 xhr.send(formData);
             });
             
-            if (data.recording_url === "processing_in_background") {
-                window.showToast("Call logged! Recording is uploading in the background.", "success");
-                
-                // Poll for background upload completion
-                if (data.id) {
-                    const pollInterval = setInterval(async () => {
-                        try {
-                            const statusRes = await fetch(`/api/leads/calls/${data.id}/status`, {
-                                headers: { 'Authorization': `Bearer ${token}` }
-                            });
-                            if (statusRes.ok) {
-                                const statusData = await statusRes.json();
-                                if (statusData.recording_url && statusData.recording_url !== "processing_in_background") {
-                                    clearInterval(pollInterval);
-                                    if (statusData.recording_url.startsWith('http')) {
-                                        window.showToast("Cloud Storage upload complete!", "success");
-                                    } else {
-                                        window.showToast(`Cloud Storage upload warning: ${statusData.recording_url}`, "error");
-                                    }
-                                    if (typeof loadLeads === 'function') loadLeads();
-                                }
-                            }
-                        } catch (e) {
-                            // ignore polling errors
-                        }
-                    }, 5000); // Poll every 5 seconds
-                }
+            if (data.upload_error) {
+                window.showToast(`Call logged, but Cloud Storage upload failed: ${data.upload_error}`, "error");
             } else if (data.recording_url && data.recording_url.startsWith('http')) {
                 window.showToast("Call logged & recording uploaded to Cloud Storage!", "success");
-            } else if (data.recording_url) {
-                window.showToast(`Call logged, but upload warning: ${data.recording_url}`, "error");
             } else {
                 window.showToast("Call logged successfully.", "success");
             }

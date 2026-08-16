@@ -785,5 +785,5 @@ def upload_recording_to_b2(local_path: str, filename: str, app=None) -> str | No
 
     except Exception as e:
         logger.error(f'B2 upload failed for {filename}: {e}')
-        return None
+        raise Exception(f"B2 upload failed: {e}")
 

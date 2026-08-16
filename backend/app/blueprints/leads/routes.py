@@ -491,33 +491,32 @@ def log_call(id):
         local_path = os.path.join(recordings_dir, safe_name)
 
         recording_file.save(local_path)
-        log.recording_filename = "processing_in_background"
+        log.recording_filename = safe_name
         db.session.commit()
 
-        # Run B2 upload in a background thread to prevent UI freezing
-        import threading
-        app_context = current_app._get_current_object()
+        # Synchronous B2 upload
+        from app.tasks import upload_recording_to_b2
+        upload_error = None
+        recording_url = safe_name
         
-        def background_b2_upload(app_ctx, log_id, filepath, fname):
-            with app_ctx.app_context():
-                from app.tasks import upload_recording_to_b2
-                from app.models import CallLog, db
-                link = upload_recording_to_b2(filepath, fname)
-                call_log = CallLog.query.get(log_id)
-                if call_log:
-                    if link:
-                        call_log.recording_filename = link
-                    else:
-                        call_log.recording_filename = fname
-                    db.session.commit()
-                        
-        thread = threading.Thread(target=background_b2_upload, args=(app_context, log.id, local_path, safe_name))
-        thread.start()
+        try:
+            link = upload_recording_to_b2(local_path, safe_name)
+            if link:
+                log.recording_filename = link
+                recording_url = link
+                db.session.commit()
+        except Exception as e:
+            upload_error = str(e)
 
-        # Tell UI that upload is processing
-        recording_url = "processing_in_background"
-
-    return jsonify({"id": log.id, "msg": "Call logged", "recording_url": recording_url}), 201
+        resp_data = {
+            "id": log.id,
+            "msg": "Call logged",
+            "recording_url": recording_url
+        }
+        if upload_error:
+            resp_data["upload_error"] = upload_error
+            
+        return jsonify(resp_data), 201
 
 @leads_bp.route('/calls/<int:log_id>/status', methods=['GET'])
 @jwt_required()
