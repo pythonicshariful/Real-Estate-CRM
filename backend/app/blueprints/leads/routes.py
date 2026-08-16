@@ -417,6 +417,43 @@ def update_temperature(id):
     db.session.commit()
     return jsonify(lead.to_dict())
 
+@leads_bp.route('/<int:id>/calls/bulk-delete', methods=['POST'])
+@jwt_required()
+def bulk_delete_calls(id):
+    claims = get_jwt()
+    if not is_admin(claims.get('role')):
+        return jsonify({"error": "Access denied"}), 403
+
+    data = request.get_json() or {}
+    call_ids = data.get('call_ids', [])
+    
+    if not call_ids:
+        return jsonify({"error": "No call IDs provided"}), 400
+
+    calls_to_delete = CallLog.query.filter(CallLog.id.in_(call_ids), CallLog.opportunity_id == id).all()
+    
+    for call in calls_to_delete:
+        # Delete local file if it exists
+        if call.recording_filename and not call.recording_filename.startswith('http'):
+            try:
+                recordings_dir = current_app.config.get('RECORDINGS_FOLDER', 'uploads/call record')
+                # Try new local path
+                local_path = os.path.join(recordings_dir, call.recording_filename)
+                if os.path.exists(local_path):
+                    os.remove(local_path)
+                else:
+                    # Try old local path
+                    old_local_path = os.path.join(current_app.config.get('RECORDINGS_FOLDER', 'uploads/recordings'), call.recording_filename)
+                    if os.path.exists(old_local_path):
+                        os.remove(old_local_path)
+            except Exception as e:
+                current_app.logger.error(f"Failed to delete local recording: {e}")
+                
+        db.session.delete(call)
+
+    db.session.commit()
+    return jsonify({"message": f"{len(calls_to_delete)} call records deleted successfully"}), 200
+
 @leads_bp.route('/<int:id>/calls', methods=['POST'])
 @jwt_required()
 def log_call(id):
@@ -486,7 +523,7 @@ def log_call(id):
             return jsonify({"error": "Invalid recording file type"}), 400
             
         safe_name = f"call_{log.id}_{uuid.uuid4().hex[:8]}{ext}"
-        recordings_dir = current_app.config.get('RECORDINGS_FOLDER', 'uploads/recordings')
+        recordings_dir = current_app.config.get('RECORDINGS_FOLDER', 'uploads/call record')
         os.makedirs(recordings_dir, exist_ok=True)
         local_path = os.path.join(recordings_dir, safe_name)
 
@@ -494,19 +531,24 @@ def log_call(id):
         log.recording_filename = safe_name
         db.session.commit()
 
-        # Synchronous B2 upload
-        from app.tasks import upload_recording_to_b2
-        upload_error = None
         recording_url = safe_name
-        
-        try:
-            link = upload_recording_to_b2(local_path, safe_name)
-            if link:
-                log.recording_filename = link
-                recording_url = link
-                db.session.commit()
-        except Exception as e:
-            upload_error = str(e)
+        upload_error = None
+
+        from app.models import SystemSetting
+        storage_strategy = SystemSetting.get('recording_storage_strategy', 'b2')
+
+        if storage_strategy == 'b2':
+            # Synchronous B2 upload
+            from app.tasks import upload_recording_to_b2
+            
+            try:
+                link = upload_recording_to_b2(local_path, safe_name)
+                if link:
+                    log.recording_filename = link
+                    recording_url = link
+                    db.session.commit()
+            except Exception as e:
+                upload_error = str(e)
 
         resp_data = {
             "id": log.id,

@@ -350,10 +350,18 @@
             
             <!-- Config Form Column -->
             <div class="lg:col-span-6 space-y-5">
-              <div class="text-base font-bold text-white">Backblaze B2 Cloud Storage</div>
+              <div class="text-base font-bold text-white">Call Recording Storage</div>
               <form id="b2-form" onsubmit="saveB2Settings(event)" class="chart-card space-y-4">
                 <div>
-                  <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">B2 Key ID</label>
+                  <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Storage Method</label>
+                  <select id="recording-storage-strategy" onchange="toggleB2Settings()" class="w-full input-glass px-4 py-2.5 rounded-xl text-sm bg-slate-900">
+                    <option value="b2">Cloud Storage (Backblaze B2)</option>
+                    <option value="local">Local Storage (Server)</option>
+                  </select>
+                </div>
+                <div id="b2-settings-container" class="space-y-4">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">B2 Key ID</label>
                   <input type="text" id="b2-key-id" class="w-full input-glass px-4 py-2.5 rounded-xl text-sm" placeholder="Enter B2 Key ID">
                 </div>
                 <div>
@@ -367,6 +375,7 @@
                 <div>
                   <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">S3 Endpoint URL</label>
                   <input type="text" id="b2-endpoint" class="w-full input-glass px-4 py-2.5 rounded-xl text-sm" placeholder="https://s3.us-east-005.backblazeb2.com">
+                </div>
                 </div>
                 <div class="pt-3 border-t border-slate-800 flex justify-end">
                   <button type="submit" class="btn-gradient px-6 py-2.5 rounded-xl text-xs font-bold">Save Storage Settings</button>
@@ -682,8 +691,21 @@
         document.getElementById('b2-application-key').value = data.b2_application_key || '';
         document.getElementById('b2-bucket-name').value = data.b2_bucket_name || 'crm-recordings';
         document.getElementById('b2-endpoint').value = data.b2_endpoint || 'https://s3.us-east-005.backblazeb2.com';
+        if (data.recording_storage_strategy) document.getElementById('recording-storage-strategy').value = data.recording_storage_strategy;
+        
+        if (typeof toggleB2Settings === 'function') toggleB2Settings();
       } catch (e) {
         if (window.showToast) window.showToast(e.message, 'error');
+      }
+    }
+
+    function toggleB2Settings() {
+      const strategy = document.getElementById('recording-storage-strategy').value;
+      const b2Container = document.getElementById('b2-settings-container');
+      if (strategy === 'local') {
+        b2Container.style.display = 'none';
+      } else {
+        b2Container.style.display = 'block';
       }
     }
 
@@ -693,11 +715,12 @@
         b2_key_id: document.getElementById('b2-key-id').value,
         b2_application_key: document.getElementById('b2-application-key').value,
         b2_bucket_name: document.getElementById('b2-bucket-name').value,
-        b2_endpoint: document.getElementById('b2-endpoint').value
+        b2_endpoint: document.getElementById('b2-endpoint').value,
+        recording_storage_strategy: document.getElementById('recording-storage-strategy').value
       };
       try {
         await fetchAPI('/api/settings/b2-storage', { method: 'PUT', body: JSON.stringify(payload) });
-        if (window.showToast) window.showToast('B2 storage settings saved!', 'success');
+        if (window.showToast) window.showToast('Storage settings saved!', 'success');
       } catch (e) {
         if (window.showToast) window.showToast(e.message, 'error');
       }

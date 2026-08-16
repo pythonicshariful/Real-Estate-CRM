@@ -178,7 +178,10 @@
         <!-- Tab: Files -->
         <div id="content-files" class="drawer-content-pane hidden space-y-6">
           <div>
-            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Call Recordings & Files</h3>
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Call Recordings & Files</h3>
+              <button id="bulk-delete-calls-btn" onclick="bulkDeleteCalls()" class="hidden admin-only btn-ghost px-2 py-1 text-xs text-rose-400 hover:text-rose-300 border border-rose-500/30 rounded transition-colors">Delete Selected</button>
+            </div>
             <div class="space-y-3" id="drawer-files-list">
               <!-- Files injected here -->
             </div>

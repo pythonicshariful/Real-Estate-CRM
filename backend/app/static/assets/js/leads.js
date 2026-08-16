@@ -712,9 +712,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 2. Populate Files Tab
                 if (item.recording_url) {
                     fileCount++;
+                    const isAdmin = localStorage.getItem('crm_role') === 'ADMIN';
+                    const checkboxHtml = isAdmin ? `<input type="checkbox" class="call-record-checkbox rounded bg-slate-800 border-slate-700 text-rose-500 focus:ring-rose-500 w-4 h-4 mr-2" value="${item.id}">` : '';
+
                     filesContainer.innerHTML += `
                         <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-3 flex justify-between items-center hover:border-slate-700 transition-colors">
                             <div class="flex items-center gap-3">
+                                ${checkboxHtml}
                                 <div class="w-8 h-8 rounded bg-indigo-500/20 flex items-center justify-center text-indigo-400">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
                                 </div>
@@ -772,9 +776,63 @@ document.addEventListener('DOMContentLoaded', () => {
             tlContainer.appendChild(tlItem);
         });
         
+        
         if (noteCount === 0) notesContainer.innerHTML = '<div class="text-sm text-slate-500">No notes yet.</div>';
         if (fileCount === 0) filesContainer.innerHTML = '<div class="text-sm text-slate-500">No files or recordings.</div>';
+
+        const bulkDeleteBtn = document.getElementById('bulk-delete-calls-btn');
+        if (bulkDeleteBtn) {
+            const isAdmin = localStorage.getItem('crm_role') === 'ADMIN';
+            if (isAdmin && fileCount > 0) {
+                bulkDeleteBtn.classList.remove('hidden');
+            } else {
+                bulkDeleteBtn.classList.add('hidden');
+            }
+        }
     }
+
+    // Add Bulk Delete function to window object so inline onclick can access it
+    window.bulkDeleteCalls = async () => {
+        if (!currentLeadId) return;
+        const checkboxes = document.querySelectorAll('.call-record-checkbox:checked');
+        if (checkboxes.length === 0) {
+            if (window.showToast) window.showToast("No recordings selected", "error");
+            return;
+        }
+
+        if (!confirm(`Are you sure you want to permanently delete ${checkboxes.length} call recording(s)?`)) return;
+
+        const callIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+        const btn = document.getElementById('bulk-delete-calls-btn');
+        btn.disabled = true;
+        btn.textContent = 'Deleting...';
+
+        try {
+            const token = localStorage.getItem('crm_token');
+            const res = await fetch(`/api/leads/${currentLeadId}/calls/bulk-delete`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ call_ids: callIds })
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || "Failed to delete recordings");
+            }
+            if (window.showToast) window.showToast("Recordings deleted successfully", "success");
+            
+            // Refresh drawer
+            document.getElementById('drawer-timeline').innerHTML = '<div class="text-sm text-slate-500 ml-4">Loading timeline...</div>';
+            const refreshRes = await fetch(`/api/leads/${currentLeadId}/profile`, { headers: { 'Authorization': `Bearer ${token}` } });
+            populateDrawer(await refreshRes.json());
+        } catch (err) {
+            console.error(err);
+            if (window.showToast) window.showToast(err.message, "error");
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Delete Selected';
+        }
+    };
 
     // Add Lead Modal Logic
     const addLeadBtn = document.getElementById('add-lead-btn');

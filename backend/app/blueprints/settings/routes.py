@@ -28,6 +28,7 @@ DEFAULT_SETTINGS = {
     'b2_application_key': '',
     'b2_bucket_name': 'crm-recordings',
     'b2_endpoint': 'https://s3.us-east-005.backblazeb2.com',
+    'recording_storage_strategy': 'b2',
     'quick_notes': 'Left Voicemail,Meeting Scheduled,Call Back Later,Send More Info,Not Interested,Wrong Number'
 }
 
@@ -207,7 +208,7 @@ def email_templates():
 @jwt_required()
 @require_role(UserRole.ADMIN)
 def b2_storage_settings():
-    keys = ['b2_key_id', 'b2_application_key', 'b2_bucket_name', 'b2_endpoint']
+    keys = ['b2_key_id', 'b2_application_key', 'b2_bucket_name', 'b2_endpoint', 'recording_storage_strategy']
     if request.method == 'GET':
         return jsonify(_get_setting_dict(keys))
     
