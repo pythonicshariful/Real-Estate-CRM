@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meta Lead Ads Webhook Setup Guide</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: transparent;
+      color: #94a3b8; /* text-slate-400 */
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    }
+    h1, h2, h3 { color: #f8fafc; /* text-slate-50 */ font-weight: 700; }
+    h1 { font-size: 1.5rem; margin-bottom: 1rem; }
+    h2 { font-size: 1.25rem; margin-top: 1.5rem; margin-bottom: 0.75rem; border-bottom: 1px solid #1e293b; padding-bottom: 0.5rem; }
+    h3 { font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #818cf8; /* text-indigo-400 */ }
+    p { margin-bottom: 1rem; line-height: 1.6; }
+    ul, ol { margin-bottom: 1rem; padding-left: 1.5rem; line-height: 1.6; }
+    ul { list-style-type: disc; }
+    ol { list-style-type: decimal; }
+    li { margin-bottom: 0.5rem; }
+    strong { color: #cbd5e1; /* text-slate-300 */ }
+    code { 
+      background-color: #0f172a; /* bg-slate-900 */
+      color: #38bdf8; /* text-sky-400 */
+      padding: 0.2rem 0.4rem;
+      border-radius: 0.25rem;
+      font-size: 0.875em;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    pre {
+      background-color: #0f172a;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      overflow-x: auto;
+      margin-bottom: 1rem;
+      border: 1px solid #1e293b;
+    }
+    pre code {
+      background-color: transparent;
+      color: #e2e8f0;
+      padding: 0;
+    }
+    a { color: #6366f1; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body class="p-4 sm:p-6">
+
+  <h1>Meta Lead Ads Webhook Setup Guide</h1>
+  <p>This guide details the complete process for configuring and connecting Meta Lead Ads webhooks to the Southeast Landmark CRM. By connecting Facebook Lead Ads, new leads generated from your Facebook or Instagram campaigns will automatically push into the CRM system in real-time, instantly starting the SLA countdown timer for your sales executives.</p>
+
+  <h2>Step-by-Step Meta Lead Ads Webhook Setup</h2>
+
+  <h3>Prerequisites</h3>
+  <p>Before you begin, ensure you have the following ready:</p>
+  <ul>
+    <li>A Facebook Developer Account (register at <a href="https://developers.facebook.com" target="_blank">developers.facebook.com</a> if needed)</li>
+    <li>A Facebook App (configured as a <strong>Business</strong> type app)</li>
+    <li>A Facebook Page connected to the App where your ads will run</li>
+    <li>Your CRM server must be publicly accessible and configured with a valid HTTPS certificate (Let's Encrypt or similar). Facebook requires all webhooks to use HTTPS.</li>
+  </ul>
+
+  <h3>Step 1: Create Facebook App</h3>
+  <ol>
+    <li>Go to <a href="https://developers.facebook.com" target="_blank">Facebook Developers</a></li>
+    <li>Click on <strong>'My Apps'</strong> in the top right corner, then click <strong>'Create App'</strong></li>
+    <li>Select <strong>'Business'</strong> as your app type and click Next.</li>
+    <li>Fill in the App Name: <code>'Southeast Landmark CRM'</code> (or your preferred name)</li>
+    <li>Enter the contact email and select your Business Manager account if applicable.</li>
+    <li>Once created, copy the <strong>App ID</strong> from the dashboard header and paste it into your <code>.env</code> file as <code>META_APP_ID</code>.</li>
+  </ol>
+
+  <h3>Step 2: Add Lead Ads Product</h3>
+  <ol>
+    <li>In your new App dashboard, navigate to the <strong>'Add Product'</strong> section.</li>
+    <li>Scroll down until you find <strong>'Lead Ads'</strong> and click <strong>'Set Up'</strong>.</li>
+    <li>Follow the prompts to add your target Facebook Page to the setup configuration.</li>
+  </ol>
+
+  <h3>Step 3: Get Page Access Token</h3>
+  <p>To authenticate API calls between the CRM and Facebook, you need a Page Access Token.</p>
+  <ol>
+    <li>Go to <strong>Tools &rarr; Graph API Explorer</strong> in the developer portal.</li>
+    <li>In the "Application" dropdown, select your newly created App.</li>
+    <li>Click "Generate Access Token" and select "Get User Token". When prompted for permissions, ensure you select: <code>pages_manage_ads</code>, <code>pages_read_engagement</code>, and <code>leads_retrieval</code>.</li>
+    <li>Once the User Token is generated, click the token dropdown again and select your specific Facebook Page to exchange it for a <strong>Page Access Token</strong>.</li>
+    <li>Copy this long-lived token and paste it into your <code>.env</code> file as <code>META_PAGE_ACCESS_TOKEN</code>.</li>
+  </ol>
+
+  <h3>Step 4: Set Up Webhook</h3>
+  <ol>
+    <li>Back in your App dashboard, go to the <strong>Webhooks</strong> product section (add it from "Add Product" if not visible).</li>
+    <li>In the dropdown at the top, select to subscribe to the <strong>'Page'</strong> object.</li>
+    <li>Click "Subscribe to this object" and enter your Callback URL. This should be your public CRM domain followed by the webhook path: <code>https://yourdomain.com/api/webhooks/meta</code></li>
+    <li>For the <strong>Verify Token</strong>, create a random, secure string (e.g., a UUID or a long randomized password). Paste this exact string into your <code>.env</code> file as <code>META_VERIFY_TOKEN</code>.</li>
+    <li>Click "Verify and Save". Facebook will ping your server to confirm the token matches.</li>
+    <li>After saving, find the <strong>'leadgen'</strong> field in the list of subscriptions and click "Subscribe".</li>
+  </ol>
+
+  <h3>Step 5: Get App Secret</h3>
+  <ol>
+    <li>Navigate to <strong>Settings &rarr; Basic</strong> in the left sidebar.</li>
+    <li>Click "Show" next to the App Secret (you may need to enter your Facebook password).</li>
+    <li>Copy the App Secret and paste it into your <code>.env</code> file as <code>META_APP_SECRET</code>. This is used to validate incoming webhook HMAC signatures.</li>
+  </ol>
+
+  <h3>Step 6: Subscribe Page to Webhook</h3>
+  <p>You must tell Facebook to route your specific page's leads to this application. Run the following curl command from your terminal, replacing the placeholders with your actual values:</p>
+  <pre><code>curl -X POST 'https://graph.facebook.com/v19.0/{PAGE_ID}/subscribed_apps' \
+  -H 'Authorization: Bearer {PAGE_ACCESS_TOKEN}' \
+  -d 'subscribed_fields=leadgen'</code></pre>
+
+  <h3>Step 7: Test the Webhook</h3>
+  <ol>
+    <li>Go to the <a href="https://developers.facebook.com/tools/lead-ads-testing" target="_blank">Lead Ads Testing Tool</a> in the developer portal.</li>
+    <li>Select your Page and Form, then click <strong>'Create Lead'</strong>.</li>
+    <li>Check your CRM dashboard immediately. The new test lead should appear.</li>
+    <li>Verify that the SLA timer for the lead has started correctly.</li>
+  </ol>
+
+  <h3>Step 8: Lead Form Field Mapping</h3>
+  <p>The Southeast Landmark CRM is configured to map these standard Facebook Lead Ad fields automatically:</p>
+  <ul>
+    <li><code>full_name</code> &rarr; <code>Contact.full_name</code></li>
+    <li><code>email</code> &rarr; <code>Contact.email</code></li>
+    <li><code>phone_number</code> &rarr; <code>Contact.phone</code> (The CRM will normalize the phone number format)</li>
+    <li>Any custom questions added to your lead form are securely stored and will display in the "Custom Lead Form Answers" section in the CRM UI!</li>
+  </ul>
+
+  <h3>Troubleshooting:</h3>
+  <ul>
+    <li><strong>Webhook verification fails:</strong> Ensure the <code>META_VERIFY_TOKEN</code> in your <code>.env</code> exactly matches what you pasted into Facebook. Ensure your server is running and accessible via HTTPS.</li>
+    <li><strong>HMAC validation fails:</strong> Ensure the <code>META_APP_SECRET</code> is correct. The CRM uses this to cryptographically verify the payload is genuinely from Meta.</li>
+    <li><strong>Leads not appearing:</strong> Use the Graph API explorer to verify that your Page subscription is actively pointing to your App.</li>
+  </ul>
+</body>
+</html>
