@@ -762,12 +762,17 @@ def upload_recording_to_b2(local_path: str, filename: str, app=None) -> str | No
             aws_secret_access_key=app_key
         )
         
-        # B2 supports standard S3 upload_file
+        from boto3.s3.transfer import TransferConfig
+        
+        # B2 supports standard S3 upload_file.
+        # We disable use_threads because boto3 spawning its own sub-threads 
+        # from within our background thread can crash if the main WSGI request ends.
         s3.upload_file(
             Filename=local_path,
             Bucket=bucket,
             Key=filename,
-            ExtraArgs={'ContentType': 'audio/mpeg'}
+            ExtraArgs={'ContentType': 'audio/mpeg'},
+            Config=TransferConfig(use_threads=False)
         )
         
         # Generate the public URL (Format: endpoint/bucket/filename)
