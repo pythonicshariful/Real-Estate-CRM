@@ -28,7 +28,7 @@ DEFAULT_SETTINGS = {
     'b2_application_key': '',
     'b2_bucket_name': 'crm-recordings',
     'b2_endpoint': 'https://s3.us-east-005.backblazeb2.com',
-    'recording_storage_strategy': 'b2',
+    'recording_storage_strategy': 'local',
     'quick_notes': 'Left Voicemail,Meeting Scheduled,Call Back Later,Send More Info,Not Interested,Wrong Number'
 }
 
