@@ -156,13 +156,19 @@ def get_lead_profile(id):
     timeline_items = []
     
     # Calls
+    def format_rec_url(fname):
+        if not fname: return None
+        if fname.startswith('http'): return fname
+        import urllib.parse
+        return f"/uploads/call%20record/{urllib.parse.quote(fname)}"
+        
     for c in call_logs:
         timeline_items.append({
             "type": "CALL",
             "date": c.created_at.isoformat() if c.created_at else None,
             "connected": c.connected,
             "notes": c.notes,
-            "recording_url": c.recording_filename,
+            "recording_url": format_rec_url(c.recording_filename),
         })
         
     # Notes
@@ -212,7 +218,7 @@ def get_lead_profile(id):
         "notes": c.notes,
         "outcome": c.outcome.value if c.outcome else None,
         "created_at": c.created_at.isoformat() if c.created_at else None,
-        "recording_url": c.recording_filename,
+        "recording_url": format_rec_url(c.recording_filename),
     } for c in call_logs]
     profile["appointments"] = [{
         "id": a.id,
@@ -531,7 +537,8 @@ def log_call(id):
         log.recording_filename = safe_name
         db.session.commit()
 
-        recording_url = safe_name
+        import urllib.parse
+        recording_url = f"/uploads/call%20record/{urllib.parse.quote(safe_name)}"
         upload_error = None
 
         from app.models import SystemSetting
