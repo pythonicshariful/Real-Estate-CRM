@@ -491,7 +491,7 @@ def log_call(id):
         local_path = os.path.join(recordings_dir, safe_name)
 
         recording_file.save(local_path)
-        log.recording_filename = safe_name  # local fallback
+        log.recording_filename = "processing_in_background"
         db.session.commit()
 
         # Run B2 upload in a background thread to prevent UI freezing
@@ -503,11 +503,13 @@ def log_call(id):
                 from app.tasks import upload_recording_to_b2
                 from app.models import CallLog, db
                 link = upload_recording_to_b2(filepath, fname)
-                if link:
-                    call_log = CallLog.query.get(log_id)
-                    if call_log:
+                call_log = CallLog.query.get(log_id)
+                if call_log:
+                    if link:
                         call_log.recording_filename = link
-                        db.session.commit()
+                    else:
+                        call_log.recording_filename = fname
+                    db.session.commit()
                         
         thread = threading.Thread(target=background_b2_upload, args=(app_context, log.id, local_path, safe_name))
         thread.start()
