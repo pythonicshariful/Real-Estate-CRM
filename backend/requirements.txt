@@ -46,7 +46,5 @@ Pillow>=10.4.0
 # gunicorn is useful for testing locally
 gunicorn>=22.0.0
 
-# Mega Storage — upload call recordings to MEGA cloud
-# (mega.py is vendored locally to avoid cPanel pip dependency conflicts)
-tenacity>=8.0.0
-pycryptodome>=3.9.6
+# Backblaze B2 / AWS S3 — upload call recordings
+boto3>=1.34.0

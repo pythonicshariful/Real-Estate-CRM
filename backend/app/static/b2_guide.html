@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Backblaze B2 Setup Guide</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: transparent;
+      color: #94a3b8; /* text-slate-400 */
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    }
+    h1, h2, h3 { color: #f8fafc; /* text-slate-50 */ font-weight: 700; }
+    h1 { font-size: 1.5rem; margin-bottom: 1rem; }
+    h2 { font-size: 1.25rem; margin-top: 1.5rem; margin-bottom: 0.75rem; border-bottom: 1px solid #1e293b; padding-bottom: 0.5rem; }
+    h3 { font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #818cf8; /* text-indigo-400 */ }
+    p { margin-bottom: 1rem; line-height: 1.6; }
+    ul, ol { margin-bottom: 1rem; padding-left: 1.5rem; line-height: 1.6; }
+    ul { list-style-type: disc; }
+    ol { list-style-type: decimal; }
+    li { margin-bottom: 0.5rem; }
+    strong { color: #cbd5e1; /* text-slate-300 */ }
+    code { 
+      background-color: #0f172a; /* bg-slate-900 */
+      color: #38bdf8; /* text-sky-400 */
+      padding: 0.2rem 0.4rem;
+      border-radius: 0.25rem;
+      font-size: 0.875em;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    a { color: #6366f1; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body class="p-4 sm:p-6">
+
+  <h1>Backblaze B2 Setup Guide</h1>
+  <p>This guide explains how to connect your CRM to Backblaze B2 to securely and reliably store all your sales call recordings.</p>
+
+  <h2>Step 1: Create a Backblaze Account</h2>
+  <ol>
+    <li>Go to <a href="https://www.backblaze.com/b2/cloud-storage.html" target="_blank">Backblaze B2</a> and sign up for a free account.</li>
+    <li>Once logged in, look at the left sidebar and click on <strong>Buckets</strong>.</li>
+  </ol>
+
+  <h2>Step 2: Create a Public Bucket</h2>
+  <ol>
+    <li>Click the <strong>Create a Bucket</strong> button.</li>
+    <li><strong>Bucket Name:</strong> Enter a unique name (e.g., <code>mycompany-crm-recordings</code>). It must be globally unique across all Backblaze users.</li>
+    <li><strong>Files in Bucket are:</strong> Choose <strong>Public</strong>. <em>(This is required so the CRM can play the audio files back to you via a secure direct link)</em>.</li>
+    <li>Default Encryption: Disable (or leave as default).</li>
+    <li>Object Lock: Disable.</li>
+    <li>Click <strong>Create Bucket</strong>.</li>
+    <li>Wait for the bucket to be created. Once done, look at the bucket details and copy the <strong>Endpoint</strong> URL (it will look something like <code>s3.us-east-005.backblazeb2.com</code>). <strong>Add <code>https://</code> to the beginning of it</strong> and paste it into the <em>S3 Endpoint URL</em> field in your CRM.</li>
+    <li>Also, type your exact Bucket Name into the <em>B2 Bucket Name</em> field in the CRM.</li>
+  </ol>
+
+  <h2>Step 3: Generate Application Keys</h2>
+  <ol>
+    <li>On the left sidebar in Backblaze, click on <strong>Application Keys</strong>.</li>
+    <li>Scroll down to the bottom and click the <strong>Add a New Application Key</strong> button.</li>
+    <li><strong>Name of Key:</strong> <code>crm-storage-key</code></li>
+    <li><strong>Allow access to Bucket(s):</strong> Select the bucket you just created.</li>
+    <li><strong>Type of Access:</strong> Read and Write.</li>
+    <li>Click <strong>Create New Key</strong>.</li>
+  </ol>
+
+  <h2>Step 4: Copy the Keys to your CRM</h2>
+  <p>Backblaze will now show you a blue box with your new keys. <strong>This is the ONLY time you will ever see the Application Key, so don't close the tab!</strong></p>
+  <ul>
+    <li>Copy the <strong>keyID</strong> and paste it into the <em>B2 Key ID</em> field in your CRM.</li>
+    <li>Copy the <strong>applicationKey</strong> and paste it into the <em>B2 Application Key</em> field in your CRM.</li>
+  </ul>
+
+  <h2>Step 5: Save & Test</h2>
+  <p>Click <strong>Save Storage Settings</strong> in the CRM. To test it, go to a Lead's profile, click "Log Call", attach an audio recording file, and hit save. The recording should upload successfully and be playable from the activity timeline!</p>
+
+</body>
+</html>

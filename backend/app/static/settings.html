@@ -57,9 +57,9 @@
           <svg class="w-4 h-4 text-fuchsia-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
           Quick Notes
         </button>
-        <button id="nav-mega" onclick="switchTab('mega')" class="tab-btn admin-only inline-flex md:flex w-auto md:w-full text-left px-4 py-2.5 rounded-xl text-xs text-slate-400 hover:bg-white/5 transition-all items-center gap-2.5">
+        <button id="nav-b2" onclick="switchTab('b2')" class="tab-btn admin-only inline-flex md:flex w-auto md:w-full text-left px-4 py-2.5 rounded-xl text-xs text-slate-400 hover:bg-white/5 transition-all items-center gap-2.5">
           <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
-          Mega Storage
+          Cloud Storage (B2)
         </button>
       </div>
 
@@ -344,27 +344,53 @@
           </div>
         </div>
 
-        <!-- 7. MEGA STORAGE -->
-        <div id="tab-mega" class="tab-content hidden">
-          <div class="max-w-2xl space-y-5">
-            <div class="text-base font-bold text-white">MEGA Cloud Storage Configuration</div>
-            <form id="mega-form" onsubmit="saveMegaSettings(event)" class="chart-card space-y-4">
-              <div>
-                <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Mega Email Address</label>
-                <input type="email" id="mega-email" class="w-full input-glass px-4 py-2.5 rounded-xl text-sm" placeholder="admin@domain.com">
+        <!-- 7. B2 STORAGE TAB -->
+        <div id="tab-b2" class="tab-content hidden">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Config Form Column -->
+            <div class="lg:col-span-6 space-y-5">
+              <div class="text-base font-bold text-white">Backblaze B2 Cloud Storage</div>
+              <form id="b2-form" onsubmit="saveB2Settings(event)" class="chart-card space-y-4">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">B2 Key ID</label>
+                  <input type="text" id="b2-key-id" class="w-full input-glass px-4 py-2.5 rounded-xl text-sm" placeholder="Enter B2 Key ID">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">B2 Application Key</label>
+                  <input type="password" id="b2-application-key" class="w-full input-glass px-4 py-2.5 rounded-xl text-sm" placeholder="••••••••">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">B2 Bucket Name</label>
+                  <input type="text" id="b2-bucket-name" class="w-full input-glass px-4 py-2.5 rounded-xl text-sm" placeholder="crm-recordings">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">S3 Endpoint URL</label>
+                  <input type="text" id="b2-endpoint" class="w-full input-glass px-4 py-2.5 rounded-xl text-sm" placeholder="https://s3.us-east-005.backblazeb2.com">
+                </div>
+                <div class="pt-3 border-t border-slate-800 flex justify-end">
+                  <button type="submit" class="btn-gradient px-6 py-2.5 rounded-xl text-xs font-bold">Save Storage Settings</button>
+                </div>
+              </form>
+            </div>
+
+            <!-- B2 Documentation Panel -->
+            <div class="lg:col-span-6 space-y-4">
+              <div class="chart-card border border-indigo-500/30 bg-[#0f1122]">
+                <div class="flex items-center gap-2 border-b border-slate-800 pb-3 mb-4">
+                  <div class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-xs">📖</div>
+                  <div>
+                    <div class="text-sm font-bold text-white">Backblaze B2 Setup Guide</div>
+                    <div class="text-[11px] text-slate-400">Step-by-step documentation for configuring cloud storage</div>
+                  </div>
+                </div>
+
+                <div class="h-[650px] w-full rounded-xl overflow-hidden border border-slate-800">
+                  <iframe src="/b2_guide.html" class="w-full h-full border-0"></iframe>
+                </div>
               </div>
-              <div>
-                <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Mega Password</label>
-                <input type="password" id="mega-password" class="w-full input-glass px-4 py-2.5 rounded-xl text-sm" placeholder="••••••••">
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Target Folder</label>
-                <input type="text" id="mega-folder" class="w-full input-glass px-4 py-2.5 rounded-xl text-sm" placeholder="CRM-Recordings">
-              </div>
-              <div class="pt-3 border-t border-slate-800 flex justify-end">
-                <button type="submit" class="btn-gradient px-6 py-2.5 rounded-xl text-xs font-bold">Save Mega Settings</button>
-              </div>
-            </form>
+            </div>
+
           </div>
         </div>
 
@@ -648,28 +674,30 @@
       }
     }
 
-    async function loadMegaSettings() {
+    async function loadB2Settings() {
       try {
-        const data = await fetchAPI('/api/settings/mega-storage');
+        const data = await fetchAPI('/api/settings/b2-storage');
         if (!data) return;
-        document.getElementById('mega-email').value = data.mega_email || '';
-        document.getElementById('mega-password').value = data.mega_password || '';
-        document.getElementById('mega-folder').value = data.mega_folder || 'CRM-Recordings';
+        document.getElementById('b2-key-id').value = data.b2_key_id || '';
+        document.getElementById('b2-application-key').value = data.b2_application_key || '';
+        document.getElementById('b2-bucket-name').value = data.b2_bucket_name || 'crm-recordings';
+        document.getElementById('b2-endpoint').value = data.b2_endpoint || 'https://s3.us-east-005.backblazeb2.com';
       } catch (e) {
         if (window.showToast) window.showToast(e.message, 'error');
       }
     }
 
-    async function saveMegaSettings(e) {
+    async function saveB2Settings(e) {
       e.preventDefault();
       const payload = {
-        mega_email: document.getElementById('mega-email').value,
-        mega_password: document.getElementById('mega-password').value,
-        mega_folder: document.getElementById('mega-folder').value
+        b2_key_id: document.getElementById('b2-key-id').value,
+        b2_application_key: document.getElementById('b2-application-key').value,
+        b2_bucket_name: document.getElementById('b2-bucket-name').value,
+        b2_endpoint: document.getElementById('b2-endpoint').value
       };
       try {
-        await fetchAPI('/api/settings/mega-storage', { method: 'PUT', body: JSON.stringify(payload) });
-        if (window.showToast) window.showToast('Mega storage settings saved!', 'success');
+        await fetchAPI('/api/settings/b2-storage', { method: 'PUT', body: JSON.stringify(payload) });
+        if (window.showToast) window.showToast('B2 storage settings saved!', 'success');
       } catch (e) {
         if (window.showToast) window.showToast(e.message, 'error');
       }
@@ -739,7 +767,7 @@
         loadGeneralSettings();
         loadSlaSettings();
         loadEmailSettings();
-        loadMegaSettings();
+        loadB2Settings();
         loadQuickNotes();
         
         // Auto-upload company logo on file selection

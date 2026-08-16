@@ -477,7 +477,7 @@ def log_call(id):
     if recording_file and recording_file.filename:
         import uuid
         from werkzeug.utils import secure_filename
-        from app.tasks import upload_recording_to_mega
+        from app.tasks import upload_recording_to_b2
 
         ext = os.path.splitext(secure_filename(recording_file.filename))[1] or '.mp3'
         
@@ -494,22 +494,22 @@ def log_call(id):
         log.recording_filename = safe_name  # local fallback
         db.session.commit()
 
-        # Run MEGA upload in a background thread to prevent UI freezing
+        # Run B2 upload in a background thread to prevent UI freezing
         import threading
         app_context = current_app._get_current_object()
         
-        def background_mega_upload(app_ctx, log_id, filepath, fname):
+        def background_b2_upload(app_ctx, log_id, filepath, fname):
             with app_ctx.app_context():
-                from app.tasks import upload_recording_to_mega
+                from app.tasks import upload_recording_to_b2
                 from app.models import CallLog, db
-                link = upload_recording_to_mega(filepath, fname)
+                link = upload_recording_to_b2(filepath, fname)
                 if link:
                     call_log = CallLog.query.get(log_id)
                     if call_log:
                         call_log.recording_filename = link
                         db.session.commit()
                         
-        thread = threading.Thread(target=background_mega_upload, args=(app_context, log.id, local_path, safe_name))
+        thread = threading.Thread(target=background_b2_upload, args=(app_context, log.id, local_path, safe_name))
         thread.start()
 
         # Tell UI that upload is processing

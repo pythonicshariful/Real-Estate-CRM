@@ -24,9 +24,10 @@ DEFAULT_SETTINGS = {
     'smtp_password': '',
     'sender_email': 'noreply@southeast.com',
     'company_logo': '',
-    'mega_email': '',
-    'mega_password': '',
-    'mega_folder': 'CRM-Recordings',
+    'b2_key_id': '',
+    'b2_application_key': '',
+    'b2_bucket_name': 'crm-recordings',
+    'b2_endpoint': 'https://s3.us-east-005.backblazeb2.com',
     'quick_notes': 'Left Voicemail,Meeting Scheduled,Call Back Later,Send More Info,Not Interested,Wrong Number'
 }
 
@@ -202,11 +203,11 @@ def email_templates():
             SystemSetting.set(k, str(data[k]))
     return jsonify({"message": "Email settings updated successfully", "settings": _get_setting_dict(keys)})
 
-@settings_bp.route('/mega-storage', methods=['GET', 'PUT'])
+@settings_bp.route('/b2-storage', methods=['GET', 'PUT'])
 @jwt_required()
 @require_role(UserRole.ADMIN)
-def mega_storage_settings():
-    keys = ['mega_email', 'mega_password', 'mega_folder']
+def b2_storage_settings():
+    keys = ['b2_key_id', 'b2_application_key', 'b2_bucket_name', 'b2_endpoint']
     if request.method == 'GET':
         return jsonify(_get_setting_dict(keys))
     
@@ -214,7 +215,7 @@ def mega_storage_settings():
     for k in keys:
         if k in data:
             SystemSetting.set(k, str(data[k]))
-    return jsonify({"message": "Mega storage settings updated successfully", "settings": _get_setting_dict(keys)})
+    return jsonify({"message": "B2 storage settings updated successfully", "settings": _get_setting_dict(keys)})
 
 @settings_bp.route('/roles', methods=['GET', 'PUT'])
 @jwt_required()

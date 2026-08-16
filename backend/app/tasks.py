@@ -730,51 +730,55 @@ def db_cast_date(column_expr):
 
 
 # ---------------------------------------------------------------------------
-# MEGA Cloud Storage — call recording upload
+# Backblaze B2 Cloud Storage — call recording upload
 # ---------------------------------------------------------------------------
 
-def upload_recording_to_mega(local_path: str, filename: str, app=None) -> str | None:
+def upload_recording_to_b2(local_path: str, filename: str, app=None) -> str | None:
     """
-    Upload a call recording file to MEGA cloud storage.
+    Upload a call recording file to Backblaze B2 cloud storage via S3 API.
 
     Returns:
-        str: Public MEGA share link if upload succeeded.
-        None: If MEGA credentials are missing or upload failed.
-
-    The upload is intentionally synchronous (runs in the request thread) because
-    it's fast for audio files (<50 MB). Move into a background thread if needed.
+        str: Public B2 share link if upload succeeded.
+        None: If B2 credentials are missing or upload failed.
     """
     app = _get_app(app)
     with app.app_context():
         from app.models import SystemSetting
-        email = SystemSetting.get('mega_email', '').strip()
-        password = SystemSetting.get('mega_password', '').strip()
-        folder_name = SystemSetting.get('mega_folder', 'CRM-Recordings')
+        key_id = SystemSetting.get('b2_key_id', '').strip()
+        app_key = SystemSetting.get('b2_application_key', '').strip()
+        bucket = SystemSetting.get('b2_bucket_name', '').strip()
+        endpoint = SystemSetting.get('b2_endpoint', '').strip() # e.g. https://s3.us-east-005.backblazeb2.com
 
-    if not email or not password:
-        logger.warning('MEGA_EMAIL / MEGA_PASSWORD not configured — skipping cloud upload')
+    if not key_id or not app_key or not bucket or not endpoint:
+        logger.warning('B2 credentials not fully configured — skipping cloud upload')
         return None
 
     try:
-        from mega import Mega
-        mega = Mega()
-        m = mega.login(email, password)
-
-        # Find or create the target folder
-        folder = m.find(folder_name, exclude_deleted=True)
-        if folder is None:
-            folder = m.create_folder(folder_name)
-            # find() returns None, create_folder returns the new folder dict;
-            # re-fetch so we have a consistent object
-            folder = m.find(folder_name, exclude_deleted=True)
-
-        # Upload the file into the folder
-        uploaded = m.upload(local_path, folder[0] if isinstance(folder, tuple) else folder)
-        share_link = m.get_upload_link(uploaded)
-        logger.info(f'Recording uploaded to MEGA: {filename} → {share_link}')
+        import boto3
+        s3 = boto3.client(
+            's3',
+            endpoint_url=endpoint,
+            aws_access_key_id=key_id,
+            aws_secret_access_key=app_key
+        )
+        
+        # B2 supports standard S3 upload_file
+        s3.upload_file(
+            Filename=local_path,
+            Bucket=bucket,
+            Key=filename,
+            ExtraArgs={'ContentType': 'audio/mpeg'}
+        )
+        
+        # Generate the public URL (Format: endpoint/bucket/filename)
+        # Note: B2 requires the bucket to be public for this direct URL to work.
+        endpoint_cleaned = endpoint.rstrip('/')
+        share_link = f"{endpoint_cleaned}/{bucket}/{filename}"
+        
+        logger.info(f'Recording uploaded to B2: {filename} → {share_link}')
         return share_link
 
     except Exception as e:
-        logger.error(f'MEGA upload failed for {filename}: {e}')
+        logger.error(f'B2 upload failed for {filename}: {e}')
         return None
 

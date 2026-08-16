@@ -175,7 +175,7 @@ const ARTICLES = [
                 <li><strong>Meta Webhooks:</strong> Configure your Facebook App ID, Secret, and Page Access Token to automatically receive leads from Facebook Lead Ads.</li>
                 <li><strong>SMTP Email:</strong> Set up your email gateway to enable Two-Factor Authentication (OTP) and system notifications.</li>
                 <li><strong>SLA Timers:</strong> Configure how many minutes a Lead Owner has to contact a new lead before the system sends a warning or escalates the lead to management.</li>
-                <li><strong>Mega Storage:</strong> Link your MEGA cloud account to automatically backup files or recordings.</li>
+                <li><strong>Backblaze B2:</strong> Link your B2 cloud storage bucket to automatically upload and store call recordings via S3 API.</li>
             </ul>
         `
     }

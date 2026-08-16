@@ -132,9 +132,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                 if (statusData.recording_url && statusData.recording_url !== "processing_in_background") {
                                     clearInterval(pollInterval);
                                     if (statusData.recording_url.startsWith('http')) {
-                                        window.showToast("MEGA upload complete!", "success");
+                                        window.showToast("Cloud Storage upload complete!", "success");
                                     } else {
-                                        window.showToast(`MEGA upload warning: ${statusData.recording_url}`, "error");
+                                        window.showToast(`Cloud Storage upload warning: ${statusData.recording_url}`, "error");
                                     }
                                     if (typeof loadLeads === 'function') loadLeads();
                                 }
@@ -145,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }, 5000); // Poll every 5 seconds
                 }
             } else if (data.recording_url && data.recording_url.startsWith('http')) {
-                window.showToast("Call logged & recording uploaded to MEGA!", "success");
+                window.showToast("Call logged & recording uploaded to Cloud Storage!", "success");
             } else if (data.recording_url) {
                 window.showToast(`Call logged, but upload warning: ${data.recording_url}`, "error");
             } else {
