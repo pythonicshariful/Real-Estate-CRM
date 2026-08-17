@@ -158,7 +158,8 @@ def meta_setup():
         data = request.get_json() or {}
         for k in keys:
             if k in data:
-                SystemSetting.set(k, str(data[k]))
+                val = str(data[k]).strip()
+                SystemSetting.set(k, val)
                 
     settings = _get_setting_dict(keys)
     
