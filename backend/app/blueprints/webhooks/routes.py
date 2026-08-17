@@ -21,20 +21,30 @@ def verify_webhook():
 def receive_webhook():
     payload = request.get_data()
     signature = request.headers.get('X-Hub-Signature-256')
+    from app.models import SystemSetting
     
     if not signature:
+        SystemSetting.set('meta_webhook_last_error', 'Missing X-Hub-Signature-256 header in request')
         return 'Missing signature', 400
         
     # Validate signature
-    from app.models import SystemSetting
     secret_str = SystemSetting.get('meta_app_secret') or current_app.config.get('META_APP_SECRET', '')
     secret = secret_str.encode('utf-8')
     expected = 'sha256=' + hmac.new(secret, payload, hashlib.sha256).hexdigest()
     if not hmac.compare_digest(expected, signature):
+        SystemSetting.set('meta_webhook_last_error', 'Invalid signature. The App Secret does not match.')
         return 'Invalid signature', 403
         
-    from app.tasks import process_meta_webhook
-    process_meta_webhook(request.json)
+    try:
+        from app.tasks import process_meta_webhook
+        process_meta_webhook(request.json)
+        # Clear the error on success
+        SystemSetting.set('meta_webhook_last_error', '')
+    except Exception as e:
+        import traceback
+        current_app.logger.error(f'Error processing webhook: {traceback.format_exc()}')
+        SystemSetting.set('meta_webhook_last_error', f'Internal error processing lead: {str(e)}')
+        return 'Internal error', 500
     
     return 'EVENT_RECEIVED', 200
 

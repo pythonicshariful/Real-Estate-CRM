@@ -153,7 +153,7 @@ def sla_settings():
 @jwt_required()
 @require_role(UserRole.ADMIN)
 def meta_setup():
-    keys = ['meta_verify_token', 'meta_app_secret', 'meta_app_id', 'meta_page_access_token']
+    keys = ['meta_verify_token', 'meta_app_secret', 'meta_app_id', 'meta_page_access_token', 'meta_webhook_last_error']
     if request.method == 'PUT':
         data = request.get_json() or {}
         for k in keys:
@@ -177,7 +177,8 @@ def meta_setup():
         "meta_app_secret": settings.get('meta_app_secret', ''),
         "meta_app_id": settings.get('meta_app_id', ''),
         "meta_page_access_token": settings.get('meta_page_access_token', ''),
-        "last_payload_received": last_payload_time
+        "last_payload_received": last_payload_time,
+        "meta_webhook_last_error": settings.get('meta_webhook_last_error', '')
     })
 
 @settings_bp.route('/test-meta-webhook', methods=['POST'])

@@ -106,6 +106,7 @@
                     <span id="webhook-status-text">Webhook Status: Active</span>
                   </div>
                   <div class="text-[11px] text-slate-400 mt-1" id="webhook-last-payload">Last payload received: Checking...</div>
+                  <div class="text-[11px] text-rose-400 mt-1 hidden font-semibold" id="webhook-last-error"></div>
                 </div>
               </div>
 
@@ -422,6 +423,7 @@
         const statusDot = document.getElementById('webhook-status-dot');
         const statusText = document.getElementById('webhook-status-text');
         const lastPayload = document.getElementById('webhook-last-payload');
+        const lastError = document.getElementById('webhook-last-error');
 
         if (data.status === 'active') {
           statusDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
@@ -435,6 +437,15 @@
           lastPayload.textContent = `Last payload received: ${new Date(data.last_payload_received).toLocaleString()}`;
         } else {
           lastPayload.textContent = 'No incoming Meta lead payload received yet';
+        }
+        
+        if (data.meta_webhook_last_error) {
+          lastError.textContent = `Error: ${data.meta_webhook_last_error}`;
+          lastError.classList.remove('hidden');
+          document.getElementById('meta-status-card').classList.replace('border-emerald-500', 'border-rose-500');
+        } else {
+          lastError.classList.add('hidden');
+          document.getElementById('meta-status-card').classList.replace('border-rose-500', 'border-emerald-500');
         }
       } catch (e) {
         if (window.showToast) window.showToast(e.message, 'error');
