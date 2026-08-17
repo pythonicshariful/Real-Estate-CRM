@@ -149,6 +149,18 @@
                   <button type="submit" class="btn-gradient px-6 py-2 rounded-xl text-xs font-bold">Save Webhook Configuration</button>
                 </div>
               </form>
+
+              <!-- Webhook Console -->
+              <div class="chart-card space-y-4">
+                <div class="flex items-center justify-between">
+                  <div class="text-sm font-bold text-white flex items-center gap-2">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M4 17h16a2 2 0 002-2V9a2 2 0 00-2-2H4a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
+                    Webhook Console
+                  </div>
+                  <button type="button" onclick="loadMetaSettings()" class="btn-ghost px-2 py-1 rounded-lg text-[10px] font-semibold text-slate-400 hover:text-white">Refresh Log</button>
+                </div>
+                <textarea id="webhook-console-output" readonly rows="4" class="w-full input-glass px-3.5 py-3 rounded-xl text-[11px] font-mono text-slate-300 bg-slate-900/80 focus:ring-0 focus:outline-none" placeholder="Waiting for incoming webhook events..."></textarea>
+              </div>
             </div>
 
             <!-- Meta Documentation Panel (Contents of META_WEBHOOK_SETUP.md) -->
@@ -424,6 +436,7 @@
         const statusText = document.getElementById('webhook-status-text');
         const lastPayload = document.getElementById('webhook-last-payload');
         const lastError = document.getElementById('webhook-last-error');
+        const consoleOut = document.getElementById('webhook-console-output');
 
         if (data.status === 'active') {
           statusDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
@@ -443,9 +456,21 @@
           lastError.textContent = `Error: ${data.meta_webhook_last_error}`;
           lastError.classList.remove('hidden');
           document.getElementById('meta-status-card').classList.replace('border-emerald-500', 'border-rose-500');
+          consoleOut.value = `[${new Date().toLocaleTimeString()}] ERROR:\n${data.meta_webhook_last_error}\n\n-> Hint: Double check your App Secret and ensure there are no trailing spaces.`;
+          consoleOut.classList.add('text-rose-400');
+          consoleOut.classList.remove('text-emerald-400', 'text-slate-300');
         } else {
           lastError.classList.add('hidden');
           document.getElementById('meta-status-card').classList.replace('border-rose-500', 'border-emerald-500');
+          if (data.last_payload_received) {
+            consoleOut.value = `[${new Date(data.last_payload_received).toLocaleTimeString()}] SUCCESS:\nLead payload received and processed perfectly! CRM records updated.`;
+            consoleOut.classList.add('text-emerald-400');
+            consoleOut.classList.remove('text-rose-400', 'text-slate-300');
+          } else {
+            consoleOut.value = `[${new Date().toLocaleTimeString()}] Waiting for incoming webhook events...\nRun a test using the Meta Lead Ads Testing Tool.`;
+            consoleOut.classList.add('text-slate-300');
+            consoleOut.classList.remove('text-rose-400', 'text-emerald-400');
+          }
         }
       } catch (e) {
         if (window.showToast) window.showToast(e.message, 'error');
