@@ -1,3 +1,5 @@
+Options -Indexes
+
 <IfModule mod_deflate.c>
   AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json
 </IfModule>
@@ -26,9 +28,9 @@
 </IfModule>
 
 # DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
-PassengerAppRoot "/home/alpheojj/Real-Estate-CRM"
+PassengerAppRoot "/home/southeas/repositories/Real-Estate-CRM"
 PassengerBaseURI "/"
-PassengerPython "/home/alpheojj/virtualenv/Real-Estate-CRM/3.13/bin/python"
+PassengerPython "/home/southeas/virtualenv/repositories/Real-Estate-CRM/3.13/bin/python"
 # DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
 
 <IfModule Litespeed>
