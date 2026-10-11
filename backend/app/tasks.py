@@ -435,6 +435,11 @@ def process_meta_webhook(payload_dict: dict, app=None):
                     adset_id=adset_id,
                     ad_id=ad_id,
                     form_id=form_id,
+                    utm_source='meta',
+                    utm_medium='paid_social',
+                    utm_campaign=campaign_id,
+                    utm_content=ad_id,
+                    project_interest=field_data.get('project_interest', field_data.get('project', None)),
                     raw_payload={"webhook_payload": payload_dict, "lead_data": lead_data},
                     submitted_at=datetime.now(timezone.utc),
                 )
@@ -673,11 +678,7 @@ def assign_lead_owner_auto(exclude_user_id: int | None = None, app=None):
             if date_ok and time_ok:
                 matching_scheduled_owners.append(owner)
 
-        if len(matching_scheduled_owners) == 1:
-            logger.info(f"Auto-assigned lead to scheduled Lead Owner: {matching_scheduled_owners[0].full_name}")
-            return matching_scheduled_owners[0]
-
-        if len(matching_scheduled_owners) > 1:
+        if len(matching_scheduled_owners) > 0:
             candidate_pool = matching_scheduled_owners
         else:
             logger.info("No active scheduled Lead Owners found. Leaving lead unassigned (Pending).")
@@ -685,24 +686,43 @@ def assign_lead_owner_auto(exclude_user_id: int | None = None, app=None):
             
         candidate_ids = [u.id for u in candidate_pool]
 
+        # Count active opportunities per candidate (non-deleted, non-terminal stages)
+        terminal_stages = [
+            PipelineStage.SOLD,
+            PipelineStage.CLOSED_LOST,
+            PipelineStage.INVALID,
+            PipelineStage.BOUGHT_ELSEWHERE,
+            PipelineStage.UNREACHABLE
+        ]
         lead_counts = (
             db.session.query(Opportunity.assigned_to_id, func.count(Opportunity.id).label('cnt'))
             .filter(Opportunity.assigned_to_id.in_(candidate_ids))
             .filter(Opportunity.is_deleted == False)
+            .filter(~Opportunity.pipeline_stage.in_(terminal_stages))
             .group_by(Opportunity.assigned_to_id)
             .subquery()
         )
 
-        selected = (
-            User.query
+        candidates_with_counts = (
+            db.session.query(User, func.coalesce(lead_counts.c.cnt, 0).label('active_leads'))
             .outerjoin(lead_counts, User.id == lead_counts.c.assigned_to_id)
             .filter(User.id.in_(candidate_ids))
             .order_by(func.coalesce(lead_counts.c.cnt, 0).asc(), User.id.asc())
-            .first()
+            .all()
         )
 
+        # Pick candidate with available capacity
+        selected = None
+        for user, active_cnt in candidates_with_counts:
+            max_cap = user.max_lead_capacity if user.max_lead_capacity is not None else 30
+            if active_cnt < max_cap:
+                selected = user
+                break
+
         if selected:
-            logger.info(f"Auto-assigned lead to Lead Owner (equal distribution): {selected.full_name}")
+            logger.info(f"Auto-assigned lead to Lead Owner: {selected.full_name}")
+        else:
+            logger.warning("All candidate Lead Owners have reached maximum capacity. Leaving lead unassigned.")
         return selected
 
 
@@ -786,4 +806,83 @@ def upload_recording_to_b2(local_path: str, filename: str, app=None) -> str | No
     except Exception as e:
         logger.error(f'B2 upload failed for {filename}: {e}')
         raise Exception(f"B2 upload failed: {e}")
+
+
+def check_appointment_reminders(app=None):
+    """
+    Check upcoming appointments for 24h and 2h reminders.
+    Runs every 10 minutes via APScheduler.
+    """
+    app = _get_app(app)
+    with app.app_context():
+        from app.extensions import db
+        from app.models import Appointment, AppointmentStatus, Opportunity
+
+        now = datetime.now(timezone.utc)
+        t_24h = now + timedelta(hours=24)
+        t_2h = now + timedelta(hours=2)
+
+        # 24h reminders (appointments between now and 24 hours from now)
+        appts_24h = Appointment.query.filter(
+            Appointment.status.in_([AppointmentStatus.SCHEDULED, AppointmentStatus.CONFIRMED]),
+            Appointment.appointment_datetime <= t_24h,
+            Appointment.appointment_datetime > now,
+            Appointment.reminder_24h_sent == False,
+            Appointment.is_deleted == False
+        ).all()
+
+        for appt in appts_24h:
+            appt.reminder_24h_sent = True
+            logger.info(f"Sent 24h reminder for Appointment #{appt.id}")
+
+        # 2h reminders (appointments between now and 2 hours from now)
+        appts_2h = Appointment.query.filter(
+            Appointment.status.in_([AppointmentStatus.SCHEDULED, AppointmentStatus.CONFIRMED]),
+            Appointment.appointment_datetime <= t_2h,
+            Appointment.appointment_datetime > now,
+            Appointment.reminder_2h_sent == False,
+            Appointment.is_deleted == False
+        ).all()
+
+        for appt in appts_2h:
+            appt.reminder_2h_sent = True
+            logger.info(f"Sent 2h reminder for Appointment #{appt.id}")
+
+        db.session.commit()
+
+
+def retry_failed_webhooks(app=None):
+    """
+    Retry failed webhooks with exponential backoff.
+    Runs every 5 minutes via APScheduler.
+    """
+    app = _get_app(app)
+    with app.app_context():
+        from app.extensions import db
+        from app.models import WebhookRetry
+
+        now = datetime.now(timezone.utc)
+        retries = WebhookRetry.query.filter(
+            WebhookRetry.status.in_(['PENDING', 'RETRYING']),
+            WebhookRetry.next_retry_at <= now,
+            WebhookRetry.retry_count < WebhookRetry.max_retries
+        ).all()
+
+        for r in retries:
+            try:
+                r.retry_count += 1
+                r.status = 'RETRYING'
+                process_meta_webhook(r.payload, app=app)
+                r.status = 'SUCCESS'
+                logger.info(f"Successfully retried webhook #{r.id}")
+            except Exception as e:
+                logger.error(f"Failed retry #{r.retry_count} for webhook #{r.id}: {e}")
+                r.error_message = str(e)
+                if r.retry_count >= r.max_retries:
+                    r.status = 'FAILED'
+                else:
+                    backoff_minutes = 2 ** r.retry_count
+                    r.next_retry_at = now + timedelta(minutes=backoff_minutes)
+        db.session.commit()
+
 

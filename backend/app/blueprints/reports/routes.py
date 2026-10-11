@@ -1,4 +1,4 @@
-from flask import jsonify, request
+from flask import jsonify, request, make_response
 from app.blueprints.reports import reports_bp
 from app.models import Opportunity, Contact, PipelineStage, User, CallLog, Appointment, AppointmentStatus, Objection, ObjectionCategory, Sale, Expense, ExpenseCategory, ExpenseStatus, Invoice, InvoiceStatus, SLAEvent, SLAStatus, ActivityOutcome, PipelineHistory, db
 from app.models import UserRole
@@ -6,6 +6,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from datetime import datetime, timedelta, date
 from sqlalchemy import func
 from decimal import Decimal
+import io
+import csv
 from app.utils.rbac import is_admin
 
 @reports_bp.route('/kpis', methods=['GET'])
@@ -21,10 +23,29 @@ def get_reports_kpis():
             return q.filter(user_id_col == user_id)
         return q
 
+    # Date range filters
+    start_date_str = request.args.get('start_date')
+    end_date_str = request.args.get('end_date')
+    start_dt = datetime.fromisoformat(start_date_str) if start_date_str else None
+    end_dt = datetime.fromisoformat(end_date_str) if end_date_str else None
+
+    # Base Opportunity query
+    opps_q = Opportunity.query.filter(Opportunity.is_deleted == False)
+    if not is_admin(role):
+        opps_q = opps_q.filter(Opportunity.assigned_to_id == user_id)
+    if start_dt:
+        opps_q = opps_q.filter(Opportunity.created_at >= start_dt)
+    if end_dt:
+        opps_q = opps_q.filter(Opportunity.created_at <= end_dt)
+
     # Opportunity Stage Grouping
     stage_counts_q = db.session.query(Opportunity.pipeline_stage, func.count(Opportunity.id)).filter(Opportunity.is_deleted == False)
     if not is_admin(role):
         stage_counts_q = stage_counts_q.filter(Opportunity.assigned_to_id == user_id)
+    if start_dt:
+        stage_counts_q = stage_counts_q.filter(Opportunity.created_at >= start_dt)
+    if end_dt:
+        stage_counts_q = stage_counts_q.filter(Opportunity.created_at <= end_dt)
     stage_counts_result = stage_counts_q.group_by(Opportunity.pipeline_stage).all()
     stage_map = {row[0]: row[1] for row in stage_counts_result if row[0] is not None}
     
@@ -305,10 +326,20 @@ def get_reports_charts():
     role = claims.get('role')
     user_id = int(get_jwt_identity())
 
+    # Date range filters
+    start_date_str = request.args.get('start_date')
+    end_date_str = request.args.get('end_date')
+    start_dt = datetime.fromisoformat(start_date_str) if start_date_str else None
+    end_dt = datetime.fromisoformat(end_date_str) if end_date_str else None
+
     # Filters
     opps_q = Opportunity.query.filter_by(is_deleted=False)
     if not is_admin(role):
         opps_q = opps_q.filter_by(assigned_to_id=user_id)
+    if start_dt:
+        opps_q = opps_q.filter(Opportunity.created_at >= start_dt)
+    if end_dt:
+        opps_q = opps_q.filter(Opportunity.created_at <= end_dt)
 
     # 1. Lead Outcome Distribution
     outcome_counts = {}
@@ -521,3 +552,56 @@ def get_reports_charts():
             "sla": weekly_sla
         }
     })
+
+
+@reports_bp.route('/export/leads', methods=['GET'])
+@jwt_required()
+def export_leads_csv():
+    claims = get_jwt()
+    role = claims.get('role')
+    user_id = int(get_jwt_identity())
+
+    # Only managers and admins can export
+    if role not in ('MANAGER', 'GM', 'CEO', 'ADMIN'):
+        return jsonify({"error": "Export permission required (Manager or higher)"}), 403
+
+    query = db.session.query(Opportunity, Contact).outerjoin(
+        Contact, Opportunity.contact_id == Contact.id
+    ).filter(Opportunity.is_deleted == False)
+
+    start_date_str = request.args.get('start_date')
+    end_date_str = request.args.get('end_date')
+    if start_date_str:
+        query = query.filter(Opportunity.created_at >= datetime.fromisoformat(start_date_str))
+    if end_date_str:
+        query = query.filter(Opportunity.created_at <= datetime.fromisoformat(end_date_str))
+
+    leads_data = query.order_by(Opportunity.created_at.desc()).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        'Lead ID', 'Full Name', 'Phone', 'Email', 'Source',
+        'Pipeline Stage', 'Priority', 'Lead Temperature',
+        'Assigned To', 'Created At'
+    ])
+
+    for opp, contact in leads_data:
+        writer.writerow([
+            opp.id,
+            contact.full_name if contact else '',
+            contact.phone_raw if contact else '',
+            contact.email if contact else '',
+            contact.source if contact else '',
+            opp.pipeline_stage.value if opp.pipeline_stage else '',
+            opp.priority.value if opp.priority else '',
+            opp.lead_temperature.value if opp.lead_temperature else '',
+            opp.assigned_to.full_name if opp.assigned_to else 'Unassigned',
+            opp.created_at.isoformat() if opp.created_at else ''
+        ])
+
+    csv_data = output.getvalue()
+    response = make_response(csv_data)
+    response.headers['Content-Disposition'] = f'attachment; filename=leads_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+    response.headers['Content-Type'] = 'text/csv'
+    return response

@@ -30,7 +30,7 @@ ROLE_HIERARCHY = {
     "ADMIN": 6,
 }
 
-MFA_REQUIRED_ROLES = {"ADMIN"}
+MFA_REQUIRED_ROLES = {"MANAGER", "GM", "CEO", "ADMIN"}
 
 
 def is_admin(role: str) -> bool:

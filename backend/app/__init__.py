@@ -186,7 +186,7 @@ def create_app(config_name=None):
 
 def _configure_scheduler(app):
     """Configure and start APScheduler with SQLAlchemy jobstore."""
-    from app.tasks import check_sla_compliance, send_daily_summary
+    from app.tasks import check_sla_compliance, send_daily_summary, check_appointment_reminders, retry_failed_webhooks
     from filelock import FileLock, Timeout
 
     scheduler.app = app
@@ -217,6 +217,24 @@ def _configure_scheduler(app):
         hour=20,
         minute=0,
         id='daily_summary',
+        replace_existing=True
+    )
+
+    # Appointment reminders (24h and 2h) — runs every 10 minutes
+    scheduler.add_job(
+        func=check_appointment_reminders,
+        trigger='interval',
+        minutes=10,
+        id='appointment_reminders',
+        replace_existing=True
+    )
+
+    # Webhook retry backoff worker — runs every 5 minutes
+    scheduler.add_job(
+        func=retry_failed_webhooks,
+        trigger='interval',
+        minutes=5,
+        id='webhook_retries',
         replace_existing=True
     )
 

@@ -52,7 +52,14 @@ class ActivityOutcome(PyEnum):
     NOT_INTERESTED = "NOT_INTERESTED"
     CALLBACK_REQUESTED = "CALLBACK_REQUESTED"
 
+class LeadPriority(PyEnum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+    URGENT = "URGENT"
+
 class LeadTemperature(PyEnum):
+    VERY_HOT = "VERY_HOT"
     HOT = "HOT"
     WARM = "WARM"
     COLD = "COLD"
@@ -60,6 +67,7 @@ class LeadTemperature(PyEnum):
 
 class AppointmentStatus(PyEnum):
     SCHEDULED = "SCHEDULED"
+    CONFIRMATION_PENDING = "CONFIRMATION_PENDING"
     CONFIRMED = "CONFIRMED"
     COMPLETED = "COMPLETED"
     NO_SHOW = "NO_SHOW"
@@ -89,19 +97,41 @@ class SLAStatus(PyEnum):
     RESOLVED = "RESOLVED"
 
 class ObjectionCategory(PyEnum):
-    PRICE = "PRICE"
-    DISTANCE = "DISTANCE"
-    INFRASTRUCTURE = "INFRASTRUCTURE"
-    COMPETITOR = "COMPETITOR"
-    TIMING = "TIMING"
-    FINANCING = "FINANCING"
+    PRICE_TOO_HIGH = "PRICE_TOO_HIGH"
+    LOCATION_DISTANCE = "LOCATION_DISTANCE"
+    CONNECTIVITY_ROADS = "CONNECTIVITY_ROADS"
+    DEVELOPMENT_TIMELINE = "DEVELOPMENT_TIMELINE"
+    TITLE_LEGAL_CLARITY = "TITLE_LEGAL_CLARITY"
+    COMPETITOR_PREFERENCE = "COMPETITOR_PREFERENCE"
+    PAYMENT_TERMS_UNSUITABLE = "PAYMENT_TERMS_UNSUITABLE"
+    SPOUSE_FAMILY_DISAPPROVAL = "SPOUSE_FAMILY_DISAPPROVAL"
+    NOT_READY_FINANCIALLY = "NOT_READY_FINANCIALLY"
+    NO_LONGER_INTERESTED = "NO_LONGER_INTERESTED"
     OTHER = "OTHER"
+    # Legacy aliases
+    PRICE = "PRICE_TOO_HIGH"
+    DISTANCE = "LOCATION_DISTANCE"
+    INFRASTRUCTURE = "CONNECTIVITY_ROADS"
+    COMPETITOR = "COMPETITOR_PREFERENCE"
+    TIMING = "DEVELOPMENT_TIMELINE"
+    FINANCING = "PAYMENT_TERMS_UNSUITABLE"
 
 class PaymentMethod(PyEnum):
     CASH = "CASH"
     CHEQUE = "CHEQUE"
     BANK_TRANSFER = "BANK_TRANSFER"
     MOBILE_BANKING = "MOBILE_BANKING"
+
+class InstallmentStatus(PyEnum):
+    PENDING = "PENDING"
+    PAID = "PAID"
+    OVERDUE = "OVERDUE"
+    WAIVED = "WAIVED"
+
+class CancellationStatus(PyEnum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
 
 class TaskPriority(PyEnum):
     LOW = "LOW"
@@ -119,6 +149,13 @@ class ProjectStatus(PyEnum):
     ACTIVE = "ACTIVE"
     COMPLETED = "COMPLETED"
     ON_HOLD = "ON_HOLD"
+
+class PlotStatus(PyEnum):
+    AVAILABLE = "AVAILABLE"
+    HOLD = "HOLD"
+    RESERVED = "RESERVED"
+    BOOKED = "BOOKED"
+    SOLD = "SOLD"
 
 class LeaveType(PyEnum):
     ANNUAL = "ANNUAL"
@@ -214,6 +251,8 @@ class Contact(db.Model, SoftDeleteMixin):
     phone_normalized = db.Column(db.String(20), unique=True)
     phone_hash = db.Column(db.String(64), index=True)
     gender = db.Column(db.String(10))
+    job_title = db.Column(db.String(100))
+    profession = db.Column(db.String(100))
     address = db.Column(db.Text)
     district = db.Column(db.String(100))
     city = db.Column(db.String(100))
@@ -249,6 +288,7 @@ class Inquiry(db.Model):
     utm_term = db.Column(db.String(100))
     raw_payload = db.Column(db.JSON)
     project_interest = db.Column(db.String(100))
+    original_phone_raw = db.Column(db.String(50))
     budget_min = db.Column(db.Numeric(12, 2))
     budget_max = db.Column(db.Numeric(12, 2))
     submitted_at = db.Column(db.DateTime)
@@ -270,6 +310,116 @@ class Project(db.Model):
     status = db.Column(db.Enum(ProjectStatus), default=ProjectStatus.ACTIVE)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
+    phases = db.relationship('Phase', backref='project', lazy=True, cascade='all, delete-orphan')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'code': self.code,
+            'description': self.description,
+            'location': self.location,
+            'total_units': self.total_units,
+            'available_units': self.available_units,
+            'price_per_sqft': float(self.price_per_sqft) if self.price_per_sqft else None,
+            'status': self.status.value if self.status else 'ACTIVE',
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+
+class Phase(db.Model):
+    __tablename__ = 'phases'
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    blocks = db.relationship('Block', backref='phase', lazy=True, cascade='all, delete-orphan')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'project_id': self.project_id,
+            'name': self.name,
+            'description': self.description,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+
+class Block(db.Model):
+    __tablename__ = 'blocks'
+    id = db.Column(db.Integer, primary_key=True)
+    phase_id = db.Column(db.Integer, db.ForeignKey('phases.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    roads = db.relationship('Road', backref='block', lazy=True, cascade='all, delete-orphan')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'phase_id': self.phase_id,
+            'name': self.name,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+
+class Road(db.Model):
+    __tablename__ = 'roads'
+    id = db.Column(db.Integer, primary_key=True)
+    block_id = db.Column(db.Integer, db.ForeignKey('blocks.id'), nullable=False)
+    road_number = db.Column(db.String(50), nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    plots = db.relationship('Plot', backref='road', lazy=True, cascade='all, delete-orphan')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'block_id': self.block_id,
+            'road_number': self.road_number,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+
+class Plot(db.Model, SoftDeleteMixin):
+    __tablename__ = 'plots'
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
+    phase_id = db.Column(db.Integer, db.ForeignKey('phases.id'), nullable=True)
+    block_id = db.Column(db.Integer, db.ForeignKey('blocks.id'), nullable=True)
+    road_id = db.Column(db.Integer, db.ForeignKey('roads.id'), nullable=True)
+    plot_number = db.Column(db.String(50), nullable=False)
+    size_katha = db.Column(db.Numeric(6, 2), nullable=False) # Plot size in Katha
+    facing = db.Column(db.String(50)) # North, South, East, West, Corner, etc.
+    rate_per_katha = db.Column(db.Numeric(12, 2))
+    total_price = db.Column(db.Numeric(15, 2))
+    status = db.Column(db.Enum(PlotStatus), default=PlotStatus.AVAILABLE, nullable=False)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    project_rel = db.relationship('Project', foreign_keys=[project_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'project_id': self.project_id,
+            'phase_id': self.phase_id,
+            'block_id': self.block_id,
+            'road_id': self.road_id,
+            'plot_number': self.plot_number,
+            'size_katha': float(self.size_katha) if self.size_katha else None,
+            'facing': self.facing,
+            'rate_per_katha': float(self.rate_per_katha) if self.rate_per_katha else None,
+            'total_price': float(self.total_price) if self.total_price else None,
+            'status': self.status.value if self.status else 'AVAILABLE',
+            'notes': self.notes,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
 
 class Opportunity(db.Model, SoftDeleteMixin):
     __tablename__ = 'opportunities'
@@ -287,12 +437,25 @@ class Opportunity(db.Model, SoftDeleteMixin):
     next_action_deadline = db.Column(db.DateTime)
     appointment_status = db.Column(db.Enum(AppointmentStatus))
     lead_temperature = db.Column(db.Enum(LeadTemperature), default=LeadTemperature.COLD)
+    priority = db.Column(db.Enum(LeadPriority), default=LeadPriority.MEDIUM)
     is_starred = db.Column(db.Boolean, default=False)
     manager_assessment = db.Column(db.Text)
     manager_label = db.Column(db.String(100))
     final_result = db.Column(db.Enum(FinalResult))
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'))
     total_deal_value = db.Column(db.Numeric(15, 2))
+
+    # Stage milestone date tracking
+    assigned_date = db.Column(db.DateTime)
+    first_contact_date = db.Column(db.DateTime)
+    last_contact_date = db.Column(db.DateTime)
+    engaged_date = db.Column(db.DateTime)
+    visit_date = db.Column(db.DateTime)
+    negotiation_date = db.Column(db.DateTime)
+    booking_date = db.Column(db.DateTime)
+    sold_date = db.Column(db.DateTime)
+    closed_lost_date = db.Column(db.DateTime)
+
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
@@ -312,6 +475,15 @@ class Opportunity(db.Model, SoftDeleteMixin):
             return deadline < datetime.now(timezone.utc)
         return False
         
+    @property
+    def lead_age_days(self):
+        if self.created_at:
+            created = self.created_at
+            if created.tzinfo is None:
+                created = created.replace(tzinfo=timezone.utc)
+            return (datetime.now(timezone.utc) - created).days
+        return 0
+
     def to_dict(self):
         owner = self.assigned_to
         return {
@@ -323,6 +495,10 @@ class Opportunity(db.Model, SoftDeleteMixin):
             "project_name": self.project.name if self.project else None,
             "pipeline_stage": self.pipeline_stage.value if self.pipeline_stage else None,
             "lead_temperature": self.lead_temperature.value if self.lead_temperature else None,
+            "priority": self.priority.value if self.priority else "MEDIUM",
+            "next_action_type": self.next_action_type.value if self.next_action_type else None,
+            "next_action_deadline": self.next_action_deadline.isoformat() if self.next_action_deadline else None,
+            "lead_age_days": self.lead_age_days,
             "is_starred": self.is_starred,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
@@ -425,8 +601,30 @@ class Appointment(db.Model, SoftDeleteMixin):
     debrief_submitted = db.Column(db.Boolean, default=False)
     debrief_notes = db.Column(db.Text)
     no_show_reason = db.Column(db.Text)
+    rescheduled_from_id = db.Column(db.Integer, db.ForeignKey('appointments.id'), nullable=True)
+    reminder_24h_sent = db.Column(db.Boolean, default=False)
+    reminder_2h_sent = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'opportunity_id': self.opportunity_id,
+            'contact_id': self.contact_id,
+            'scheduled_by_id': self.scheduled_by_id,
+            'appointment_datetime': self.appointment_datetime.isoformat() if self.appointment_datetime else None,
+            'location': self.location,
+            'project_id': self.project_id,
+            'status': self.status.value if self.status else 'SCHEDULED',
+            'confirmed_at': self.confirmed_at.isoformat() if self.confirmed_at else None,
+            'completed_at': self.completed_at.isoformat() if self.completed_at else None,
+            'debrief_submitted': self.debrief_submitted,
+            'debrief_notes': self.debrief_notes,
+            'no_show_reason': self.no_show_reason,
+            'rescheduled_from_id': self.rescheduled_from_id,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
 
 
 class Objection(db.Model):
@@ -437,7 +635,11 @@ class Objection(db.Model):
     category = db.Column(db.Enum(ObjectionCategory), nullable=False)
     specific_objection = db.Column(db.String(255), nullable=False)
     competitor_name = db.Column(db.String(100))
+    intensity = db.Column(db.Integer, default=3) # 1 (mild) to 5 (dealbreaker)
+    is_principal = db.Column(db.Boolean, default=True) # Primary objection blocker
+    reactivation_eligible = db.Column(db.Boolean, default=False)
     handling_notes = db.Column(db.Text)
+    executive_response = db.Column(db.Text)
     resolved = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
@@ -449,6 +651,7 @@ class Reservation(db.Model, SoftDeleteMixin):
     opportunity_id = db.Column(db.Integer, db.ForeignKey('opportunities.id'), nullable=False)
     contact_id = db.Column(db.Integer, db.ForeignKey('contacts.id'), nullable=False)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
+    plot_id = db.Column(db.Integer, db.ForeignKey('plots.id'), nullable=True)
     unit_reference = db.Column(db.String(100), nullable=False)
     booking_amount = db.Column(db.Numeric(12, 2), nullable=False)
     currency = db.Column(db.String(10), default='BDT')
@@ -459,6 +662,103 @@ class Reservation(db.Model, SoftDeleteMixin):
     notes = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    installments = db.relationship('Installment', backref='reservation', lazy=True, cascade='all, delete-orphan')
+    cancellation_requests = db.relationship('CancellationRequest', backref='reservation', lazy=True, cascade='all, delete-orphan')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'opportunity_id': self.opportunity_id,
+            'contact_id': self.contact_id,
+            'project_id': self.project_id,
+            'plot_id': self.plot_id,
+            'unit_reference': self.unit_reference,
+            'booking_amount': float(self.booking_amount) if self.booking_amount else 0.0,
+            'currency': self.currency,
+            'receipt_number': self.receipt_number,
+            'payment_method': self.payment_method.value if self.payment_method else None,
+            'approving_officer_id': self.approving_officer_id,
+            'approved_at': self.approved_at.isoformat() if self.approved_at else None,
+            'notes': self.notes,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+
+class Installment(db.Model, SoftDeleteMixin):
+    __tablename__ = 'installments'
+    id = db.Column(db.Integer, primary_key=True)
+    reservation_id = db.Column(db.Integer, db.ForeignKey('reservations.id'), nullable=False, index=True)
+    opportunity_id = db.Column(db.Integer, db.ForeignKey('opportunities.id'), nullable=False, index=True)
+    installment_number = db.Column(db.Integer, nullable=False)
+    title = db.Column(db.String(100), nullable=False) # e.g., '1st Installment', 'Booking Downpayment'
+    amount = db.Column(db.Numeric(12, 2), nullable=False)
+    due_date = db.Column(db.Date, nullable=False)
+    status = db.Column(db.Enum(InstallmentStatus), default=InstallmentStatus.PENDING, nullable=False)
+    paid_amount = db.Column(db.Numeric(12, 2), default=0.0)
+    paid_at = db.Column(db.DateTime)
+    payment_method = db.Column(db.Enum(PaymentMethod))
+    receipt_number = db.Column(db.String(100))
+    recorded_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    recorded_by = db.relationship('User', foreign_keys=[recorded_by_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'reservation_id': self.reservation_id,
+            'opportunity_id': self.opportunity_id,
+            'installment_number': self.installment_number,
+            'title': self.title,
+            'amount': float(self.amount) if self.amount else 0.0,
+            'due_date': self.due_date.isoformat() if self.due_date else None,
+            'status': self.status.value if self.status else 'PENDING',
+            'paid_amount': float(self.paid_amount) if self.paid_amount else 0.0,
+            'paid_at': self.paid_at.isoformat() if self.paid_at else None,
+            'payment_method': self.payment_method.value if self.payment_method else None,
+            'receipt_number': self.receipt_number,
+            'notes': self.notes,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+
+class CancellationRequest(db.Model, SoftDeleteMixin):
+    __tablename__ = 'cancellation_requests'
+    id = db.Column(db.Integer, primary_key=True)
+    reservation_id = db.Column(db.Integer, db.ForeignKey('reservations.id'), nullable=False, index=True)
+    opportunity_id = db.Column(db.Integer, db.ForeignKey('opportunities.id'), nullable=False, index=True)
+    reason = db.Column(db.Text, nullable=False)
+    refund_amount_requested = db.Column(db.Numeric(12, 2))
+    refund_amount_approved = db.Column(db.Numeric(12, 2))
+    status = db.Column(db.Enum(CancellationStatus), default=CancellationStatus.PENDING, nullable=False)
+    requested_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    reviewed_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    reviewed_at = db.Column(db.DateTime)
+    review_notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    requested_by = db.relationship('User', foreign_keys=[requested_by_id])
+    reviewed_by = db.relationship('User', foreign_keys=[reviewed_by_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'reservation_id': self.reservation_id,
+            'opportunity_id': self.opportunity_id,
+            'reason': self.reason,
+            'refund_amount_requested': float(self.refund_amount_requested) if self.refund_amount_requested else None,
+            'refund_amount_approved': float(self.refund_amount_approved) if self.refund_amount_approved else None,
+            'status': self.status.value if self.status else 'PENDING',
+            'requested_by_id': self.requested_by_id,
+            'reviewed_by_id': self.reviewed_by_id,
+            'reviewed_at': self.reviewed_at.isoformat() if self.reviewed_at else None,
+            'review_notes': self.review_notes,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
 
 
 class Sale(db.Model, SoftDeleteMixin):
@@ -970,3 +1270,66 @@ class Contract(db.Model):
             'signed_at': self.signed_at.isoformat() if self.signed_at else None,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
+
+
+class CoachingLog(db.Model):
+    __tablename__ = 'coaching_logs'
+    id = db.Column(db.Integer, primary_key=True)
+    manager_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    executive_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    call_log_id = db.Column(db.Integer, db.ForeignKey('call_logs.id'), nullable=True)
+    opportunity_id = db.Column(db.Integer, db.ForeignKey('opportunities.id'), nullable=True)
+    score = db.Column(db.Integer, nullable=True) # 1-10 rating
+    strengths = db.Column(db.Text)
+    areas_for_improvement = db.Column(db.Text)
+    action_items = db.Column(db.Text)
+    session_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    manager = db.relationship('User', foreign_keys=[manager_id])
+    executive = db.relationship('User', foreign_keys=[executive_id])
+    call_log = db.relationship('CallLog')
+    opportunity = db.relationship('Opportunity')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'manager_id': self.manager_id,
+            'manager_name': self.manager.full_name if self.manager else None,
+            'executive_id': self.executive_id,
+            'executive_name': self.executive.full_name if self.executive else None,
+            'call_log_id': self.call_log_id,
+            'opportunity_id': self.opportunity_id,
+            'score': self.score,
+            'strengths': self.strengths,
+            'areas_for_improvement': self.areas_for_improvement,
+            'action_items': self.action_items,
+            'session_date': self.session_date.isoformat() if self.session_date else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+
+class WebhookRetry(db.Model):
+    __tablename__ = 'webhook_retries'
+    id = db.Column(db.Integer, primary_key=True)
+    provider = db.Column(db.String(50), default='meta')
+    payload = db.Column(db.JSON, nullable=False)
+    error_message = db.Column(db.Text)
+    retry_count = db.Column(db.Integer, default=0)
+    max_retries = db.Column(db.Integer, default=5)
+    next_retry_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    status = db.Column(db.String(20), default='PENDING') # PENDING, RETRYING, SUCCESS, FAILED
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'provider': self.provider,
+            'retry_count': self.retry_count,
+            'status': self.status,
+            'error_message': self.error_message,
+            'next_retry_at': self.next_retry_at.isoformat() if self.next_retry_at else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+

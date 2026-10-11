@@ -85,13 +85,28 @@ def login():
             # Logging error handled in tasks
             pass
     
-    access_token = create_access_token(identity=str(user.id), additional_claims={
-        'role': user.role.value,
-        'color': user.calendar_color,
-        'full_name': user.full_name,
-        'mfa_pending': mfa_required,
-        'mfa_type': mfa_type
-    })
+    # Role-based token expiration (shorter for high-privilege roles)
+    role_expiry_map = {
+        'ADMIN': timedelta(hours=2),
+        'CEO': timedelta(hours=4),
+        'GM': timedelta(hours=4),
+        'MANAGER': timedelta(hours=8),
+        'LEAD_OWNER': timedelta(hours=12),
+        'EXECUTIVE': timedelta(hours=12),
+    }
+    token_expiry = role_expiry_map.get(user.role.value, timedelta(hours=8))
+
+    access_token = create_access_token(
+        identity=str(user.id),
+        expires_delta=token_expiry,
+        additional_claims={
+            'role': user.role.value,
+            'color': user.calendar_color,
+            'full_name': user.full_name,
+            'mfa_pending': mfa_required,
+            'mfa_type': mfa_type
+        }
+    )
     refresh_token = create_refresh_token(identity=str(user.id))
     return jsonify(
         access_token=access_token,

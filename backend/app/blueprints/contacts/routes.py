@@ -130,3 +130,65 @@ def contact_inquiries(id):
 def contact_opportunities(id):
     contact = Contact.query.get_or_404(id)
     return jsonify([o.to_dict() for o in contact.opportunities if contact.opportunities]), 200
+
+
+@contacts_bp.route('/import', methods=['POST'])
+@jwt_required()
+def import_contacts():
+    import csv
+    import io
+    from app.utils.phone import normalize_phone
+
+    if 'file' not in request.files:
+        return jsonify({"error": "No file uploaded (must provide 'file' field)"}), 400
+
+    file = request.files['file']
+    if not file.filename.endswith('.csv'):
+        return jsonify({"error": "Only CSV files are supported"}), 400
+
+    stream = io.StringIO(file.stream.read().decode("utf-8-sig"), newline=None)
+    reader = csv.DictReader(stream)
+
+    imported_count = 0
+    duplicate_count = 0
+    errors = []
+
+    for idx, row in enumerate(reader, start=1):
+        full_name = row.get('full_name') or row.get('name') or row.get('Full Name')
+        phone = row.get('phone') or row.get('phone_number') or row.get('Phone')
+        email = row.get('email') or row.get('Email')
+
+        if not full_name or not phone:
+            errors.append(f"Row {idx}: missing full_name or phone")
+            continue
+
+        phone_norm = normalize_phone(phone)
+        existing = Contact.query.filter_by(phone_normalized=phone_norm).first()
+        if existing:
+            duplicate_count += 1
+            continue
+
+        contact = Contact(
+            full_name=full_name.strip(),
+            phone_raw=phone.strip(),
+            phone_normalized=phone_norm,
+            email=email.strip() if email else None,
+            job_title=row.get('job_title') or row.get('Job Title'),
+            profession=row.get('profession') or row.get('Profession'),
+            district=row.get('district') or row.get('District'),
+            city=row.get('city') or row.get('City'),
+            source=row.get('source') or 'CSV Import',
+            consent_given=True,
+            consent_date=datetime.now(timezone.utc)
+        )
+        db.session.add(contact)
+        imported_count += 1
+
+    db.session.commit()
+    return jsonify({
+        "msg": f"Import completed: {imported_count} imported, {duplicate_count} skipped duplicates",
+        "imported": imported_count,
+        "duplicates": duplicate_count,
+        "errors": errors
+    }), 200
+
