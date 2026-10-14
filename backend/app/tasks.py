@@ -799,10 +799,16 @@ def upload_recording_to_b2(local_path: str, filename: str, app=None) -> str | No
             Config=TransferConfig(use_threads=False)
         )
         
-        # Generate the public URL (Format: endpoint/bucket/filename)
-        # Note: B2 requires the bucket to be public for this direct URL to work.
-        endpoint_cleaned = endpoint.rstrip('/')
-        share_link = f"{endpoint_cleaned}/{bucket}/{filename}"
+        # Try generating a pre-signed URL first (works for both Private and Public buckets)
+        try:
+            share_link = s3.generate_presigned_url(
+                'get_object',
+                Params={'Bucket': bucket, 'Key': filename},
+                ExpiresIn=86400 * 7 # 7 days valid
+            )
+        except Exception:
+            endpoint_cleaned = endpoint.rstrip('/')
+            share_link = f"{endpoint_cleaned}/{bucket}/{filename}"
         
         logger.info(f'Recording uploaded to B2: {filename} → {share_link}')
         return share_link
@@ -810,6 +816,37 @@ def upload_recording_to_b2(local_path: str, filename: str, app=None) -> str | No
     except Exception as e:
         logger.error(f'B2 upload failed for {filename}: {e}')
         raise Exception(f"B2 upload failed: {e}")
+
+
+def generate_b2_presigned_url(filename: str, expires_in: int = 3600) -> str | None:
+    """Generate a temporary signed URL for a private B2 recording."""
+    try:
+        from app.models import SystemSetting
+        key_id = SystemSetting.get('b2_key_id', '').strip()
+        app_key = SystemSetting.get('b2_application_key', '').strip()
+        bucket = SystemSetting.get('b2_bucket_name', '').strip()
+        endpoint = SystemSetting.get('b2_endpoint', '').strip()
+
+        if not all([key_id, app_key, bucket, endpoint]):
+            return None
+
+        import boto3
+        from botocore.config import Config
+        s3 = boto3.client(
+            's3',
+            endpoint_url=endpoint,
+            aws_access_key_id=key_id,
+            aws_secret_access_key=app_key,
+            config=Config(signature_version='s3v4')
+        )
+        return s3.generate_presigned_url(
+            'get_object',
+            Params={'Bucket': bucket, 'Key': filename},
+            ExpiresIn=expires_in
+        )
+    except Exception as e:
+        logger.warning(f"Could not generate presigned URL for {filename}: {e}")
+        return None
 
 
 def check_appointment_reminders(app=None):
