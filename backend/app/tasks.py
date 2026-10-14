@@ -783,6 +783,10 @@ def upload_recording_to_b2(local_path: str, filename: str, app=None) -> str | No
         )
         
         from boto3.s3.transfer import TransferConfig
+        import mimetypes
+        content_type, _ = mimetypes.guess_type(filename)
+        if not content_type:
+            content_type = 'video/mp4' if filename.lower().endswith(('.mp4', '.mov', '.webm', '.mkv', '.avi', '.wmv')) else 'audio/mpeg'
         
         # B2 supports standard S3 upload_file.
         # We disable use_threads because boto3 spawning its own sub-threads 
@@ -791,7 +795,7 @@ def upload_recording_to_b2(local_path: str, filename: str, app=None) -> str | No
             Filename=local_path,
             Bucket=bucket,
             Key=filename,
-            ExtraArgs={'ContentType': 'audio/mpeg'},
+            ExtraArgs={'ContentType': content_type},
             Config=TransferConfig(use_threads=False)
         )
         

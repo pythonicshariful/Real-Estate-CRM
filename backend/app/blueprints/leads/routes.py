@@ -623,14 +623,22 @@ def log_call(id):
         from werkzeug.utils import secure_filename
         from app.tasks import upload_recording_to_b2
 
-        ext = os.path.splitext(secure_filename(recording_file.filename))[1] or '.mp3'
+        ext = os.path.splitext(secure_filename(recording_file.filename))[1]
+        if not ext:
+            ext = '.mp3'
         
-        allowed_audio_ext = {'.mp3', '.wav', '.ogg', '.m4a', '.mp4'}
-        if ext.lower() not in allowed_audio_ext:
-            return jsonify({"error": "Invalid recording file type"}), 400
+        # Support audio and video formats
+        allowed_recording_ext = {
+            # Audio
+            '.mp3', '.wav', '.ogg', '.m4a', '.aac', '.flac', '.wma', '.amr', '.weba',
+            # Video
+            '.mp4', '.webm', '.mkv', '.mov', '.avi', '.wmv', '.m4v', '.3gp'
+        }
+        if ext.lower() not in allowed_recording_ext:
+            return jsonify({"error": "Invalid recording file type. Allowed formats: MP3, WAV, OGG, M4A, AAC, FLAC, AMR, MP4, WEBM, MKV, MOV, AVI."}), 400
             
         safe_name = f"call_{log.id}_{uuid.uuid4().hex[:8]}{ext}"
-        recordings_dir = current_app.config.get('RECORDINGS_FOLDER', 'uploads/call record')
+        recordings_dir = current_app.config.get('RECORDINGS_FOLDER', 'uploads/recordings')
         os.makedirs(recordings_dir, exist_ok=True)
         local_path = os.path.join(recordings_dir, safe_name)
 
