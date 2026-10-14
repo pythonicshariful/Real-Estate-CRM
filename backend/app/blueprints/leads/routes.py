@@ -170,7 +170,20 @@ def get_lead_profile(id):
     can_access_recordings = role in ('ADMIN', 'MANAGER', 'GM', 'CEO')
     def format_rec_url(fname):
         if not fname or not can_access_recordings: return None
-        if fname.startswith('http'): return fname
+        # If it is a full URL or stored filename in B2
+        if fname.startswith('http'):
+            # If it's a backblazeb2 URL, refresh with fresh signature if possible
+            if 'backblazeb2.com' in fname:
+                import urllib.parse
+                parsed = urllib.parse.urlparse(fname)
+                path_parts = parsed.path.strip('/').split('/')
+                if len(path_parts) >= 2:
+                    raw_filename = path_parts[-1]
+                    from app.tasks import generate_b2_presigned_url
+                    fresh_url = generate_b2_presigned_url(raw_filename, expires_in=86400)
+                    if fresh_url:
+                        return fresh_url
+            return fname
         import urllib.parse
         return f"/uploads/recordings/{urllib.parse.quote(fname)}"
         

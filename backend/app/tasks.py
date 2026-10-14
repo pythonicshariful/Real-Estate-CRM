@@ -775,11 +775,13 @@ def upload_recording_to_b2(local_path: str, filename: str, app=None) -> str | No
 
     try:
         import boto3
+        from botocore.config import Config
         s3 = boto3.client(
             's3',
             endpoint_url=endpoint,
             aws_access_key_id=key_id,
-            aws_secret_access_key=app_key
+            aws_secret_access_key=app_key,
+            config=Config(signature_version='s3v4')
         )
         
         from boto3.s3.transfer import TransferConfig
@@ -799,12 +801,12 @@ def upload_recording_to_b2(local_path: str, filename: str, app=None) -> str | No
             Config=TransferConfig(use_threads=False)
         )
         
-        # Try generating a pre-signed URL first (works for both Private and Public buckets)
+        # In AWS SigV4, maximum presigned URL lifetime is 7 days (604800 seconds)
         try:
             share_link = s3.generate_presigned_url(
                 'get_object',
                 Params={'Bucket': bucket, 'Key': filename},
-                ExpiresIn=86400 * 7 # 7 days valid
+                ExpiresIn=604800
             )
         except Exception:
             endpoint_cleaned = endpoint.rstrip('/')
