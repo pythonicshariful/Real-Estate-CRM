@@ -377,9 +377,14 @@
                   <input type="text" id="b2-endpoint" class="w-full input-glass px-4 py-2.5 rounded-xl text-sm" placeholder="https://s3.us-east-005.backblazeb2.com">
                 </div>
                 </div>
-                <div class="pt-3 border-t border-slate-800 flex justify-end">
+                <div class="pt-3 border-t border-slate-800 flex items-center justify-between gap-3">
+                  <button type="button" id="btn-test-b2" onclick="testB2Connection()" class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/20 hover:text-white transition-all flex items-center gap-2">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    Test B2 Connection
+                  </button>
                   <button type="submit" class="btn-gradient px-6 py-2.5 rounded-xl text-xs font-bold">Save Storage Settings</button>
                 </div>
+                <div id="b2-test-result" class="hidden text-xs p-3 rounded-xl border mt-2"></div>
               </form>
             </div>
 
@@ -723,6 +728,41 @@
         if (window.showToast) window.showToast('Storage settings saved!', 'success');
       } catch (e) {
         if (window.showToast) window.showToast(e.message, 'error');
+      }
+    }
+
+    async function testB2Connection() {
+      const btn = document.getElementById('btn-test-b2');
+      const resultDiv = document.getElementById('b2-test-result');
+      const originalText = btn.innerHTML;
+      
+      btn.disabled = true;
+      btn.innerHTML = `<svg class="animate-spin w-3.5 h-3.5 text-indigo-400 inline" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg> Testing connection...`;
+      resultDiv.className = 'text-xs p-3 rounded-xl border mt-2 bg-indigo-500/10 border-indigo-500/20 text-indigo-300 block';
+      resultDiv.textContent = 'Contacting Backblaze B2 servers & running write test...';
+
+      const payload = {
+        b2_key_id: document.getElementById('b2-key-id').value,
+        b2_application_key: document.getElementById('b2-application-key').value,
+        b2_bucket_name: document.getElementById('b2-bucket-name').value,
+        b2_endpoint: document.getElementById('b2-endpoint').value
+      };
+
+      try {
+        const res = await fetchAPI('/api/settings/b2-storage/test', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        resultDiv.className = 'text-xs p-3 rounded-xl border mt-2 bg-emerald-500/10 border-emerald-500/30 text-emerald-400 block';
+        resultDiv.innerHTML = `<strong>Success!</strong> ${res.message || 'Connected to Backblaze B2 bucket successfully.'}`;
+        if (window.showToast) window.showToast('Backblaze B2 test passed successfully!', 'success');
+      } catch (err) {
+        resultDiv.className = 'text-xs p-3 rounded-xl border mt-2 bg-rose-500/10 border-rose-500/30 text-rose-400 block';
+        resultDiv.innerHTML = `<strong>Test Failed:</strong> ${err.message || 'Could not connect to Backblaze B2.'}`;
+        if (window.showToast) window.showToast(err.message || 'B2 Connection test failed', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
       }
     }
 

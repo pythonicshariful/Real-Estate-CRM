@@ -434,8 +434,20 @@
 
     const formatDate = (isoString) => {
       if (!isoString) return '--';
-      const d = new Date(isoString);
-      return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      let cleanStr = isoString;
+      if (typeof cleanStr === 'string' && !cleanStr.endsWith('Z') && !cleanStr.includes('+')) {
+        cleanStr += 'Z';
+      }
+      const d = new Date(cleanStr);
+      return d.toLocaleString('en-US', {
+        timeZone: 'Asia/Dhaka',
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
     };
 
     async function viewProfile(ownerId) {

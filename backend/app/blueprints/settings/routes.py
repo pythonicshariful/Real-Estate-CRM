@@ -220,6 +220,60 @@ def b2_storage_settings():
             SystemSetting.set(k, str(data[k]))
     return jsonify({"message": "B2 storage settings updated successfully", "settings": _get_setting_dict(keys)})
 
+@settings_bp.route('/b2-storage/test', methods=['POST'])
+@jwt_required()
+@require_role(UserRole.ADMIN)
+def test_b2_storage():
+    """Test connection, bucket access, and upload capabilities to Backblaze B2."""
+    data = request.get_json() or {}
+    key_id = data.get('b2_key_id') or SystemSetting.get('b2_key_id', '').strip()
+    app_key = data.get('b2_application_key') or SystemSetting.get('b2_application_key', '').strip()
+    bucket = data.get('b2_bucket_name') or SystemSetting.get('b2_bucket_name', '').strip()
+    endpoint = data.get('b2_endpoint') or SystemSetting.get('b2_endpoint', '').strip()
+
+    if not all([key_id, app_key, bucket, endpoint]):
+        return jsonify({"success": False, "message": "Missing credentials. Please fill Key ID, Application Key, Bucket Name, and Endpoint."}), 400
+
+    try:
+        import boto3
+        from botocore.config import Config
+        import io
+        import uuid
+        
+        s3 = boto3.client(
+            's3',
+            endpoint_url=endpoint,
+            aws_access_key_id=key_id,
+            aws_secret_access_key=app_key,
+            config=Config(signature_version='s3v4')
+        )
+        
+        test_filename = f"b2_test_{uuid.uuid4().hex[:6]}.txt"
+        test_content = b"Southeast Landmark CRM - Backblaze B2 connection test successful!"
+        
+        s3.put_object(
+            Bucket=bucket,
+            Key=test_filename,
+            Body=test_content,
+            ContentType='text/plain'
+        )
+        
+        # Verify and clean up test file
+        try:
+            s3.delete_object(Bucket=bucket, Key=test_filename)
+        except Exception:
+            pass
+            
+        return jsonify({
+            "success": True,
+            "message": f"Successfully connected to Backblaze B2! Bucket '{bucket}' is accessible and write test passed."
+        }), 200
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "message": f"Connection failed: {str(e)}"
+        }), 400
+
 @settings_bp.route('/roles', methods=['GET', 'PUT'])
 @jwt_required()
 @require_role(UserRole.ADMIN)

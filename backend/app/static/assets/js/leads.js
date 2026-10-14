@@ -13,11 +13,24 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPage = 1;
     let itemsPerPage = 20;
 
-    // Helper: format dates
+    // Helper: format dates in Bangladesh Standard Time (Asia/Dhaka)
     const formatDate = (isoString) => {
         if (!isoString) return '--';
-        const d = new Date(isoString);
-        return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        // Normalize UTC date string if missing tz offset
+        let cleanStr = isoString;
+        if (typeof cleanStr === 'string' && !cleanStr.endsWith('Z') && !cleanStr.includes('+')) {
+            cleanStr += 'Z';
+        }
+        const d = new Date(cleanStr);
+        return d.toLocaleString('en-US', {
+            timeZone: 'Asia/Dhaka',
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
     };
 
     // Helper: Badge color for pipeline stage
