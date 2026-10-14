@@ -31,6 +31,19 @@ document.addEventListener('DOMContentLoaded', () => {
     closeCallModalBtn.addEventListener('click', hideCallModal);
     cancelCallModalBtn.addEventListener('click', hideCallModal);
 
+    // Toggle Outcome & Duration fields when Call Connected is checked/unchecked
+    const callConnectedCheckbox = document.getElementById('call-connected');
+    const connectedFieldsContainer = document.getElementById('connected-fields');
+    if (callConnectedCheckbox && connectedFieldsContainer) {
+        callConnectedCheckbox.addEventListener('change', () => {
+            if (callConnectedCheckbox.checked) {
+                connectedFieldsContainer.classList.remove('hidden');
+            } else {
+                connectedFieldsContainer.classList.add('hidden');
+            }
+        });
+    }
+
     // Quick Notes Logic
     const callNotesTextarea = document.getElementById('call-notes');
     const quickNotesContainer = document.getElementById('quick-notes-container');

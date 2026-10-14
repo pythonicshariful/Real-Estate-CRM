@@ -63,7 +63,11 @@ def login():
     
     from app.models import SystemSetting
     smtp_host = SystemSetting.get('smtp_host', '').strip()
-    if smtp_host:
+    smtp_username = SystemSetting.get('smtp_username', '').strip()
+    otp_enabled = SystemSetting.get('otp_enabled', 'false').strip().lower() in ('true', '1', 'yes')
+    
+    # Only enforce email OTP if explicitly enabled and SMTP credentials are provided
+    if otp_enabled and smtp_host and smtp_username:
         mfa_required = True
         mfa_type = 'email'
         import random
@@ -73,7 +77,6 @@ def login():
         db.session.commit()
         
         from app.tasks import _send_email_notification
-        # Use a background task or inline call to send OTP
         try:
             _send_email_notification(
                 current_app._get_current_object(),
@@ -81,8 +84,7 @@ def login():
                 "Your Login OTP",
                 f"Your one-time password for login is: {otp}\n\nIt is valid for 5 minutes."
             )
-        except Exception as e:
-            # Logging error handled in tasks
+        except Exception:
             pass
     
     # Role-based token expiration (shorter for high-privilege roles)

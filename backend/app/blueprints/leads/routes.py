@@ -563,11 +563,11 @@ def log_call(id):
     # Validation
     if connected:
         if not outcome_val:
-            return jsonify({"error": "Outcome is required when call is connected"}), 400
+            outcome_val = ActivityOutcome.CONNECTED
         if not duration_val:
-            return jsonify({"error": "Duration band is required when call is connected"}), 400
+            duration_val = DurationBand.ONE_TO_3MIN
     if not notes or len(notes.strip()) < 3:
-        return jsonify({"error": "Call notes are required (at least 3 characters)"}), 400
+        notes = "Call logged with recording" if request.files.get('recording_file') else "Call logged"
 
     log = CallLog(
         opportunity_id=id,

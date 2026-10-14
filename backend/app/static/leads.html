@@ -237,6 +237,31 @@
           </label>
         </div>
 
+        <div id="connected-fields" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Call Outcome <span class="text-rose-500">*</span></label>
+            <select name="outcome" id="call-outcome" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+              <option value="CONNECTED" selected>Connected (General)</option>
+              <option value="INTERESTED">Interested</option>
+              <option value="CALLBACK_REQUESTED">Callback Requested</option>
+              <option value="NOT_INTERESTED">Not Interested</option>
+              <option value="BUSY">Busy</option>
+              <option value="VOICEMAIL">Voicemail</option>
+              <option value="WRONG_NUMBER">Wrong Number</option>
+              <option value="NOT_CONNECTED">Not Connected</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Duration <span class="text-rose-500">*</span></label>
+            <select name="duration_band" id="call-duration-band" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+              <option value="UNDER_1MIN">Under 1 minute</option>
+              <option value="ONE_TO_3MIN" selected>1 – 3 minutes</option>
+              <option value="THREE_TO_10MIN">3 – 10 minutes</option>
+              <option value="OVER_10MIN">Over 10 minutes</option>
+            </select>
+          </div>
+        </div>
+
         <div class="pt-4 flex justify-end gap-3">
           <button type="button" id="cancel-call-modal" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-800 transition-colors">Cancel</button>
           <button type="submit" id="submit-call-btn" class="btn-gradient px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2">
