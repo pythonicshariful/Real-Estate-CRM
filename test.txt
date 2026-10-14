@@ -1,0 +1,6 @@
+cd ~/Real-Estate-CRM
+git pull
+source vevn/bin/activate
+pip install -r requirements.txt   # only needed if requirements changed
+systemctl restart crm
+journalctl -u crm -n 30 --no-pager  # check for errors
