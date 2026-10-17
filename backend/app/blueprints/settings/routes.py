@@ -2,8 +2,9 @@ from flask import request, jsonify, current_app
 from app.blueprints.settings import settings_bp
 from flask_jwt_extended import jwt_required
 from app.utils.rbac import require_role
-from app.models import UserRole, SystemSetting, Inquiry, db
+from app.models import UserRole, SystemSetting, Inquiry, db, ActivityLabel, LeadQuestionnaireQuestion
 from datetime import datetime
+from sqlalchemy import func
 
 DEFAULT_SETTINGS = {
     'company_name': 'Southeast Landmark CRM',
@@ -186,11 +187,102 @@ def meta_setup():
 @jwt_required()
 @require_role(UserRole.ADMIN)
 def test_meta_webhook():
+    """Legacy config check — kept for backward compat."""
     token = SystemSetting.get('meta_verify_token')
     secret = SystemSetting.get('meta_app_secret')
     if not token or not secret:
         return jsonify({"success": False, "message": "Verify token or App Secret is missing"}), 400
     return jsonify({"success": True, "message": "Meta Webhook configuration verified successfully!"})
+
+
+@settings_bp.route('/simulate-meta-lead', methods=['POST'])
+@jwt_required()
+@require_role(UserRole.ADMIN)
+def simulate_meta_lead():
+    """
+    Simulate a Meta Lead Ads webhook payload to test the full pipeline
+    WITHOUT needing a real Facebook ad or live webhook call.
+    Creates a fake lead via process_meta_webhook() in the app context.
+    """
+    import uuid
+    from datetime import datetime, timezone
+    from flask import current_app
+    from app.tasks import process_meta_webhook
+
+    data = request.get_json() or {}
+
+    full_name = data.get('full_name', 'Test Lead (Simulated)')
+    phone = data.get('phone', '01700000000')
+    email = data.get('email', f'testlead_{uuid.uuid4().hex[:6]}@simulate.com')
+    profession = data.get('profession', 'Businessman')
+    service_type = data.get('service_type', 'Residential Plot')
+    budget = data.get('budget', '50-80 Lakhs')
+    plot_size = data.get('plot_size', '5 Katha')
+    location = data.get('location', 'Dhaka')
+    campaign_name = data.get('campaign_name', 'TEST_CAMPAIGN_SIMULATED')
+    form_name = data.get('form_name', 'Test Lead Form')
+
+    # Construct a Facebook-style Lead Ads webhook payload
+    fake_payload = {
+        "object": "page",
+        "entry": [
+            {
+                "id": "111111111111111",
+                "time": int(datetime.now(timezone.utc).timestamp()),
+                "changes": [
+                    {
+                        "value": {
+                            "leadgen_id": f"sim_{uuid.uuid4().hex[:12]}",
+                            "page_id": "111111111111111",
+                            "form_id": f"form_{uuid.uuid4().hex[:10]}",
+                            "campaign_id": f"camp_{uuid.uuid4().hex[:8]}",
+                            "campaign_name": campaign_name,
+                            "adset_id": f"adset_{uuid.uuid4().hex[:8]}",
+                            "ad_id": f"ad_{uuid.uuid4().hex[:8]}",
+                            "form_name": form_name,
+                            "field_data": [
+                                {"name": "full_name", "values": [full_name]},
+                                {"name": "phone_number", "values": [phone]},
+                                {"name": "email", "values": [email]},
+                                {"name": "profession", "values": [profession]},
+                                {"name": "service_type", "values": [service_type]},
+                                {"name": "budget_range", "values": [budget]},
+                                {"name": "plot_size", "values": [plot_size]},
+                                {"name": "preferred_location", "values": [location]},
+                                {"name": "purchasing_timeline", "values": ["Within 3 months"]},
+                                {"name": "contact_time", "values": ["Morning (9am-12pm)"]},
+                            ]
+                        },
+                        "field": "leadgen"
+                    }
+                ]
+            }
+        ]
+    }
+
+    try:
+        app_obj = current_app._get_current_object()
+        process_meta_webhook(fake_payload, app=app_obj)
+        return jsonify({
+            "success": True,
+            "message": f"✅ Simulated lead '{full_name}' successfully created via Meta webhook pipeline!",
+            "simulated_data": {
+                "name": full_name,
+                "phone": phone,
+                "email": email,
+                "profession": profession,
+                "service_type": service_type,
+                "budget": budget,
+                "campaign": campaign_name
+            }
+        })
+    except Exception as e:
+        import traceback
+        current_app.logger.error(f'Simulate lead error: {traceback.format_exc()}')
+        return jsonify({
+            "success": False,
+            "message": f"Error simulating lead: {str(e)}"
+        }), 500
 
 @settings_bp.route('/email-templates', methods=['GET', 'PUT'])
 @jwt_required()
@@ -284,4 +376,169 @@ def role_matrix():
             {"role": "LEAD_OWNER", "permissions": ["view_assigned_leads", "log_calls", "create_notes", "manage_appointments"]}
         ]
     })
+
+
+# ---------------------------------------------------------------------------
+# Activity Labels Management
+# ---------------------------------------------------------------------------
+
+@settings_bp.route('/activity-labels', methods=['GET'])
+@jwt_required()
+def get_activity_labels():
+    labels = ActivityLabel.query.filter_by(is_active=True).order_by(ActivityLabel.name.asc()).all()
+    if not labels:
+        ActivityLabel.seed_defaults()
+        labels = ActivityLabel.query.filter_by(is_active=True).order_by(ActivityLabel.name.asc()).all()
+    return jsonify([l.to_dict() for l in labels])
+
+
+@settings_bp.route('/activity-labels', methods=['POST'])
+@jwt_required()
+@require_role(UserRole.ADMIN)
+def create_activity_label():
+    data = request.json or {}
+    name = (data.get('name') or '').strip()
+    color = (data.get('color') or '#6366f1').strip()
+    description = (data.get('description') or '').strip()
+
+    if not name:
+        return jsonify({'error': 'Label name is required'}), 400
+
+    existing = ActivityLabel.query.filter(func.lower(ActivityLabel.name) == func.lower(name)).first()
+    if existing:
+        if not existing.is_active:
+            existing.is_active = True
+            existing.color = color
+            existing.description = description
+            db.session.commit()
+            return jsonify(existing.to_dict()), 200
+        return jsonify({'error': f"Label '{name}' already exists"}), 400
+
+    label = ActivityLabel(name=name, color=color, description=description)
+    db.session.add(label)
+    db.session.commit()
+    return jsonify(label.to_dict()), 201
+
+
+@settings_bp.route('/activity-labels/<int:id>', methods=['PUT'])
+@jwt_required()
+@require_role(UserRole.ADMIN)
+def update_activity_label(id):
+    label = ActivityLabel.query.get_or_404(id)
+    data = request.json or {}
+    if 'name' in data and data['name'].strip():
+        label.name = data['name'].strip()
+    if 'color' in data and data['color'].strip():
+        label.color = data['color'].strip()
+    if 'description' in data:
+        label.description = data['description'].strip()
+    if 'is_active' in data:
+        label.is_active = bool(data['is_active'])
+    db.session.commit()
+    return jsonify(label.to_dict())
+
+
+@settings_bp.route('/activity-labels/<int:id>', methods=['DELETE'])
+@jwt_required()
+@require_role(UserRole.ADMIN)
+def delete_activity_label(id):
+    label = ActivityLabel.query.get_or_404(id)
+    label.is_active = False
+    db.session.commit()
+    return jsonify({'message': f"Label '{label.name}' removed successfully"}), 200
+
+
+# ---------------------------------------------------------------------------
+# Lead Questionnaire Configuration
+# ---------------------------------------------------------------------------
+
+@settings_bp.route('/questionnaire', methods=['GET'])
+@jwt_required()
+def get_questionnaire_template():
+    questions = LeadQuestionnaireQuestion.query.filter_by(is_active=True).order_by(LeadQuestionnaireQuestion.order_index.asc()).all()
+    if not questions:
+        LeadQuestionnaireQuestion.seed_defaults()
+        questions = LeadQuestionnaireQuestion.query.filter_by(is_active=True).order_by(LeadQuestionnaireQuestion.order_index.asc()).all()
+    return jsonify([q.to_dict() for q in questions])
+
+
+@settings_bp.route('/questionnaire', methods=['POST'])
+@jwt_required()
+@require_role(UserRole.ADMIN)
+def create_questionnaire_question():
+    data = request.json or {}
+    text = (data.get('question_text') or '').strip()
+    key = (data.get('question_key') or '').strip()
+    if not key:
+        import re
+        key = re.sub(r'[^a-zA-Z0-9_]', '_', text.lower()).strip('_')
+    
+    if not text or not key:
+        return jsonify({'error': 'Question text and key are required'}), 400
+
+    existing = LeadQuestionnaireQuestion.query.filter_by(question_key=key).first()
+    if existing:
+        existing.question_text = text
+        existing.field_type = data.get('field_type', existing.field_type)
+        existing.options = data.get('options', existing.options)
+        existing.is_required = bool(data.get('is_required', existing.is_required))
+        existing.is_active = True
+        db.session.commit()
+        return jsonify(existing.to_dict()), 200
+
+    max_order = db.session.query(func.max(LeadQuestionnaireQuestion.order_index)).scalar() or 0
+    q = LeadQuestionnaireQuestion(
+        question_key=key,
+        question_text=text,
+        field_type=data.get('field_type', 'text'),
+        options=data.get('options', []),
+        order_index=data.get('order_index', max_order + 1),
+        is_required=bool(data.get('is_required', False)),
+        is_active=True
+    )
+    db.session.add(q)
+    db.session.commit()
+    return jsonify(q.to_dict()), 201
+
+
+@settings_bp.route('/questionnaire/<int:id>', methods=['PUT'])
+@jwt_required()
+@require_role(UserRole.ADMIN)
+def update_questionnaire_question(id):
+    q = LeadQuestionnaireQuestion.query.get_or_404(id)
+    data = request.json or {}
+    if 'question_text' in data and data['question_text'].strip():
+        q.question_text = data['question_text'].strip()
+    if 'field_type' in data:
+        q.field_type = data['field_type']
+    if 'options' in data:
+        q.options = data['options']
+    if 'order_index' in data:
+        q.order_index = int(data['order_index'])
+    if 'is_required' in data:
+        q.is_required = bool(data['is_required'])
+    if 'is_active' in data:
+        q.is_active = bool(data['is_active'])
+    db.session.commit()
+    return jsonify(q.to_dict())
+
+
+@settings_bp.route('/questionnaire/<int:id>', methods=['DELETE'])
+@jwt_required()
+@require_role(UserRole.ADMIN)
+def delete_questionnaire_question(id):
+    q = LeadQuestionnaireQuestion.query.get_or_404(id)
+    q.is_active = False
+    db.session.commit()
+    return jsonify({'message': f"Question '{q.question_text}' deactivated successfully"}), 200
+
+
+@settings_bp.route('/questionnaire/reset', methods=['POST'])
+@jwt_required()
+@require_role(UserRole.ADMIN)
+def reset_questionnaire_defaults():
+    LeadQuestionnaireQuestion.seed_defaults()
+    questions = LeadQuestionnaireQuestion.query.filter_by(is_active=True).order_by(LeadQuestionnaireQuestion.order_index.asc()).all()
+    return jsonify([q.to_dict() for q in questions])
+
 

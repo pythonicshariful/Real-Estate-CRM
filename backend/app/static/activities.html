@@ -23,11 +23,17 @@
           <div class="chart-title">Filters</div>
           <button id="clear-filters-btn" class="text-xs font-semibold text-slate-400 hover:text-white transition-colors bg-slate-800/50 hover:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700/50">Clear Filters</button>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 items-end">
           <div id="filter-user-container" class="hidden">
             <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Lead Owner</label>
             <select id="filter-user-select" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
               <option value="">All Owners</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Activity Label</label>
+            <select id="filter-label-select" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="">All Labels</option>
             </select>
           </div>
           <div>
@@ -91,6 +97,27 @@
         }
       }
 
+      // Populate activity labels dropdown
+      try {
+        const labelSelect = document.getElementById('filter-label-select');
+        if (labelSelect) {
+          const res = await fetch('/api/settings/activity-labels', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const labels = await res.json();
+            labels.forEach(lbl => {
+              const opt = document.createElement('option');
+              opt.value = lbl.name;
+              opt.textContent = lbl.name;
+              labelSelect.appendChild(opt);
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load activity labels", err);
+      }
+
       const getActionStyles = (action) => {
         switch (action) {
           case 'LOGIN':
@@ -131,6 +158,8 @@
         timeline.innerHTML = '<div class="text-center text-slate-500 py-10">Loading activities...</div>';
 
         const userSelect = document.getElementById('filter-user-select');
+        const labelSelect = document.getElementById('filter-label-select');
+        const selectedLabel = labelSelect ? labelSelect.value : '';
         const startDate = document.getElementById('filter-start-date').value;
         const endDate = document.getElementById('filter-end-date').value;
 
@@ -146,13 +175,18 @@
           if (!res.ok) throw new Error("Failed to load audit logs");
           const logs = await res.json();
 
-          if (logs.length === 0) {
+          let filteredLogs = logs;
+          if (selectedLabel) {
+            filteredLogs = logs.filter(l => (l.activity_label === selectedLabel) || (l.new_value && l.new_value.includes(selectedLabel)));
+          }
+
+          if (filteredLogs.length === 0) {
             timeline.innerHTML = '<div class="text-center text-slate-500 py-10">No activities found matching filters.</div>';
             return;
           }
 
           timeline.innerHTML = '';
-          logs.forEach(log => {
+          filteredLogs.forEach(log => {
             const styles = getActionStyles(log.action);
             const date = new Date(log.created_at);
             const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -169,6 +203,7 @@
                   <div class="flex items-center gap-2">
                     <span class="text-xs font-bold text-white">${log.user_name}</span>
                     <span class="px-2 py-0.5 text-[9px] font-extrabold tracking-wide uppercase rounded-full bg-slate-800 text-slate-400 border border-slate-700/50">${log.action}</span>
+                    ${log.activity_label ? `<span class="px-2 py-0.5 text-[9px] font-semibold rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">${log.activity_label}</span>` : ''}
                   </div>
                   <div class="text-[10px] text-slate-500 font-mono">${dateStr} at ${timeStr}</div>
                 </div>
@@ -189,6 +224,8 @@
       document.getElementById('clear-filters-btn').addEventListener('click', () => {
         const userSelect = document.getElementById('filter-user-select');
         if (userSelect) userSelect.value = '';
+        const labelSelect = document.getElementById('filter-label-select');
+        if (labelSelect) labelSelect.value = '';
         document.getElementById('filter-start-date').value = '';
         document.getElementById('filter-end-date').value = '';
         fetchActivities();

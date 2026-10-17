@@ -16,15 +16,15 @@ def _get_app(app=None):
     """Retrieve the Flask application instance."""
     if app is not None:
         return app
-    from app.extensions import scheduler
-    if hasattr(scheduler, 'app') and scheduler.app:
-        return scheduler.app
-    from flask import current_app
+    from flask import current_app, has_app_context
     try:
-        if current_app and current_app.has_app_context:
+        if has_app_context():
             return current_app._get_current_object()
     except Exception:
         pass
+    from app.extensions import scheduler
+    if hasattr(scheduler, 'app') and scheduler.app:
+        return scheduler.app
     from app import create_app
     import os
     return create_app(os.environ.get('FLASK_CONFIG', 'development'))
@@ -304,11 +304,14 @@ def check_sla_compliance(app=None):
                 PipelineStage.ASSIGNED,
                 PipelineStage.FIRST_CONTACT_PENDING,
             }:
-                if event.assigned_at <= escalate_cutoff:
+                assigned_at = event.assigned_at
+                if assigned_at and assigned_at.tzinfo is None:
+                    assigned_at = assigned_at.replace(tzinfo=timezone.utc)
+                if assigned_at and assigned_at <= escalate_cutoff:
                     sla_escalate(event.opportunity_id, app=app)
-                elif event.assigned_at <= alert_cutoff:
+                elif assigned_at and assigned_at <= alert_cutoff:
                     sla_manager_alert(event.opportunity_id, app=app)
-                else:
+                elif assigned_at:
                     sla_reminder(event.opportunity_id, app=app)
                     
         duration = (time.time() - start_time) * 1000
@@ -387,11 +390,21 @@ def process_meta_webhook(payload_dict: dict, app=None):
                 adset_id = value.get('adset_id')
                 campaign_id = value.get('campaign_id')
 
-                # Fetch full lead data from Meta Graph API
-                lead_data = _fetch_meta_lead(app, leadgen_id)
-                if not lead_data:
-                    logger.error(f'Could not fetch lead data for leadgen_id={leadgen_id}')
-                    continue
+                # Support embedded field_data (for in-CRM simulation or offline testing)
+                if value.get('field_data'):
+                    lead_data = {
+                        'field_data': value.get('field_data'),
+                        'ad_id': ad_id,
+                        'adset_id': adset_id,
+                        'campaign_id': campaign_id,
+                        'form_id': form_id
+                    }
+                else:
+                    # Fetch full lead data from Meta Graph API
+                    lead_data = _fetch_meta_lead(app, leadgen_id)
+                    if not lead_data:
+                        logger.error(f'Could not fetch lead data for leadgen_id={leadgen_id}')
+                        continue
 
                 # Parse field data
                 field_data = {
@@ -412,12 +425,23 @@ def process_meta_webhook(payload_dict: dict, app=None):
                 if not contact and email:
                     contact = Contact.query.filter_by(email=email).first()
 
+                profession = field_data.get('profession', field_data.get('job_title', field_data.get('occupation')))
+                service_type = field_data.get('service_type', field_data.get('service', field_data.get('property_type')))
+
+                # Extract all custom questionnaire responses
+                ignored_keys = {'full_name', 'name', 'first_name', 'last_name', 'email', 'phone_number', 'phone'}
+                questionnaire_answers = {
+                    k: v for k, v in field_data.items() if k not in ignored_keys
+                }
+
                 if not contact:
                     contact = Contact(
                         full_name=full_name,
                         email=email,
                         phone_raw=phone_raw,
                         phone_normalized=phone_norm,
+                        profession=profession,
+                        service_type=service_type,
                         source='Meta Lead Ads',
                         facebook_lead_id=leadgen_id,
                         consent_given=True,
@@ -426,6 +450,10 @@ def process_meta_webhook(payload_dict: dict, app=None):
                     db.session.add(contact)
                     db.session.flush()
                 else:
+                    if profession and not contact.profession:
+                        contact.profession = profession
+                    if service_type and not getattr(contact, 'service_type', None):
+                        contact.service_type = service_type
                     logger.info(f'Duplicate contact found: {contact.id} — creating new inquiry')
 
                 # Create immutable Inquiry record
@@ -440,7 +468,7 @@ def process_meta_webhook(payload_dict: dict, app=None):
                     utm_campaign=campaign_id,
                     utm_content=ad_id,
                     project_interest=field_data.get('project_interest', field_data.get('project', None)),
-                    raw_payload={"webhook_payload": payload_dict, "lead_data": lead_data},
+                    raw_payload={"webhook_payload": payload_dict, "lead_data": lead_data, "questionnaire": questionnaire_answers},
                     submitted_at=datetime.now(timezone.utc),
                 )
                 db.session.add(inquiry)
@@ -449,12 +477,14 @@ def process_meta_webhook(payload_dict: dict, app=None):
                 # Auto-assign lead owner based on date/time schedule or equal round-robin
                 assigned_owner = assign_lead_owner_auto(app=app)
 
-                # Create Opportunity
+                # Create Opportunity with questionnaire answers
                 opp = Opportunity(
                     inquiry_id=inquiry.id,
                     contact_id=contact.id,
                     assigned_to_id=assigned_owner.id if assigned_owner else None,
                     pipeline_stage=PipelineStage.NEW if assigned_owner else PipelineStage.NEW,
+                    service_type=service_type,
+                    questionnaire_answers=questionnaire_answers,
                 )
                 db.session.add(opp)
                 db.session.flush()
@@ -466,14 +496,19 @@ def process_meta_webhook(payload_dict: dict, app=None):
                     status=SLAStatus.NOTIFIED,
                 )
                 db.session.add(sla)
+                
+                saved_contact_id = contact.id
+                saved_inquiry_id = inquiry.id
+                saved_opp_id = opp.id
+
                 db.session.commit()
 
                 # Schedule SLA chain (APScheduler)
-                schedule_sla_chain(opp.id, app=app)
+                schedule_sla_chain(saved_opp_id, app=app)
 
                 logger.info(
-                    f'Meta lead processed: contact={contact.id}, '
-                    f'inquiry={inquiry.id}, opportunity={opp.id}'
+                    f'Meta lead processed: contact={saved_contact_id}, '
+                    f'inquiry={saved_inquiry_id}, opportunity={saved_opp_id}'
                 )
 
 
@@ -927,5 +962,88 @@ def retry_failed_webhooks(app=None):
                     backoff_minutes = 2 ** r.retry_count
                     r.next_retry_at = now + timedelta(minutes=backoff_minutes)
         db.session.commit()
+
+
+def auto_update_scheduled_lead_statuses(app=None):
+    """
+    Time-based automated lead pipeline and stage updates:
+    1. For scheduled appointments where appointment_datetime has passed:
+       - If completed or debrief submitted: advances opportunity to VISIT_COMPLETED (if still in APPOINTMENT stage).
+       - If passed > 4 hours and still in SCHEDULED/CONFIRMED status: flags as urgent debrief pending.
+    2. For opportunities where next_action_deadline has passed:
+       - Escalate priority to HIGH or URGENT so it triggers visual overdue badges and alerts.
+    3. Runs every 5 minutes in APScheduler or on demand via /api/leads/auto-update-stages.
+    """
+    app = _get_app(app)
+    with app.app_context():
+        from app.extensions import db
+        from app.models import Appointment, AppointmentStatus, Opportunity, PipelineStage, LeadPriority, PipelineHistory
+
+        now = datetime.now(timezone.utc)
+        stats = {
+            "appointments_checked": 0,
+            "stages_advanced": 0,
+            "deadlines_flagged": 0
+        }
+
+        # 1. Check passed appointments
+        passed_appts = Appointment.query.filter(
+            Appointment.appointment_datetime <= now,
+            Appointment.is_deleted == False
+        ).all()
+
+        stats["appointments_checked"] = len(passed_appts)
+
+        for appt in passed_appts:
+            opp = Opportunity.query.get(appt.opportunity_id)
+            if not opp or opp.is_deleted:
+                continue
+
+            # If appointment was completed or debriefed, auto advance to VISIT_COMPLETED
+            if appt.status == AppointmentStatus.COMPLETED or appt.debrief_submitted:
+                if opp.pipeline_stage in (PipelineStage.APPOINTMENT_SCHEDULED, PipelineStage.APPOINTMENT_CONFIRMED):
+                    old_stage = opp.pipeline_stage.value
+                    opp.pipeline_stage = PipelineStage.VISIT_COMPLETED
+                    if not opp.visit_date:
+                        opp.visit_date = now
+
+                    hist = PipelineHistory(
+                        opportunity_id=opp.id,
+                        from_stage=PipelineStage[old_stage],
+                        to_stage=PipelineStage.VISIT_COMPLETED,
+                        changed_by_id=appt.scheduled_by_id or 1,
+                        changed_at=now,
+                        notes="Auto-advanced to Visit Completed based on completed appointment time"
+                    )
+                    db.session.add(hist)
+                    stats["stages_advanced"] += 1
+
+            # If appointment was scheduled/confirmed and now > 4 hours passed without debrief:
+            elif appt.status in (AppointmentStatus.SCHEDULED, AppointmentStatus.CONFIRMED):
+                appt_dt = appt.appointment_datetime
+                if appt_dt.tzinfo is None:
+                    appt_dt = appt_dt.replace(tzinfo=timezone.utc)
+                time_diff = (now - appt_dt).total_seconds()
+                if time_diff > 4 * 3600:
+                    if opp.priority != LeadPriority.URGENT:
+                        opp.priority = LeadPriority.URGENT
+                        stats["deadlines_flagged"] += 1
+
+        # 2. Check next action deadline
+        overdue_opps = Opportunity.query.filter(
+            Opportunity.next_action_deadline < now,
+            Opportunity.final_result.is_(None),
+            Opportunity.is_deleted == False
+        ).all()
+
+        for opp in overdue_opps:
+            if opp.priority in (LeadPriority.LOW, LeadPriority.MEDIUM):
+                opp.priority = LeadPriority.HIGH
+                stats["deadlines_flagged"] += 1
+
+        db.session.commit()
+        logger.info(f"[SCHEDULER] auto_update_scheduled_lead_statuses: {stats}")
+        return stats
+
 
 

@@ -25,8 +25,12 @@ def login():
     if not user:
         return jsonify({"msg": "Bad email or password"}), 401
 
-    if user.lockout_until and user.lockout_until > datetime.now(timezone.utc):
-        return jsonify({"msg": "Account is locked due to too many failed attempts. Please try again later."}), 403
+    lockout = user.lockout_until
+    if lockout:
+        if lockout.tzinfo is None:
+            lockout = lockout.replace(tzinfo=timezone.utc)
+        if lockout > datetime.now(timezone.utc):
+            return jsonify({"msg": "Account is locked due to too many failed attempts. Please try again later."}), 403
 
     if not user.check_password(password):
         user.failed_login_attempts += 1

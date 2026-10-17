@@ -96,6 +96,30 @@ document.addEventListener('DOMContentLoaded', () => {
     // Call loadQuickNotes to populate the buttons
     loadQuickNotes();
 
+    // Activity Labels Logic
+    async function loadActivityLabels() {
+        const labelSelect = document.getElementById('call-activity-label');
+        if (!labelSelect) return;
+        try {
+            const res = await fetch('/api/settings/activity-labels', {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('crm_token')}` }
+            });
+            if (res.ok) {
+                const labels = await res.json();
+                labelSelect.innerHTML = '<option value="">-- No Label --</option>';
+                labels.forEach(lbl => {
+                    const opt = document.createElement('option');
+                    opt.value = lbl.name;
+                    opt.textContent = lbl.name;
+                    labelSelect.appendChild(opt);
+                });
+            }
+        } catch (e) {
+            console.error("Failed to load activity labels:", e);
+        }
+    }
+    loadActivityLabels();
+
     // Form submission
     callLogForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -189,7 +213,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Attach to existing 'Log Activity' buttons in leads.html (Hack for static HTML showcase)
     // In a dynamic app, these buttons would call showCallModal(lead.id) when rendering the list
     setTimeout(() => {
-        const logActivityBtns = document.querySelectorAll('button:contains("Log Activity"), button:contains("Call Now")');
         // Simple manual attach for the hardcoded leads in leads.html
         const leadCards = document.querySelectorAll('.chart-card');
         leadCards.forEach((card, index) => {

@@ -32,7 +32,7 @@
     <div class="flex-1 overflow-y-auto p-5 space-y-5">
 
       <!-- KPI Row -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
         <div class="kpi-card">
           <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Total Lead Owners</div>
           <div id="kpi-owners" class="text-2xl font-black text-indigo-400">—</div>
@@ -40,6 +40,10 @@
         <div class="kpi-card">
           <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Total Leads</div>
           <div id="kpi-total" class="text-2xl font-black text-white">—</div>
+        </div>
+        <div class="kpi-card border-amber-500/30 bg-amber-500/5">
+          <div class="text-[10px] text-amber-400 uppercase font-semibold mb-1">Unassigned Leads</div>
+          <div id="kpi-unassigned" class="text-2xl font-black text-amber-400">—</div>
         </div>
         <div class="kpi-card border-rose-500/30 bg-rose-500/5">
           <div class="text-[10px] text-rose-400 uppercase font-semibold mb-1">Overdue SLA</div>
@@ -54,7 +58,7 @@
       <!-- Lead Owner Performance Cards -->
       <div>
         <div class="flex items-center justify-between mb-3">
-          <h2 class="text-sm font-bold text-white">Lead Owner Performance</h2>
+          <h2 class="text-sm font-bold text-white">Lead Owner Performance & Workload Capacity</h2>
           <a href="/lead-owners.html" class="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">Manage Owners →</a>
         </div>
         <div id="owner-cards" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -76,6 +80,37 @@
           <div class="text-sm font-bold text-white mb-4">Today's New Leads by Owner</div>
           <div class="relative h-56">
             <canvas id="today-bar-chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sales Manager Action Queues -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Unassigned Leads Attention Queue -->
+        <div class="glass-dark border border-amber-500/30 rounded-2xl p-5 bg-amber-500/[0.02]">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+              <h2 class="text-sm font-bold text-white">Unassigned Leads Queue</h2>
+            </div>
+            <a href="/leads.html?owner=none" class="text-xs text-amber-400 hover:text-amber-300 font-semibold">Bulk Assign →</a>
+          </div>
+          <div id="unassigned-queue" class="space-y-2 max-h-64 overflow-y-auto">
+            <div class="text-slate-500 text-xs text-center py-4">Checking unassigned leads...</div>
+          </div>
+        </div>
+
+        <!-- Urgent SLA Escalations -->
+        <div class="glass-dark border border-rose-500/30 rounded-2xl p-5 bg-rose-500/[0.02]">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+              <h2 class="text-sm font-bold text-white">Urgent SLA Attention Queue</h2>
+            </div>
+            <span class="text-[10px] text-rose-400 font-semibold uppercase tracking-wider" id="overdue-queue-count">0 Overdue</span>
+          </div>
+          <div id="urgent-sla-queue" class="space-y-2 max-h-64 overflow-y-auto">
+            <div class="text-slate-500 text-xs text-center py-4">Checking overdue SLA tasks...</div>
           </div>
         </div>
       </div>
@@ -123,6 +158,30 @@
         document.getElementById('kpi-overdue').textContent = stats.overdue ?? 0;
         document.getElementById('kpi-won').textContent = stats.closed_won ?? 0;
 
+        // Fetch Sales Manager Summary
+        try {
+          const mgrData = await fetchAPI('/api/reports/sales-manager-summary');
+          if (mgrData) {
+            if (mgrData.team_metrics) {
+              const unassignedCount = mgrData.team_metrics.unassigned_leads || 0;
+              document.getElementById('kpi-unassigned').textContent = unassignedCount;
+            }
+            renderUnassignedQueue(mgrData.unassigned_queue || []);
+            renderUrgentSlaQueue(mgrData.urgent_sla_queue || []);
+            
+            // Merge capacity_percent into ownersData
+            if (mgrData.agent_workload) {
+              const workloadMap = {};
+              mgrData.agent_workload.forEach(w => workloadMap[w.id] = w.capacity_percent);
+              ownersData.forEach(o => {
+                o.capacity_percent = workloadMap[o.id] !== undefined ? workloadMap[o.id] : 0;
+              });
+            }
+          }
+        } catch (e) {
+          console.error("Failed to load sales manager summary", e);
+        }
+
         // Update date
         document.getElementById('admin-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
@@ -141,6 +200,62 @@
       } catch (e) {
         console.error(e);
       }
+    }
+
+    function renderUnassignedQueue(leads) {
+      const container = document.getElementById('unassigned-queue');
+      if (!leads.length) {
+        container.innerHTML = '<div class="text-emerald-400 text-xs text-center py-4 flex items-center justify-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> All leads are assigned! Great job.</div>';
+        return;
+      }
+      container.innerHTML = leads.map(l => `
+        <div class="flex items-center justify-between p-3 rounded-xl bg-slate-900/60 hover:bg-slate-900 transition-colors border border-amber-500/20">
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-white truncate">${l.name}</span>
+              <span class="px-1.5 py-0.5 text-[9px] rounded font-semibold ${l.temperature === 'HOT' ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-800 text-slate-300'}">${l.temperature || 'NEW'}</span>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-0.5 flex items-center gap-2">
+              <span>📞 ${l.phone || '--'}</span>
+              <span>🏢 ${l.project || 'General'}</span>
+              <span class="text-slate-500">Source: ${l.source}</span>
+            </div>
+          </div>
+          <a href="/leads.html?owner=none" class="btn-gradient px-3 py-1.5 rounded-lg text-[10px] font-semibold whitespace-nowrap ml-3">
+            Assign
+          </a>
+        </div>
+      `).join('');
+    }
+
+    function renderUrgentSlaQueue(leads) {
+      const container = document.getElementById('urgent-sla-queue');
+      const countBadge = document.getElementById('overdue-queue-count');
+      if (countBadge) countBadge.textContent = `${leads.length} Overdue`;
+
+      if (!leads.length) {
+        container.innerHTML = '<div class="text-emerald-400 text-xs text-center py-4 flex items-center justify-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Zero SLA breaches! Pipeline is healthy.</div>';
+        return;
+      }
+      container.innerHTML = leads.map(l => `
+        <div class="flex items-center justify-between p-3 rounded-xl bg-slate-900/60 hover:bg-slate-900 transition-colors border border-rose-500/20">
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-white truncate">${l.name}</span>
+              <span class="px-1.5 py-0.5 text-[9px] rounded font-semibold bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                +${l.overdue_minutes}m overdue
+              </span>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-0.5 flex items-center gap-2">
+              <span>Agent: <strong class="text-slate-200">${l.assigned_to_name}</strong></span>
+              <span>Stage: <span class="text-indigo-400">${l.stage}</span></span>
+            </div>
+          </div>
+          <a href="/leads.html" class="btn-ghost border border-rose-500/40 text-rose-300 hover:text-white px-2.5 py-1.5 rounded-lg text-[10px] font-semibold whitespace-nowrap ml-3">
+            Escalate
+          </a>
+        </div>
+      `).join('');
     }
 
     function renderOwnerCards(owners) {
@@ -190,6 +305,15 @@
             <div class="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 text-center">
               <div class="text-xl font-black text-emerald-400">${owner.closed_won}</div>
               <div class="text-[9px] text-emerald-400 uppercase font-semibold mt-0.5">Closed Won</div>
+            </div>
+          </div>
+          <div class="mt-3 pt-3 border-t border-slate-800/80">
+            <div class="flex items-center justify-between text-[10px] mb-1">
+              <span class="text-slate-400">Workload Capacity</span>
+              <span class="font-bold ${owner.capacity_percent > 85 ? 'text-rose-400' : 'text-slate-300'}">${owner.capacity_percent || 0}%</span>
+            </div>
+            <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+              <div class="h-1.5 rounded-full transition-all" style="width: ${Math.min(owner.capacity_percent || 0, 100)}%; background: ${owner.capacity_percent > 85 ? '#f43f5e' : (owner.color || '#6366f1')}"></div>
             </div>
           </div>
         </div>

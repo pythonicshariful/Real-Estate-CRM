@@ -784,6 +784,154 @@ def test_phase8_audit_softdelete(client, admin_token, lead_id):
             warn("Lead record not found in DB after soft delete")
 
 
+def test_phase9_new_features(client, admin_token, exec_token, project_id):
+    section("PHASE 9 -- New Client Features & Modules")
+    h = hdrs(admin_token)
+
+    # 9a. Activity Labels Settings
+    r = client.get('/api/settings/activity-labels', headers=h)
+    if r.status_code == 200:
+        labels = r.get_json()
+        if len(labels) >= 5:
+            ok(f"Activity labels seeded and returned ({len(labels)} labels)")
+        else:
+            fail(f"Expected at least 5 default labels, got {len(labels)}")
+    else:
+        fail(f"Activity labels endpoint -> {r.status_code}")
+
+    r = client.post('/api/settings/activity-labels', json={'name': 'VIP Discussion', 'color': '#6366f1', 'description': 'High Net-worth discussion'}, headers=h)
+    if r.status_code == 201:
+        ok("Create custom activity label -> 201")
+    else:
+        fail(f"Create custom activity label failed -> {r.status_code}")
+
+    # 9b. Lead Questionnaire Settings
+    r = client.get('/api/settings/questionnaire', headers=h)
+    if r.status_code == 200:
+        questions = r.get_json()
+        if len(questions) >= 10:
+            ok(f"Lead questionnaire seeded with defaults ({len(questions)} questions)")
+        else:
+            fail(f"Expected at least 10 default questions, got {len(questions)}")
+    else:
+        fail(f"Questionnaire settings endpoint -> {r.status_code}")
+
+    # 9c. Create Lead with Profession & Service Type
+    phone_test = f"+8801700{os.getpid()%100000:05d}"
+    lead_payload = {
+        'full_name': 'Dr. Rafiqul Islam',
+        'phone': phone_test,
+        'email': 'rafiq@hospital.org',
+        'profession': 'Senior Consultant Doctor',
+        'service_type': 'Residential Plot',
+        'activity_label': 'VIP Discussion',
+        'project_id': project_id,
+        'source': 'FACEBOOK_LEAD_AD',
+        'questionnaire_answers': {
+            'profession': 'Doctor',
+            'service_type': 'Residential Plot',
+            'plot_size': '5 Katha',
+            'purchasing_timeline': 'Ready to Buy'
+        }
+    }
+    r = client.post('/api/leads/', json=lead_payload, headers=h)
+    if r.status_code == 201:
+        res = r.get_json()
+        new_lead_id = res.get('id')
+        contact = res.get('contact', {})
+        if contact.get('profession') == 'Senior Consultant Doctor' and res.get('service_type') == 'Residential Plot':
+            ok("Lead created with profession and service_type saved on contact and opportunity")
+        else:
+            fail("Profession or service_type missing from lead create response")
+    else:
+        fail(f"Create lead with profession failed -> {r.status_code}", r.get_data(as_text=True)[:200])
+        return
+
+    # 9c-2. Real-time duplicate detection test
+    r_dup = client.get(f'/api/leads/check-duplicate?phone={phone_test}', headers=h)
+    if r_dup.status_code == 200 and r_dup.get_json().get('is_duplicate') is True:
+        ok("Real-time duplicate detection identified existing lead by phone")
+    else:
+        fail(f"Real-time duplicate check failed -> {r_dup.status_code}: {r_dup.get_data(as_text=True)}")
+
+    # 9d. Questionnaire Get & Update for Lead
+    r = client.get(f'/api/leads/{new_lead_id}/questionnaire', headers=h)
+    if r.status_code == 200:
+        ans = r.get_json().get('answers', {})
+        if ans.get('plot_size') == '5 Katha':
+            ok("Retrieve lead questionnaire answers -> 200")
+        else:
+            fail(f"Expected plot_size 5 Katha, got {ans.get('plot_size')}")
+    else:
+        fail(f"Get lead questionnaire -> {r.status_code}")
+
+    r = client.put(f'/api/leads/{new_lead_id}/questionnaire', json={'answers': {'plot_size': '10 Katha', 'budget_range': '60-80 Lakhs'}}, headers=h)
+    if r.status_code == 200:
+        ans = r.get_json().get('answers', {})
+        if ans.get('plot_size') == '10 Katha':
+            ok("Update lead questionnaire answers dynamically -> 200")
+        else:
+            fail("Questionnaire answers did not update properly")
+    else:
+        fail(f"Update lead questionnaire -> {r.status_code}")
+
+    # 9e. CSV Lead Import with Duplicate Detection
+    csv_content = (
+        "Full Name,Phone Number,Email,Profession,Service Type,Project Name,Source,Notes\n"
+        f"Dr. Rafiqul Islam,{phone_test},rafiq_updated@hospital.org,Chief Surgeon,Duplex Plot,Grand City,Facebook,Updated info\n"
+        f"Farhana Yasmin,+8801999{os.getpid()%100000:05d},farhana@tech.com,Software Architect,Apartment,Grand City,Referral,Looking for 3BHK\n"
+    )
+    import io
+    data = {
+        'file': (io.BytesIO(csv_content.encode('utf-8')), 'test_import.csv'),
+        'duplicate_strategy': 'merge'
+    }
+    r = client.post('/api/leads/import', data=data, content_type='multipart/form-data', headers=h)
+    if r.status_code == 200:
+        res = r.get_json()
+        if res.get('total_processed') == 2 and res.get('merged_count') == 1 and res.get('created_count') == 1:
+            ok("CSV Lead Import with automatic duplicate merge verified -> 200")
+        else:
+            fail(f"Import stats mismatch: {res}")
+    else:
+        fail(f"CSV Lead Import failed -> {r.status_code}", r.get_data(as_text=True)[:200])
+
+    # 9f. Auto-update Scheduled Stages Endpoint
+    r = client.post('/api/leads/auto-update-stages', headers=h)
+    if r.status_code == 200 and r.get_json().get('status') == 'success':
+        ok("Auto-update scheduled lead stages executed -> 200")
+    else:
+        fail(f"Auto-update scheduled lead stages -> {r.status_code}")
+
+    # 9g. Sales Manager Summary
+    r = client.get('/api/reports/sales-manager-summary', headers=h)
+    if r.status_code == 200:
+        res = r.get_json()
+        if 'team_metrics' in res and 'agent_workload' in res and 'unassigned_queue' in res and 'urgent_sla_queue' in res:
+            ok(f"Sales Manager summary returned with {len(res['agent_workload'])} agent workloads and workload capacity metrics")
+        else:
+            fail(f"Sales manager summary missing expected keys: {list(res.keys())}")
+    else:
+        fail(f"Sales manager summary failed -> {r.status_code}")
+
+    # 9h. Simulate Meta Lead (Without Real Ads)
+    sim_payload = {
+        'full_name': 'Engr. Mahbub Simulation',
+        'phone': f'+8801999{os.getpid()%100000:05d}',
+        'email': 'mahbub_sim@engineers.org',
+        'profession': 'Software Architect',
+        'service_type': 'Commercial Plot',
+        'budget': '80-120 Lakhs',
+        'plot_size': '7 Katha',
+        'campaign_name': 'META_TEST_CAMPAIGN_2026'
+    }
+    r = client.post('/api/settings/simulate-meta-lead', json=sim_payload, headers=h)
+    if r.status_code == 200 and r.get_json().get('success') is True:
+        ok("Simulate Meta Lead (Without Real Ads) pipeline executed -> 200")
+    else:
+        fail(f"Simulate Meta Lead failed -> {r.status_code}", r.get_data(as_text=True)[:200])
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # MAIN RUNNER
 # ══════════════════════════════════════════════════════════════════════════════
@@ -831,6 +979,7 @@ def run_all():
         
         if lead_id:
             test_phase8_audit_softdelete(client, admin_token, lead_id)
+            test_phase9_new_features(client, admin_token, exec_token, project_id)
 
     # ── Summary ────────────────────────────────────────────────────────────
     total = _pass_count + _fail_count + _warn_count

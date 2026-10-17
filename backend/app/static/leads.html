@@ -21,6 +21,13 @@
         <button id="select-all-btn" class="hidden btn-ghost px-3 md:px-4 py-2 rounded-xl text-xs font-medium flex items-center gap-1.5 border border-slate-700 hover:border-slate-500 text-slate-300">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Select All
         </button>
+        <button id="import-leads-btn" class="btn-ghost px-3 md:px-4 py-2 rounded-xl text-xs font-medium flex items-center gap-1.5 border border-slate-700 hover:border-slate-500 text-slate-300">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg> Import
+        </button>
+        <a href="/settings.html#meta-guide" class="btn-ghost px-3 md:px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 border border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/10 transition-colors" title="ফেসবুক লিড অ্যাড কানেক্ট ও টেস্ট করার বাংলা নির্দেশিকা">
+          <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+          <span>Facebook Connect (বাংলা গাইড)</span>
+        </a>
         <button id="add-lead-btn" class="btn-gradient px-3 md:px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg> Add Lead</button>
       </div>
     </header>
@@ -86,6 +93,10 @@
           </div>
         </div>
         <div class="flex items-center gap-2">
+          <a id="drawer-full-page-btn" href="#" onclick="event.preventDefault(); const id = window.currentLeadId || (window.currentLeadData ? window.currentLeadData.id : null); if (id) window.location.href = '/lead-details.html?id=' + id;" class="text-indigo-400 hover:text-white bg-indigo-500/10 hover:bg-indigo-500/25 border border-indigo-500/30 px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-semibold" title="Open in Full Dedicated Page">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            <span>Full Page</span>
+          </a>
           <button id="drawer-edit-btn" class="hidden text-indigo-400 hover:text-white bg-slate-800/50 hover:bg-indigo-500/20 p-2 rounded-lg transition-colors" title="Edit Lead">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
           </button>
@@ -138,11 +149,25 @@
               <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Source</div>
               <div class="text-sm font-medium text-slate-200 capitalize" id="drawer-source">--</div>
             </div>
+            <div class="bg-slate-900/50 rounded-xl p-3 border border-slate-800/60">
+              <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Job Profession</div>
+              <div class="text-sm font-medium text-slate-200 truncate" id="drawer-profession">--</div>
+            </div>
+            <div class="bg-slate-900/50 rounded-xl p-3 border border-slate-800/60">
+              <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Service Type</div>
+              <div class="text-sm font-medium text-slate-200 truncate" id="drawer-service-type">--</div>
+            </div>
           </div>
           
           <!-- Custom Lead Questions -->
           <div id="drawer-custom-questions-container" class="hidden">
-            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Custom Lead Form Answers</h3>
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Custom Lead Form Answers</h3>
+              <a id="drawer-edit-questionnaire-btn" href="#" onclick="event.preventDefault(); const id = window.currentLeadId || (window.currentLeadData ? window.currentLeadData.id : null); if (id) window.location.href = '/lead-details.html?id=' + id;" class="text-xs text-indigo-400 hover:text-white bg-indigo-500/10 hover:bg-indigo-500/25 border border-indigo-500/30 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 font-semibold cursor-pointer">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                <span>Edit on New Page →</span>
+              </a>
+            </div>
             <div id="drawer-custom-questions" class="grid grid-cols-1 md:grid-cols-2 gap-3">
               <!-- Custom fields injected here -->
             </div>
@@ -230,6 +255,13 @@
           <input type="datetime-local" name="next_action_deadline" id="next-action-deadline" style="color-scheme: dark;" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
         </div>
         
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Activity Label / Tag</label>
+          <select name="activity_label" id="call-activity-label" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+            <option value="">-- No Label --</option>
+          </select>
+        </div>
+
         <div class="flex items-center gap-4 pt-4 border-t border-slate-800">
           <label class="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" name="connected" id="call-connected" class="rounded bg-slate-800 border-slate-700 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-slate-900 w-4 h-4" checked>
@@ -322,11 +354,25 @@
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Phone Number *</label>
-            <input type="tel" name="phone" required class="w-full bg-[#0a0a14] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder-slate-600" placeholder="e.g. 01711-223344">
+            <input type="tel" name="phone" id="add-lead-phone-input" required class="w-full bg-[#0a0a14] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder-slate-600" placeholder="e.g. 01711-223344">
+            <div id="add-lead-duplicate-warning" class="hidden mt-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-2">
+              <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+              <span id="add-lead-duplicate-msg"></span>
+            </div>
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Email (Optional)</label>
             <input type="email" name="email" class="w-full bg-[#0a0a14] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder-slate-600" placeholder="john@example.com">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Job Profession</label>
+              <input type="text" name="profession" class="w-full bg-[#0a0a14] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder-slate-600" placeholder="e.g. Doctor / Engineer">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Service Type</label>
+              <input type="text" name="service_type" class="w-full bg-[#0a0a14] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder-slate-600" placeholder="e.g. 3BHK / Land">
+            </div>
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
@@ -345,6 +391,9 @@
                 <option value="">-- None --</option>
               </select>
             </div>
+          <div id="add-lead-custom-fields-section" class="border-t border-slate-800/80 pt-3 hidden">
+            <label class="block text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2">Custom Lead Fields (Admin Configured)</label>
+            <div id="add-lead-custom-fields-container" class="space-y-3 max-h-48 overflow-y-auto pr-1"></div>
           </div>
         </div>
         <div class="mt-8 flex justify-end gap-3">
@@ -465,6 +514,20 @@
             <input type="email" id="edit-lead-email" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
           </div>
         </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Job Profession</label>
+            <input type="text" id="edit-lead-profession" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" placeholder="e.g. Doctor / Businessman">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Service Type</label>
+            <input type="text" id="edit-lead-service-type" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" placeholder="e.g. 3BHK / Land">
+          </div>
+        </div>
+        <div id="edit-lead-custom-fields-section" class="border-t border-slate-800/80 pt-3 hidden">
+          <label class="block text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2">Custom Lead Fields (Admin Configured)</label>
+          <div id="edit-lead-custom-fields-container" class="space-y-3 max-h-48 overflow-y-auto pr-1"></div>
+        </div>
         <div class="pt-4 flex justify-end gap-3 border-t border-slate-800">
           <button type="button" id="cancel-edit-modal" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-800 transition-colors">Cancel</button>
           <button type="submit" id="save-edit-btn" class="btn-gradient px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2">
@@ -475,10 +538,123 @@
     </div>
   </div>
 
+  <!-- Import Leads Modal -->
+  <div id="import-lead-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl transform scale-95 transition-transform duration-200" id="import-lead-modal-content">
+      <div class="border-b border-slate-800 p-5 flex justify-between items-center bg-slate-900/50">
+        <div>
+          <h3 class="font-bold text-white text-lg flex items-center gap-2">
+            <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            Import Leads (CSV / Excel)
+          </h3>
+          <p class="text-xs text-slate-400 mt-0.5">Bulk upload leads with automatic duplicate detection & merge.</p>
+        </div>
+        <button id="close-import-modal-btn" class="text-slate-400 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="import-lead-form" class="p-6 space-y-4">
+        <!-- Download Template helper -->
+        <div class="flex items-center justify-between p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
+          <div class="text-xs text-indigo-200">
+            Need the right CSV columns? Download our pre-formatted template.
+          </div>
+          <a href="/api/leads/import/template" download="lead_import_template.csv" class="btn-ghost border border-indigo-500/40 text-indigo-300 hover:text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 font-semibold whitespace-nowrap">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Download Template
+          </a>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Select CSV File *</label>
+          <input type="file" id="import-file-input" accept=".csv,text/csv,text/plain" required class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-500 file:text-white hover:file:bg-indigo-600 focus:outline-none">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Assign To Owner</label>
+            <select id="import-owner-select" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="">Leave Unassigned</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Default Source</label>
+            <input type="text" id="import-source-input" value="CSV Import" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Duplicate Phone / Email Strategy</label>
+          <div class="space-y-2 bg-[#161825] border border-slate-800 p-3 rounded-xl text-xs">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="import_dup_strategy" value="merge" checked class="text-indigo-500 focus:ring-indigo-500">
+              <span class="text-slate-200 font-medium">Auto-merge into existing contact & update details (Recommended)</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="import_dup_strategy" value="skip" class="text-indigo-500 focus:ring-indigo-500">
+              <span class="text-slate-300">Skip duplicate leads</span>
+            </label>
+          </div>
+        </div>
+
+        <div id="import-result-box" class="hidden p-4 rounded-xl border"></div>
+
+        <div class="pt-4 flex justify-end gap-3 border-t border-slate-800">
+          <button type="button" id="cancel-import-btn" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-800 transition-colors">Cancel</button>
+          <button type="submit" id="submit-import-btn" class="btn-gradient px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2">
+            <svg id="import-spinner" class="hidden animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            Start Import
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Lead Questionnaire Modal -->
+  <div id="edit-questionnaire-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl transform scale-95 transition-transform duration-200" id="edit-questionnaire-modal-content">
+      <div class="border-b border-slate-800 p-5 flex justify-between items-center bg-slate-900/50">
+        <div>
+          <h3 class="font-bold text-white text-lg flex items-center gap-2">
+            <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Lead Questionnaire Responses
+          </h3>
+          <p class="text-xs text-slate-400 mt-0.5" id="questionnaire-lead-name">Update custom campaign answers for this lead.</p>
+        </div>
+        <button id="close-questionnaire-modal-btn" class="text-slate-400 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="edit-questionnaire-form" class="flex-1 overflow-y-auto p-6 space-y-4">
+        <div id="questionnaire-fields-container" class="space-y-4">
+          <div class="text-slate-500 text-sm">Loading questionnaire fields...</div>
+        </div>
+      </form>
+      <div class="p-5 border-t border-slate-800 flex justify-end gap-3 bg-slate-900/40">
+        <button type="button" id="cancel-questionnaire-btn" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-800 transition-colors">Cancel</button>
+        <button type="submit" form="edit-questionnaire-form" id="save-questionnaire-btn" class="btn-gradient px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2">
+          Save Questionnaire
+        </button>
+      </div>
+    </div>
+  </div>
+
 
   <script src="/assets/js/sidebar.js"></script>
   <script type="module" src="/assets/js/app.js"></script>
-  <script src="/assets/js/leads.js?v=11"></script>
-  <script src="/assets/js/calls.js?v=4"></script>
+  <script src="/assets/js/leads.js?v=21"></script>
+  <script src="/assets/js/calls.js?v=5"></script>
+
+  <!-- Dedicated Lead Details Navigation Script -->
+  <script>
+    window.openQuestionnaireModal = function(leadId) {
+      const id = leadId || window.currentLeadId || (window.currentLeadData ? window.currentLeadData.id : null);
+      if (id) {
+        window.location.href = `/lead-details.html?id=${id}`;
+      } else {
+        window.location.href = `/lead-details.html`;
+      }
+    };
+  </script>
 </body>
 </html>

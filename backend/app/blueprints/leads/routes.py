@@ -51,6 +51,8 @@ def get_leads():
                 "email": contact.email,
                 "phone": contact.phone_raw,
                 "source": contact.source,
+                "profession": contact.profession,
+                "service_type": contact.service_type or lead.service_type,
             }
         result.append(data)
         
@@ -75,6 +77,10 @@ def create_lead():
     full_name = sanitize_input(validated_data['full_name'])
     email = sanitize_input(validated_data.get('email'))
     source = sanitize_input(validated_data.get('source'))
+    profession = sanitize_input(validated_data.get('profession'))
+    service_type = sanitize_input(validated_data.get('service_type'))
+    activity_label = sanitize_input(validated_data.get('activity_label'))
+    questionnaire_answers = validated_data.get('questionnaire_answers') or {}
     
     contact = Contact.query.filter_by(phone_normalized=phone).first()
     
@@ -84,10 +90,17 @@ def create_lead():
             phone_raw=phone,
             phone_normalized=phone,
             email=email,
-            source=source
+            source=source,
+            profession=profession,
+            service_type=service_type
         )
         db.session.add(contact)
         db.session.flush()
+    else:
+        if profession and not contact.profession:
+            contact.profession = profession
+        if service_type and not contact.service_type:
+            contact.service_type = service_type
         
     project_id = validated_data.get('project_id')
 
@@ -106,7 +119,10 @@ def create_lead():
         inquiry_id=inquiry.id,
         assigned_to_id=user_id,
         project_id=project_id,
-        pipeline_stage=PipelineStage.NEW
+        pipeline_stage=PipelineStage.NEW,
+        service_type=service_type,
+        activity_label=activity_label,
+        questionnaire_answers=questionnaire_answers
     )
     db.session.add(opp)
     db.session.flush() # flush to get opp.id
@@ -117,6 +133,7 @@ def create_lead():
         record_id=opp.id,
         action='INSERT',
         field_name='lead',
+        activity_label=activity_label,
         new_value=f"Created Lead: {contact.full_name}"
     )
     db.session.add(audit)
@@ -128,6 +145,8 @@ def create_lead():
         "email": contact.email,
         "phone": contact.phone_raw,
         "source": contact.source,
+        "profession": contact.profession,
+        "service_type": contact.service_type or opp.service_type,
     }
     return jsonify(result), 201
 
@@ -234,6 +253,9 @@ def get_lead_profile(id):
             "email": contact.email,
             "phone": contact.phone_raw,
             "source": contact.source,
+            "profession": contact.profession,
+            "service_type": contact.service_type or lead.service_type,
+            "job_title": contact.job_title,
             "address": contact.address,
             "city": contact.city,
         }
@@ -242,6 +264,7 @@ def get_lead_profile(id):
         "connected": c.connected,
         "notes": c.notes,
         "outcome": c.outcome.value if c.outcome else None,
+        "activity_label": c.activity_label,
         "created_at": c.created_at.isoformat() if c.created_at else None,
         "recording_url": format_rec_url(c.recording_filename),
     } for c in call_logs]
@@ -262,20 +285,78 @@ def get_lead_profile(id):
         "booking_amount": str(reservations.booking_amount),
     } if reservations else None
     
-    # Extract Custom Meta Questions
+    # Extract Custom Questionnaire & Dynamic Form Answers
     profile["custom_fields"] = []
-    if lead.inquiry and lead.inquiry.raw_payload:
+    answers = dict(lead.questionnaire_answers or {})
+
+    # Fallback to Inquiry payload if answers is empty
+    if not answers and lead.inquiry and lead.inquiry.raw_payload:
         rp = lead.inquiry.raw_payload
-        lead_data = rp.get("lead_data", {})
-        field_data = lead_data.get("field_data", [])
-        for f in field_data:
-            name = f.get("name")
-            vals = f.get("values", [])
-            if name not in ["full_name", "name", "email", "phone_number", "phone"] and vals:
-                profile["custom_fields"].append({
-                    "name": name,
-                    "value": vals[0]
-                })
+        if isinstance(rp, dict):
+            if "questionnaire" in rp and isinstance(rp["questionnaire"], dict):
+                answers = rp["questionnaire"]
+            elif "lead_data" in rp and isinstance(rp["lead_data"], dict):
+                field_data = rp["lead_data"].get("field_data", [])
+                for f in field_data:
+                    n = f.get("name")
+                    vals = f.get("values", [])
+                    if n not in ["full_name", "name", "email", "phone_number", "phone"] and vals:
+                        answers[n] = vals[0]
+
+    from app.models import LeadQuestionnaireQuestion
+    questions = LeadQuestionnaireQuestion.query.filter_by(is_active=True).order_by(LeadQuestionnaireQuestion.order_index.asc()).all()
+    if not questions:
+        LeadQuestionnaireQuestion.seed_defaults()
+        questions = LeadQuestionnaireQuestion.query.filter_by(is_active=True).order_by(LeadQuestionnaireQuestion.order_index.asc()).all()
+
+    questionnaire_list = []
+    seen_keys = set()
+    for q in questions:
+        seen_keys.add(q.question_key)
+        val = answers.get(q.question_key)
+        if val is None or val == "":
+            if q.question_key == 'profession' and contact:
+                val = contact.profession
+            elif q.question_key == 'service_type':
+                val = lead.service_type or (contact.service_type if contact else None)
+            elif q.question_key == 'project_interest':
+                val = lead.project.name if lead.project else (lead.inquiry.project_interest if lead.inquiry else None)
+
+        val_str = str(val) if val is not None else ""
+        questionnaire_list.append({
+            "key": q.question_key,
+            "text": q.question_text,
+            "field_type": q.field_type or "text",
+            "options": q.options or [],
+            "value": val_str,
+            "is_required": q.is_required
+        })
+        profile["custom_fields"].append({
+            "name": q.question_text,
+            "key": q.question_key,
+            "value": val_str
+        })
+
+    # Append any remaining keys not in standard questions
+    for k, v in answers.items():
+        if k not in seen_keys:
+            val_str = str(v) if v is not None else ""
+            profile["custom_fields"].append({
+                "name": k.replace('_', ' ').title(),
+                "key": k,
+                "value": val_str
+            })
+            questionnaire_list.append({
+                "key": k,
+                "text": k.replace('_', ' ').title(),
+                "field_type": "text",
+                "options": [],
+                "value": val_str,
+                "is_required": False
+            })
+
+    profile["questionnaire"] = questionnaire_list
+    profile["questionnaire_answers"] = answers
 
     profile["timeline"] = timeline_items
 
@@ -419,6 +500,23 @@ def update_lead(id):
     if 'manager_assessment' in data and is_admin(role):
         from app.utils.security import sanitize_input
         lead.manager_assessment = sanitize_input(data['manager_assessment'])
+
+    # Update Lead profession and service_type
+    if contact:
+        if 'profession' in data and data['profession'] is not None:
+            contact.profession = str(data['profession']).strip()
+        if 'service_type' in data and data['service_type'] is not None:
+            contact.service_type = str(data['service_type']).strip()
+            lead.service_type = str(data['service_type']).strip()
+
+    if 'service_type' in data and data['service_type'] is not None:
+        lead.service_type = str(data['service_type']).strip()
+    if 'activity_label' in data and data['activity_label'] is not None:
+        lead.activity_label = str(data['activity_label']).strip()
+    if 'questionnaire_answers' in data and isinstance(data['questionnaire_answers'], dict):
+        cur_q = dict(lead.questionnaire_answers or {})
+        cur_q.update(data['questionnaire_answers'])
+        lead.questionnaire_answers = cur_q
     
     db.session.commit()
     return jsonify(lead.to_dict())
@@ -582,6 +680,10 @@ def log_call(id):
     if not notes or len(notes.strip()) < 3:
         notes = "Call logged with recording" if request.files.get('recording_file') else "Call logged"
 
+    activity_label = data.get('activity_label')
+    if activity_label:
+        activity_label = sanitize_input(activity_label)
+
     log = CallLog(
         opportunity_id=id,
         logged_by_id=user_id,
@@ -591,10 +693,13 @@ def log_call(id):
         outcome=outcome_val,
         duration_band=duration_val,
         next_action_type=next_action_type_val,
+        activity_label=activity_label,
     )
     
     now_dt = datetime.now(timezone.utc)
     lead.last_activity_type = ActivityType.CALL
+    if activity_label:
+        lead.activity_label = activity_label
     if outcome_val:
         lead.last_activity_outcome = outcome_val
     if next_action_type_val:
@@ -1378,5 +1483,456 @@ def create_coaching_log():
     db.session.add(coaching)
     db.session.commit()
     return jsonify(coaching.to_dict()), 201
+
+
+# ---------------------------------------------------------------------------
+# Real-Time Lead Duplicate Detection API
+# ---------------------------------------------------------------------------
+
+@leads_bp.route('/check-duplicate', methods=['GET', 'POST'])
+@jwt_required()
+def check_lead_duplicate():
+    """
+    Check if a contact or active opportunity already exists with the given phone or email.
+    Used for real-time frontend duplicate alerts and prevention.
+    """
+    from app.utils.phone import normalize_phone
+    body = request.get_json(silent=True) or {}
+    phone = request.args.get('phone') or body.get('phone')
+    email = request.args.get('email') or body.get('email')
+
+    if not phone and not email:
+        return jsonify({"is_duplicate": False, "match": None})
+
+    phone = phone.strip() if phone else None
+    if phone:
+        if phone.startswith('880'):
+            phone = '+' + phone
+        elif phone.startswith('01') and len(phone) == 11:
+            phone = '+88' + phone
+    email = email.strip().lower() if email else None
+    phone_norm = normalize_phone(phone) if phone else None
+    
+    contact = None
+    if phone_norm:
+        contact = Contact.query.filter((Contact.phone_normalized == phone_norm) | (Contact.phone_raw == phone_norm)).first()
+    if not contact and phone:
+        contact = Contact.query.filter((Contact.phone_raw == phone) | (Contact.phone_normalized == phone)).first()
+    if not contact and email:
+        contact = Contact.query.filter_by(email=email).first()
+
+    if not contact:
+        return jsonify({"is_duplicate": False, "match": None})
+
+    terminal_stages = ['SOLD', 'CLOSED_LOST', 'INVALID', 'BOUGHT_ELSEWHERE', 'UNREACHABLE']
+    active_opp = Opportunity.query.filter_by(
+        contact_id=contact.id,
+        is_deleted=False
+    ).filter(~Opportunity.pipeline_stage.in_(terminal_stages)).order_by(Opportunity.created_at.desc()).first()
+
+    assigned_owner_name = "Unassigned"
+    if active_opp and active_opp.assigned_to:
+        assigned_owner_name = active_opp.assigned_to.full_name or active_opp.assigned_to.email
+
+    stage_val = None
+    if active_opp:
+        raw_stage = active_opp.pipeline_stage
+        stage_val = raw_stage.value if hasattr(raw_stage, 'value') else str(raw_stage)
+
+    return jsonify({
+        "is_duplicate": True,
+        "contact_id": contact.id,
+        "contact_name": contact.full_name,
+        "phone": contact.phone_raw,
+        "email": contact.email,
+        "has_active_lead": bool(active_opp),
+        "opportunity_id": active_opp.id if active_opp else None,
+        "assigned_to": assigned_owner_name,
+        "stage": stage_val,
+        "message": (
+            f"Lead already exists: {contact.full_name} (Assigned: {assigned_owner_name} | Stage: {stage_val})"
+            if active_opp else
+            f"Existing contact found: {contact.full_name}"
+        )
+    })
+
+
+# ---------------------------------------------------------------------------
+# Lead Questionnaire (Dynamic Meta / Custom Lead Questions)
+# ---------------------------------------------------------------------------
+
+@leads_bp.route('/<int:id>/questionnaire', methods=['GET'])
+@jwt_required()
+def get_lead_questionnaire(id):
+    lead = Opportunity.query.get_or_404(id)
+    claims = get_jwt()
+    role = claims.get('role')
+    user_id = int(get_jwt_identity())
+    if not _check_lead_access(lead, role, user_id):
+        return jsonify({"error": "Access denied"}), 403
+
+    from app.models import LeadQuestionnaireQuestion
+    questions = LeadQuestionnaireQuestion.query.filter_by(is_active=True).order_by(LeadQuestionnaireQuestion.order_index.asc()).all()
+    if not questions:
+        LeadQuestionnaireQuestion.seed_defaults()
+        questions = LeadQuestionnaireQuestion.query.filter_by(is_active=True).order_by(LeadQuestionnaireQuestion.order_index.asc()).all()
+
+    answers = dict(lead.questionnaire_answers or {})
+    contact = lead.contact
+    if contact:
+        if not answers.get('profession') and contact.profession:
+            answers['profession'] = contact.profession
+        if not answers.get('service_type') and (contact.service_type or lead.service_type):
+            answers['service_type'] = contact.service_type or lead.service_type
+
+    items = []
+    seen = set()
+    for q in questions:
+        seen.add(q.question_key)
+        val = answers.get(q.question_key, "")
+        items.append({
+            "key": q.question_key,
+            "question_key": q.question_key,
+            "text": q.question_text,
+            "question_text": q.question_text,
+            "field_type": q.field_type or "text",
+            "question_type": (q.field_type or "text").upper(),
+            "options": q.options or [],
+            "value": str(val) if val is not None else "",
+            "is_required": q.is_required
+        })
+
+    for k, v in answers.items():
+        if k not in seen:
+            items.append({
+                "key": k,
+                "question_key": k,
+                "text": k.replace('_', ' ').title(),
+                "question_text": k.replace('_', ' ').title(),
+                "field_type": "text",
+                "question_type": "TEXT",
+                "options": [],
+                "value": str(v) if v is not None else "",
+                "is_required": False
+            })
+
+    return jsonify({
+        "lead_id": lead.id,
+        "answers": answers,
+        "questions": items
+    })
+
+
+@leads_bp.route('/<int:id>/questionnaire', methods=['PUT'])
+@jwt_required()
+def update_lead_questionnaire(id):
+    lead = Opportunity.query.get_or_404(id)
+    claims = get_jwt()
+    role = claims.get('role')
+    user_id = int(get_jwt_identity())
+    if not _check_lead_access(lead, role, user_id):
+        return jsonify({"error": "Access denied"}), 403
+
+    data = request.json or {}
+    new_answers = data.get('answers', data)
+
+    if not isinstance(new_answers, dict):
+        return jsonify({"error": "Answers must be a JSON object"}), 400
+
+    cur_answers = dict(lead.questionnaire_answers or {})
+    cur_answers.update(new_answers)
+    lead.questionnaire_answers = cur_answers
+
+    # Synchronize top-level contact/opportunity fields
+    if 'profession' in new_answers and lead.contact:
+        lead.contact.profession = str(new_answers['profession']).strip()
+    if 'service_type' in new_answers:
+        lead.service_type = str(new_answers['service_type']).strip()
+        if lead.contact:
+            lead.contact.service_type = str(new_answers['service_type']).strip()
+
+    audit = AuditLog(
+        user_id=user_id,
+        table_name='opportunities',
+        record_id=lead.id,
+        action='UPDATE',
+        field_name='questionnaire_answers',
+        new_value=f"Updated questionnaire answers ({len(new_answers)} fields)"
+    )
+    db.session.add(audit)
+    db.session.commit()
+
+    return jsonify({
+        "status": "success",
+        "lead_id": lead.id,
+        "answers": lead.questionnaire_answers
+    }), 200
+
+
+# ---------------------------------------------------------------------------
+# Automated Status Update Trigger (Scheduled / Time-Based)
+# ---------------------------------------------------------------------------
+
+@leads_bp.route('/auto-update-stages', methods=['POST'])
+@jwt_required()
+def trigger_stage_auto_updates():
+    from app.tasks import auto_update_scheduled_lead_statuses
+    stats = auto_update_scheduled_lead_statuses(current_app)
+    return jsonify({
+        "status": "success",
+        "message": "Scheduled lead pipeline stages & deadlines successfully refreshed",
+        "stats": stats
+    }), 200
+
+
+# ---------------------------------------------------------------------------
+# Lead Import & Automatic Duplicate Detection
+# ---------------------------------------------------------------------------
+
+@leads_bp.route('/import/template', methods=['GET'])
+def download_import_template():
+    import io
+    import csv
+    from flask import Response
+
+    headers = [
+        "Full Name", "Phone Number", "Email", "Profession",
+        "Service Type", "Project Name", "Budget Range", "Source", "Notes"
+    ]
+    sample_rows = [
+        ["Shahadat Hossain", "01711223344", "shahadat@example.com", "Business Owner", "Residential Plot", "Green Valley City", "50-70 Lakhs", "Facebook Ad", "Interested in 5 Katha south facing plot"],
+        ["Dr. Nasrin Akter", "01819556677", "nasrin@example.com", "Doctor", "Villa / Duplex Plot", "Lake View City", "1.2 - 2 Crore", "Referral", "Looking for lakeside facing corner plot"]
+    ]
+
+    si = io.StringIO()
+    cw = csv.writer(si)
+    cw.writerow(headers)
+    cw.writerows(sample_rows)
+
+    return Response(
+        si.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment;filename=leads_import_template.csv"}
+    )
+
+
+@leads_bp.route('/import', methods=['POST'])
+@jwt_required()
+def import_leads():
+    claims = get_jwt()
+    role = claims.get('role')
+    user_id = int(get_jwt_identity())
+    
+    from app.utils.phone import normalize_phone
+    from app.utils.security import sanitize_input
+    from app.tasks import assign_lead_owner_auto
+    import csv
+    import io
+
+    duplicate_action = (
+        request.form.get('duplicate_strategy') or
+        request.form.get('duplicate_action') or
+        request.args.get('duplicate_action') or
+        'merge'
+    )
+    default_assigned_to = request.form.get('assigned_to_id')
+    default_owner_id = int(default_assigned_to) if default_assigned_to and default_assigned_to.isdigit() else None
+
+    rows = []
+
+    # Check for file upload
+    if 'file' in request.files:
+        f = request.files['file']
+        if not f.filename:
+            return jsonify({"error": "No file selected"}), 400
+
+        content = f.read().decode('utf-8-sig', errors='replace')
+        csv_reader = csv.DictReader(io.StringIO(content))
+        for r in csv_reader:
+            rows.append(r)
+    elif request.is_json:
+        data = request.json or {}
+        rows = data.get('leads', [])
+        duplicate_action = data.get('duplicate_strategy', data.get('duplicate_action', duplicate_action))
+        if data.get('assigned_to_id'):
+            default_owner_id = int(data['assigned_to_id'])
+    else:
+        return jsonify({"error": "Please provide a CSV file or JSON body with leads"}), 400
+
+    if not rows:
+        return jsonify({"error": "No lead records found in the import payload"}), 400
+
+    def get_val(row, *aliases):
+        for a in aliases:
+            for k in row.keys():
+                if k.strip().lower() == a.lower():
+                    v = row[k]
+                    return str(v).strip() if v is not None else ""
+        return ""
+
+    total = len(rows)
+    imported = 0
+    duplicates_merged = 0
+    duplicates_skipped = 0
+    errors = []
+
+    terminal_stages = [
+        'SOLD', 'CLOSED_LOST', 'INVALID', 'BOUGHT_ELSEWHERE', 'UNREACHABLE'
+    ]
+
+    for idx, row in enumerate(rows, 1):
+        try:
+            full_name = get_val(row, 'Full Name', 'Name', 'Customer Name', 'full_name')
+            phone_raw = get_val(row, 'Phone Number', 'Phone', 'Mobile', 'Contact Number', 'phone', 'phone_raw')
+            email = get_val(row, 'Email', 'Email Address', 'email')
+            profession = get_val(row, 'Profession', 'Occupation', 'Job', 'profession')
+            service_type = get_val(row, 'Service Type', 'Service', 'Property Type', 'service_type')
+            project_name = get_val(row, 'Project Name', 'Project', 'project', 'project_name')
+            source = get_val(row, 'Source', 'Lead Source', 'source') or 'Imported'
+            notes = get_val(row, 'Notes', 'Remarks', 'Comment', 'notes')
+            budget_str = get_val(row, 'Budget Range', 'Budget', 'budget')
+
+            if not phone_raw and not full_name:
+                continue
+
+            if not full_name:
+                full_name = "Valued Customer"
+
+            phone_norm = normalize_phone(phone_raw) if phone_raw else None
+            
+            # Find duplicate contact
+            existing_contact = None
+            if phone_norm:
+                existing_contact = Contact.query.filter_by(phone_normalized=phone_norm).first()
+            if not existing_contact and phone_raw:
+                existing_contact = Contact.query.filter_by(phone_raw=phone_raw).first()
+            if not existing_contact and email:
+                existing_contact = Contact.query.filter_by(email=email).first()
+
+            if existing_contact:
+                if duplicate_action == 'skip':
+                    duplicates_skipped += 1
+                    continue
+                else:
+                    # Auto-merge / update existing contact
+                    if profession and not existing_contact.profession:
+                        existing_contact.profession = profession
+                    if service_type and not existing_contact.service_type:
+                        existing_contact.service_type = service_type
+                    if email and not existing_contact.email:
+                        existing_contact.email = email
+                    
+                    # Check if there is an active opportunity
+                    active_opp = Opportunity.query.filter_by(
+                        contact_id=existing_contact.id,
+                        is_deleted=False
+                    ).filter(~Opportunity.pipeline_stage.in_(terminal_stages)).first()
+
+                    if active_opp:
+                        if service_type and not active_opp.service_type:
+                            active_opp.service_type = service_type
+                        if notes:
+                            n = Note(
+                                opportunity_id=active_opp.id,
+                                contact_id=existing_contact.id,
+                                created_by_id=user_id,
+                                content=f"[Import Update] {notes}"
+                            )
+                            db.session.add(n)
+                        duplicates_merged += 1
+                        continue
+                    else:
+                        # Existing contact has no active open leads -> create a new Opportunity
+                        inquiry = Inquiry(
+                            contact_id=existing_contact.id,
+                            utm_source=source,
+                            project_interest=project_name,
+                            raw_payload=row,
+                            submitted_at=datetime.now(timezone.utc)
+                        )
+                        db.session.add(inquiry)
+                        db.session.flush()
+
+                        assigned_id = default_owner_id
+                        if not assigned_id:
+                            auto_owner = assign_lead_owner_auto(app=current_app)
+                            assigned_id = auto_owner.id if auto_owner else user_id
+
+                        new_opp = Opportunity(
+                            contact_id=existing_contact.id,
+                            inquiry_id=inquiry.id,
+                            assigned_to_id=assigned_id,
+                            pipeline_stage=PipelineStage.NEW,
+                            service_type=service_type,
+                            questionnaire_answers={"profession": profession, "service_type": service_type, "budget": budget_str}
+                        )
+                        db.session.add(new_opp)
+                        if notes:
+                            db.session.flush()
+                            n = Note(opportunity_id=new_opp.id, contact_id=existing_contact.id, created_by_id=user_id, content=notes)
+                            db.session.add(n)
+                        imported += 1
+            else:
+                # Brand new contact
+                contact = Contact(
+                    full_name=sanitize_input(full_name),
+                    phone_raw=sanitize_input(phone_raw),
+                    phone_normalized=phone_norm,
+                    email=sanitize_input(email) if email else None,
+                    profession=sanitize_input(profession) if profession else None,
+                    service_type=sanitize_input(service_type) if service_type else None,
+                    source=sanitize_input(source)
+                )
+                db.session.add(contact)
+                db.session.flush()
+
+                inquiry = Inquiry(
+                    contact_id=contact.id,
+                    utm_source=source,
+                    project_interest=project_name,
+                    raw_payload=row,
+                    submitted_at=datetime.now(timezone.utc)
+                )
+                db.session.add(inquiry)
+                db.session.flush()
+
+                assigned_id = default_owner_id
+                if not assigned_id:
+                    auto_owner = assign_lead_owner_auto(app=current_app)
+                    assigned_id = auto_owner.id if auto_owner else user_id
+
+                opp = Opportunity(
+                    contact_id=contact.id,
+                    inquiry_id=inquiry.id,
+                    assigned_to_id=assigned_id,
+                    pipeline_stage=PipelineStage.NEW,
+                    service_type=service_type,
+                    questionnaire_answers={"profession": profession, "service_type": service_type, "budget": budget_str}
+                )
+                db.session.add(opp)
+                if notes:
+                    db.session.flush()
+                    n = Note(opportunity_id=opp.id, contact_id=contact.id, created_by_id=user_id, content=notes)
+                    db.session.add(n)
+                imported += 1
+
+        except Exception as e:
+            errors.append(f"Row {idx}: {str(e)}")
+
+    db.session.commit()
+
+    return jsonify({
+        "status": "success",
+        "total_rows": total,
+        "total_processed": total,
+        "imported": imported,
+        "created_count": imported,
+        "duplicates_merged": duplicates_merged,
+        "merged_count": duplicates_merged,
+        "duplicates_skipped": duplicates_skipped,
+        "skipped_count": duplicates_skipped,
+        "errors": errors[:10]
+    }), 200
+
 
 

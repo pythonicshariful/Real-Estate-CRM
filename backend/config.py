@@ -176,6 +176,10 @@ class ProductionConfig(Config):
 class TestingConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'poolclass': __import__('sqlalchemy.pool', fromlist=['StaticPool']).StaticPool,
+        'connect_args': {'check_same_thread': False},
+    }
     SCHEDULER_JOBSTORES = {'default': {'type': 'memory'}}
     WTF_CSRF_ENABLED = False
 

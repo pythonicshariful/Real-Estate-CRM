@@ -300,6 +300,7 @@
   }
 
   async function updateBadges() {
+    if (document.hidden) return;
     const token = localStorage.getItem('crm_token');
     if (!token || token === 'undefined') return;
 

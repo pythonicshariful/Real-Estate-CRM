@@ -3,7 +3,7 @@ from app.blueprints.reports import reports_bp
 from app.models import Opportunity, Contact, PipelineStage, User, CallLog, Appointment, AppointmentStatus, Objection, ObjectionCategory, Sale, Expense, ExpenseCategory, ExpenseStatus, Invoice, InvoiceStatus, SLAEvent, SLAStatus, ActivityOutcome, PipelineHistory, db
 from app.models import UserRole
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, timezone
 from sqlalchemy import func
 from decimal import Decimal
 import io
@@ -581,7 +581,7 @@ def export_leads_csv():
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow([
-        'Lead ID', 'Full Name', 'Phone', 'Email', 'Source',
+        'Lead ID', 'Full Name', 'Phone', 'Email', 'Profession', 'Service Type', 'Source',
         'Pipeline Stage', 'Priority', 'Lead Temperature',
         'Assigned To', 'Created At'
     ])
@@ -592,6 +592,8 @@ def export_leads_csv():
             contact.full_name if contact else '',
             contact.phone_raw if contact else '',
             contact.email if contact else '',
+            contact.profession if contact else '',
+            opp.service_type or (contact.service_type if contact else ''),
             contact.source if contact else '',
             opp.pipeline_stage.value if opp.pipeline_stage else '',
             opp.priority.value if opp.priority else '',
@@ -605,3 +607,164 @@ def export_leads_csv():
     response.headers['Content-Disposition'] = f'attachment; filename=leads_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
     response.headers['Content-Type'] = 'text/csv'
     return response
+
+
+# ---------------------------------------------------------------------------
+# Sales Manager Command Center / Dashboard Summary
+# ---------------------------------------------------------------------------
+
+@reports_bp.route('/sales-manager-summary', methods=['GET'])
+@jwt_required()
+def get_sales_manager_summary():
+    claims = get_jwt()
+    role = claims.get('role')
+    user_id = int(get_jwt_identity())
+
+    if role not in ('MANAGER', 'GM', 'CEO', 'ADMIN'):
+        return jsonify({"error": "Manager role required"}), 403
+
+    now = datetime.now(timezone.utc)
+    today_start = datetime(now.year, now.month, now.day, tzinfo=timezone.utc)
+
+    terminal_stages = [
+        PipelineStage.SOLD,
+        PipelineStage.CLOSED_LOST,
+        PipelineStage.INVALID,
+        PipelineStage.BOUGHT_ELSEWHERE,
+        PipelineStage.UNREACHABLE
+    ]
+
+    # 1. Team Members Workload & Metrics
+    lead_owners = User.query.filter(
+        User.role.in_([UserRole.LEAD_OWNER, UserRole.EXECUTIVE, UserRole.MANAGER]),
+        User.is_active == True,
+        User.is_deleted == False
+    ).all()
+
+    team_metrics = []
+    for owner in lead_owners:
+        total_assigned = Opportunity.query.filter_by(assigned_to_id=owner.id, is_deleted=False).count()
+        active_leads = Opportunity.query.filter(
+            Opportunity.assigned_to_id == owner.id,
+            Opportunity.is_deleted == False,
+            ~Opportunity.pipeline_stage.in_(terminal_stages)
+        ).count()
+        
+        overdue_leads = Opportunity.query.filter(
+            Opportunity.assigned_to_id == owner.id,
+            Opportunity.is_deleted == False,
+            ~Opportunity.pipeline_stage.in_(terminal_stages),
+            Opportunity.next_action_deadline < now
+        ).count()
+
+        won_leads = Opportunity.query.filter(
+            Opportunity.assigned_to_id == owner.id,
+            Opportunity.is_deleted == False,
+            Opportunity.pipeline_stage.in_([PipelineStage.SOLD, PipelineStage.RESERVATION_RECEIVED])
+        ).count()
+
+        calls_today = CallLog.query.filter(
+            CallLog.logged_by_id == owner.id,
+            CallLog.created_at >= today_start,
+            CallLog.is_deleted == False
+        ).count()
+
+        max_cap = owner.max_lead_capacity or 30
+        cap_pct = round((active_leads / max_cap) * 100) if max_cap > 0 else 0
+        conv_rate = round((won_leads / total_assigned) * 100, 1) if total_assigned > 0 else 0.0
+
+        team_metrics.append({
+            "id": owner.id,
+            "full_name": owner.full_name,
+            "email": owner.email,
+            "role": owner.role.value if owner.role else "LEAD_OWNER",
+            "calendar_color": owner.calendar_color or "#6366f1",
+            "avatar_url": owner.avatar_url or "/assets/img/default-avatar.png",
+            "max_capacity": max_cap,
+            "active_leads": active_leads,
+            "capacity_pct": cap_pct,
+            "overdue_leads": overdue_leads,
+            "won_leads": won_leads,
+            "calls_today": calls_today,
+            "conversion_rate": conv_rate
+        })
+
+    # 2. Unassigned Leads Queue
+    unassigned_opps = db.session.query(Opportunity, Contact).outerjoin(
+        Contact, Opportunity.contact_id == Contact.id
+    ).filter(
+        Opportunity.assigned_to_id.is_(None),
+        Opportunity.is_deleted == False,
+        ~Opportunity.pipeline_stage.in_(terminal_stages)
+    ).order_by(Opportunity.created_at.desc()).limit(15).all()
+
+    unassigned_list = []
+    for opp, contact in unassigned_opps:
+        unassigned_list.append({
+            "id": opp.id,
+            "contact_name": contact.full_name if contact else "Valued Client",
+            "phone": contact.phone_raw if contact else "N/A",
+            "service_type": opp.service_type or (contact.service_type if contact else None),
+            "profession": contact.profession if contact else None,
+            "source": contact.source if contact else "Web",
+            "created_at": opp.created_at.isoformat() if opp.created_at else None
+        })
+
+    # 3. Urgent / Overdue Action Items Queue
+    urgent_opps = db.session.query(Opportunity, Contact, User).outerjoin(
+        Contact, Opportunity.contact_id == Contact.id
+    ).outerjoin(
+        User, Opportunity.assigned_to_id == User.id
+    ).filter(
+        Opportunity.is_deleted == False,
+        ~Opportunity.pipeline_stage.in_(terminal_stages),
+        Opportunity.next_action_deadline < now
+    ).order_by(Opportunity.next_action_deadline.asc()).limit(15).all()
+
+    urgent_list = []
+    for opp, contact, user in urgent_opps:
+        deadline_iso = opp.next_action_deadline.isoformat() if opp.next_action_deadline else None
+        urgent_list.append({
+            "id": opp.id,
+            "contact_name": contact.full_name if contact else "Valued Client",
+            "phone": contact.phone_raw if contact else "N/A",
+            "assigned_to": user.full_name if user else "Unassigned",
+            "stage": opp.pipeline_stage.value if opp.pipeline_stage else "NEW",
+            "deadline": deadline_iso,
+            "priority": opp.priority.value if opp.priority else "HIGH"
+        })
+
+    # 4. Stage Breakdown
+    stage_counts = db.session.query(Opportunity.pipeline_stage, func.count(Opportunity.id))\
+        .filter(Opportunity.is_deleted == False)\
+        .group_by(Opportunity.pipeline_stage).all()
+    stage_map = {row[0].value if row[0] else "NEW": row[1] for row in stage_counts}
+
+    total_pipeline_leads = sum(v for k, v in stage_map.items() if k not in ['SOLD', 'CLOSED_LOST', 'INVALID', 'BOUGHT_ELSEWHERE', 'UNREACHABLE'])
+
+    return jsonify({
+        "status": "success",
+        "manager_id": user_id,
+        "team": team_metrics,
+        "team_metrics": {
+            "total_agents": len(team_metrics),
+            "unassigned_leads": len(unassigned_list),
+            "total_overdue": sum(m["overdue_leads"] for m in team_metrics),
+            "total_won": sum(m["won_leads"] for m in team_metrics),
+            "total_active_pipeline_leads": total_pipeline_leads
+        },
+        "agent_workload": team_metrics,
+        "unassigned_queue": unassigned_list,
+        "urgent_queue": urgent_list,
+        "urgent_sla_queue": urgent_list,
+        "stage_breakdown": stage_map,
+        "kpis": {
+            "total_team_members": len(team_metrics),
+            "total_active_pipeline_leads": total_pipeline_leads,
+            "unassigned_count": len(unassigned_list),
+            "total_overdue": sum(m["overdue_leads"] for m in team_metrics),
+            "total_calls_today": sum(m["calls_today"] for m in team_metrics),
+            "total_won": sum(m["won_leads"] for m in team_metrics)
+        }
+    }), 200
+

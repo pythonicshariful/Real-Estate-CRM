@@ -7,6 +7,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
 const ARTICLES = [
     {
+        id: 'meta-webhook',
+        title: 'ফেসবুক (Meta) Lead Ads কানেক্ট ও টেস্ট করার গাইড',
+        category: 'Integrations & Leads',
+        content: `
+            <p class="mb-2 text-indigo-300 font-bold">ফেসবুক বা ইনস্টাগ্রাম বিজ্ঞাপন থেকে স্বয়ংক্রিয়ভাবে লিড পাওয়ার সম্পূর্ণ বাংলা নির্দেশিকা:</p>
+            <ol class="list-decimal pl-4 space-y-1.5 text-xs text-slate-300">
+                <li><strong>Settings &gt; Meta Webhook</strong> এ যান।</li>
+                <li><strong>"How to Connect (বাংলা গাইড)"</strong> বাটনে ক্লিক করে পুরো নিয়ম দেখে নিন।</li>
+                <li>মেটা ডেভেলপার পোর্টালে <strong>Callback URL</strong> ও <strong>Verify Token</strong> পেস্ট করে ভেরিফাই করুন।</li>
+                <li>টেস্ট করার জন্য <strong>Settings</strong>-এর <em>"Simulate Lead Now"</em> বাটনে ক্লিক করুন অথবা ফেসবুকের <em>Lead Ads Testing Tool</em> ব্যবহার করুন।</li>
+            </ol>
+            <div class="mt-3">
+                <a href="/settings.html#meta-guide" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors">
+                    📖 সম্পূর্ণ বাংলা গাইড ও সেটিংস খুলুন →
+                </a>
+            </div>
+        `
+    },
+    {
         id: 'dashboard',
         title: 'Dashboard Overview',
         category: 'Command Center',

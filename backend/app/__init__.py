@@ -181,12 +181,68 @@ def create_app(config_name=None):
                 return send_from_directory(app.static_folder, filename)
         return jsonify({'error': 'Not Found', 'message': f'File {filename} not found'}), 404
 
+    # ------------------------------------------------------------------
+    # Auto-migrate database schema (creates tables & adds missing columns)
+    # ------------------------------------------------------------------
+    _auto_migrate_db(app)
+
     return app
+
+
+def _auto_migrate_db(app):
+    """
+    Auto-migrate database schema on startup:
+    1. Runs db.create_all() to ensure all tables exist.
+    2. Inspects existing tables and adds any missing columns automatically.
+    3. Seeds default activity labels & questionnaire questions if not present.
+    """
+    with app.app_context():
+        from sqlalchemy import inspect, text
+        try:
+            db.create_all()
+            inspector = inspect(db.engine)
+            existing_tables = set(inspector.get_table_names())
+            
+            for table_name, table in db.metadata.tables.items():
+                if table_name not in existing_tables:
+                    continue
+                existing_cols = {col['name'] for col in inspector.get_columns(table_name)}
+                for col in table.columns:
+                    if col.name not in existing_cols:
+                        type_str = str(col.type).upper()
+                        if 'JSON' in type_str:
+                            sql_type = 'TEXT'
+                        elif 'DATETIME' in type_str or 'DATE' in type_str or 'TIME' in type_str:
+                            sql_type = 'DATETIME'
+                        elif 'INT' in type_str:
+                            sql_type = 'INTEGER'
+                        elif 'BOOL' in type_str:
+                            sql_type = 'BOOLEAN'
+                        else:
+                            sql_type = 'TEXT'
+                        
+                        try:
+                            with db.engine.connect() as conn:
+                                conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {col.name} {sql_type}"))
+                                conn.commit()
+                            app.logger.info(f"Auto-migrated: added column '{col.name}' to table '{table_name}'")
+                        except Exception as ex:
+                            app.logger.warning(f"Failed to add column '{col.name}' to table '{table_name}': {ex}")
+
+            # Seed defaults
+            try:
+                from app.models import ActivityLabel, LeadQuestionnaireQuestion
+                ActivityLabel.seed_defaults()
+                LeadQuestionnaireQuestion.seed_defaults()
+            except Exception:
+                pass
+        except Exception as e:
+            app.logger.warning(f"Auto-migration check skipped/failed: {e}")
 
 
 def _configure_scheduler(app):
     """Configure and start APScheduler with SQLAlchemy jobstore."""
-    from app.tasks import check_sla_compliance, send_daily_summary, check_appointment_reminders, retry_failed_webhooks
+    from app.tasks import check_sla_compliance, send_daily_summary, check_appointment_reminders, retry_failed_webhooks, auto_update_scheduled_lead_statuses
     from filelock import FileLock, Timeout
 
     scheduler.app = app
@@ -235,6 +291,15 @@ def _configure_scheduler(app):
         trigger='interval',
         minutes=5,
         id='webhook_retries',
+        replace_existing=True
+    )
+
+    # Scheduled lead pipeline stage & deadline auto-updater — runs every 5 minutes
+    scheduler.add_job(
+        func=auto_update_scheduled_lead_statuses,
+        trigger='interval',
+        minutes=5,
+        id='scheduled_lead_status_updates',
         replace_existing=True
     )
 

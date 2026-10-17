@@ -253,6 +253,7 @@ class Contact(db.Model, SoftDeleteMixin):
     gender = db.Column(db.String(10))
     job_title = db.Column(db.String(100))
     profession = db.Column(db.String(100))
+    service_type = db.Column(db.String(100))
     address = db.Column(db.Text)
     district = db.Column(db.String(100))
     city = db.Column(db.String(100))
@@ -444,6 +445,9 @@ class Opportunity(db.Model, SoftDeleteMixin):
     final_result = db.Column(db.Enum(FinalResult))
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'))
     total_deal_value = db.Column(db.Numeric(15, 2))
+    service_type = db.Column(db.String(100))
+    activity_label = db.Column(db.String(100))
+    questionnaire_answers = db.Column(db.JSON, default=dict)
 
     # Stage milestone date tracking
     assigned_date = db.Column(db.DateTime)
@@ -500,6 +504,9 @@ class Opportunity(db.Model, SoftDeleteMixin):
             "next_action_deadline": self.next_action_deadline.isoformat() if self.next_action_deadline else None,
             "lead_age_days": self.lead_age_days,
             "is_starred": self.is_starred,
+            "service_type": self.service_type,
+            "activity_label": self.activity_label,
+            "questionnaire_answers": self.questionnaire_answers or {},
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "is_overdue": self.is_overdue
@@ -528,6 +535,7 @@ class AuditLog(db.Model):
     field_name = db.Column(db.String(100))
     old_value = db.Column(db.Text)
     new_value = db.Column(db.Text)
+    activity_label = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     __table_args__ = (
@@ -548,6 +556,7 @@ class AuditLog(db.Model):
             'field_name': self.field_name,
             'old_value': self.old_value,
             'new_value': self.new_value,
+            'activity_label': self.activity_label,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
@@ -582,6 +591,7 @@ class CallLog(db.Model, SoftDeleteMixin):
     next_action_deadline = db.Column(db.DateTime)
     recording_filename = db.Column(db.String(255))
     recording_url_expires = db.Column(db.DateTime)
+    activity_label = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
@@ -1332,4 +1342,185 @@ class WebhookRetry(db.Model):
             'next_retry_at': self.next_retry_at.isoformat() if self.next_retry_at else None,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
+
+
+# ---------------------------------------------------------------------------
+# Activity Labels & Custom Questionnaire
+# ---------------------------------------------------------------------------
+
+class ActivityLabel(db.Model):
+    """Configurable labels for activity and call logs."""
+    __tablename__ = 'activity_labels'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    color = db.Column(db.String(30), default='#6366f1')
+    description = db.Column(db.String(255))
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'color': self.color or '#6366f1',
+            'description': self.description,
+            'is_active': self.is_active,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+    @classmethod
+    def seed_defaults(cls):
+        defaults = [
+            ("Follow-up", "#6366f1", "Standard client follow-up conversation"),
+            ("Site Visit Discussion", "#10b981", "Discussing or confirming a project site visit"),
+            ("Price Negotiation", "#f59e0b", "Active price and installment negotiations"),
+            ("VIP Client", "#8b5cf6", "High net worth or strategic prospective buyer"),
+            ("Documentation / Booking", "#0ea5e9", "Processing paperwork, token, or plot reservation"),
+            ("Ready Buyer", "#f43f5e", "High urgency buyer ready to close immediately"),
+            ("Cold / Re-engage", "#64748b", "Re-connecting with long term or inactive inquiries")
+        ]
+        created = False
+        for name, color, desc in defaults:
+            if not cls.query.filter_by(name=name).first():
+                db.session.add(cls(name=name, color=color, description=desc))
+                created = True
+        if created:
+            db.session.commit()
+
+
+class LeadQuestionnaireQuestion(db.Model):
+    """Questions dynamically answered on leads (Meta Lead Ads & manual entry)."""
+    __tablename__ = 'lead_questionnaire_questions'
+    id = db.Column(db.Integer, primary_key=True)
+    question_key = db.Column(db.String(100), unique=True, nullable=False)
+    question_text = db.Column(db.String(255), nullable=False)
+    field_type = db.Column(db.String(50), default='text')
+    options = db.Column(db.JSON, nullable=True)
+    order_index = db.Column(db.Integer, default=0)
+    is_required = db.Column(db.Boolean, default=False)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'question_key': self.question_key,
+            'question_text': self.question_text,
+            'field_type': self.field_type or 'text',
+            'options': self.options or [],
+            'order_index': self.order_index,
+            'is_required': self.is_required,
+            'is_active': self.is_active,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+    @classmethod
+    def seed_defaults(cls):
+        default_questions = [
+            {
+                "question_key": "profession",
+                "question_text": "Profession / Occupation",
+                "field_type": "select",
+                "options": ["Govt Service", "Private Service", "Business Owner", "Doctor", "Engineer", "Defense Officer", "Expatriate / NRI", "Lawyer", "Retired", "Other"],
+                "order_index": 1,
+                "is_required": True
+            },
+            {
+                "question_key": "service_type",
+                "question_text": "Service / Property Type",
+                "field_type": "select",
+                "options": ["Residential Plot", "Commercial Plot", "Villa / Duplex Plot", "Commercial Space", "Long-term Land Investment"],
+                "order_index": 2,
+                "is_required": True
+            },
+            {
+                "question_key": "plot_size",
+                "question_text": "Preferred Plot Size",
+                "field_type": "select",
+                "options": ["3 Katha", "5 Katha", "7.5 Katha", "10 Katha", "20 Katha (1 Bigha)"],
+                "order_index": 3,
+                "is_required": False
+            },
+            {
+                "question_key": "facing_preference",
+                "question_text": "Facing Preference",
+                "field_type": "select",
+                "options": ["South Facing", "North Facing", "East Facing", "West Facing", "Corner Plot", "Lakeside / Park Facing"],
+                "order_index": 4,
+                "is_required": False
+            },
+            {
+                "question_key": "project_interest",
+                "question_text": "Preferred Project",
+                "field_type": "select",
+                "options": ["Green Valley City", "Lake View City", "Highway Heights", "South City Extension", "Any Suitable Project"],
+                "order_index": 5,
+                "is_required": False
+            },
+            {
+                "question_key": "budget_range",
+                "question_text": "Budget Range",
+                "field_type": "select",
+                "options": ["20 - 40 Lakhs", "40 - 70 Lakhs", "70 Lakhs - 1.2 Crore", "1.2 - 2 Crore", "2 Crore+"],
+                "order_index": 6,
+                "is_required": False
+            },
+            {
+                "question_key": "purchase_timeline",
+                "question_text": "Purchasing Timeline",
+                "field_type": "select",
+                "options": ["Immediate / Ready to Buy", "Within 1 - 3 Months", "Within 3 - 6 Months", "Exploring Options"],
+                "order_index": 7,
+                "is_required": False
+            },
+            {
+                "question_key": "payment_preference",
+                "question_text": "Payment Plan Preference",
+                "field_type": "select",
+                "options": ["Full One-Time Payment", "12 Months Installment", "24-36 Months Installment", "Long-Term 60 Months"],
+                "order_index": 8,
+                "is_required": False
+            },
+            {
+                "question_key": "decision_maker",
+                "question_text": "Primary Decision Maker",
+                "field_type": "select",
+                "options": ["Self", "Self & Spouse", "Joint Family", "Company / Business Partner"],
+                "order_index": 9,
+                "is_required": False
+            },
+            {
+                "question_key": "living_status",
+                "question_text": "Current Living Status",
+                "field_type": "select",
+                "options": ["Own House in Dhaka", "Rented Apartment in Dhaka", "Expatriate Living Abroad", "Living Outside Dhaka"],
+                "order_index": 10,
+                "is_required": False
+            },
+            {
+                "question_key": "previous_visit",
+                "question_text": "Have you visited our project sites before?",
+                "field_type": "select",
+                "options": ["Yes, visited already", "No, want to schedule a visit", "Planning this Friday", "Planning next week"],
+                "order_index": 11,
+                "is_required": False
+            },
+            {
+                "question_key": "preferred_contact_time",
+                "question_text": "Preferred Time for Call / Site Visit",
+                "field_type": "select",
+                "options": ["Morning (10 AM - 1 PM)", "Afternoon (2 PM - 5 PM)", "Evening (6 PM - 9 PM)", "Friday / Weekend Only"],
+                "order_index": 12,
+                "is_required": False
+            }
+        ]
+        created = False
+        for q in default_questions:
+            existing = cls.query.filter_by(question_key=q["question_key"]).first()
+            if not existing:
+                db.session.add(cls(**q))
+                created = True
+        if created:
+            db.session.commit()
+
 

@@ -364,7 +364,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   </div>
                   <div>
                     <div class="font-bold text-white text-sm flex items-center gap-2">
-                        ${contactName}
+                        <a href="/lead-details.html?id=${lead.id}" class="hover:text-indigo-400 hover:underline transition-colors" onclick="event.stopPropagation()">${contactName}</a>
                         <button class="star-btn hover:scale-110 transition-transform" data-id="${lead.id}" data-starred="${lead.is_starred}">
                             <svg class="w-4 h-4 ${lead.is_starred ? 'text-yellow-400 fill-current' : 'text-slate-500'}" viewBox="0 0 24 24" stroke="currentColor" fill="none"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
                         </button>
@@ -409,9 +409,9 @@ document.addEventListener('DOMContentLoaded', () => {
                   <button class="log-activity-btn btn-ghost px-3 py-2 rounded-lg text-xs font-medium border border-slate-700 hover:border-indigo-500 transition-colors" data-id="${lead.id}">
                     Log Activity
                   </button>
-                  <button class="view-profile-btn btn-gradient px-4 py-2 rounded-lg text-xs font-semibold shadow-lg" data-id="${lead.id}">
-                    View Profile
-                  </button>
+                  <a href="/lead-details.html?id=${lead.id}" class="view-profile-btn btn-gradient px-4 py-2 rounded-lg text-xs font-semibold shadow-lg inline-flex items-center gap-1.5" onclick="event.stopPropagation()">
+                    View Profile →
+                  </a>
                 </div>
             `;
 
@@ -438,6 +438,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Drawer Logic
     const openDrawer = async (id) => {
         currentLeadId = id;
+        window.currentLeadId = id;
         drawer.classList.remove('hidden');
         // Wait a frame for transition
         requestAnimationFrame(() => {
@@ -619,6 +620,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function populateDrawer(data) {
         currentLeadData = data;
+        window.currentLeadData = data;
+        window.currentLeadId = data.id;
+        window.populateDrawer = populateDrawer;
         const c = data.contact || {};
         document.getElementById('drawer-lead-name').textContent = c.full_name || `Lead #${data.id}`;
         
@@ -665,6 +669,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('drawer-email').textContent = c.email || '--';
         document.getElementById('drawer-project').textContent = data.project_name || '--';
         document.getElementById('drawer-source').textContent = c.source || '--';
+        const profEl = document.getElementById('drawer-profession');
+        if (profEl) profEl.textContent = c.profession || data.profession || '--';
+        const srvEl = document.getElementById('drawer-service-type');
+        if (srvEl) srvEl.textContent = c.service_type || data.service_type || '--';
 
         // Render Custom Questions
         const customQContainer = document.getElementById('drawer-custom-questions-container');
@@ -716,7 +724,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (item.type === 'CALL') {
                 dot.classList.add(item.connected ? 'bg-emerald-500' : 'bg-rose-500');
                 contentHtml = `
-                    <div class="text-xs font-semibold text-white mb-0.5">Call Logged <span class="text-slate-500 font-normal ml-2">${formatDate(item.date)}</span></div>
+                    <div class="flex items-center justify-between mb-0.5">
+                        <div class="text-xs font-semibold text-white">Call Logged <span class="text-slate-500 font-normal ml-2">${formatDate(item.date)}</span></div>
+                        ${item.activity_label ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">${item.activity_label}</span>` : ''}
+                    </div>
                     <div class="text-xs text-slate-400 mb-1">Status: <span class="${item.connected ? 'text-emerald-400' : 'text-rose-400'}">${item.connected ? 'Connected' : 'Not Connected'}</span></div>
                     ${item.notes ? `<div class="text-xs text-slate-300 bg-slate-800/50 p-2 rounded border border-slate-700/50 mt-1">${item.notes}</div>` : ''}
                     ${item.recording_url ? `<a href="${item.recording_url}" target="_blank" class="inline-flex items-center gap-1 text-[10px] text-indigo-400 hover:text-indigo-300 mt-2 bg-indigo-500/10 px-2 py-1 rounded-full"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg> Play Recording</a>` : ''}
@@ -879,6 +890,71 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const renderDynamicCustomFields = async (containerEl, initialValues = {}) => {
+        if (!containerEl) return;
+        try {
+            const token = localStorage.getItem('crm_token');
+            const res = await fetch('/api/settings/questionnaire', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) return;
+            const questions = await res.json();
+            const activeQuestions = questions.filter(q => q.is_active);
+            const sectionEl = containerEl.closest('[id$="-custom-fields-section"]');
+            if (!activeQuestions.length) {
+                if (sectionEl) sectionEl.classList.add('hidden');
+                containerEl.innerHTML = '';
+                return;
+            }
+            if (sectionEl) sectionEl.classList.remove('hidden');
+            containerEl.innerHTML = '';
+            activeQuestions.forEach(q => {
+                const val = initialValues[q.question_key] || '';
+                const fieldDiv = document.createElement('div');
+                fieldDiv.className = 'space-y-1';
+                let inputHtml = '';
+                if (q.question_type === 'select' && q.options) {
+                    const opts = q.options.split(',').map(o => o.trim()).filter(Boolean);
+                    inputHtml = `
+                        <select data-custom-key="${q.question_key}" class="custom-field-input w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                            <option value="">-- Select ${q.question_text} --</option>
+                            ${opts.map(o => `<option value="${o}" ${val === o ? 'selected' : ''}>${o}</option>`).join('')}
+                        </select>
+                    `;
+                } else if (q.question_type === 'number') {
+                    inputHtml = `
+                        <input type="number" data-custom-key="${q.question_key}" value="${val}" class="custom-field-input w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 placeholder-slate-600" placeholder="e.g. 5000000">
+                    `;
+                } else {
+                    inputHtml = `
+                        <input type="text" data-custom-key="${q.question_key}" value="${val}" class="custom-field-input w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 placeholder-slate-600" placeholder="Enter answer...">
+                    `;
+                }
+                fieldDiv.innerHTML = `
+                    <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider">${q.question_text} ${q.is_required ? '<span class="text-rose-400">*</span>' : ''}</label>
+                    ${inputHtml}
+                `;
+                containerEl.appendChild(fieldDiv);
+            });
+        } catch (err) {
+            console.error("Failed to render custom fields:", err);
+        }
+    };
+
+    const collectCustomFieldValues = (containerEl) => {
+        const answers = {};
+        if (!containerEl) return answers;
+        const inputs = containerEl.querySelectorAll('.custom-field-input');
+        inputs.forEach(input => {
+            const key = input.getAttribute('data-custom-key');
+            const val = input.value.trim();
+            if (key && val) {
+                answers[key] = val;
+            }
+        });
+        return answers;
+    };
+
     const openAddLeadModal = async () => {
         addLeadForm.reset();
         addLeadModal.classList.remove('hidden');
@@ -887,6 +963,7 @@ document.addEventListener('DOMContentLoaded', () => {
             addLeadModalContent.classList.remove('scale-95');
         });
         await loadProjectsIntoDropdown();
+        await renderDynamicCustomFields(document.getElementById('add-lead-custom-fields-container'));
     };
 
     const closeAddLeadModal = () => {
@@ -896,6 +973,39 @@ document.addEventListener('DOMContentLoaded', () => {
             addLeadModal.classList.add('hidden');
         }, 200);
     };
+
+    const addLeadPhoneInput = document.getElementById('add-lead-phone-input');
+    const duplicateWarningEl = document.getElementById('add-lead-duplicate-warning');
+    const duplicateMsgEl = document.getElementById('add-lead-duplicate-msg');
+
+    let duplicateCheckTimeout = null;
+    if (addLeadPhoneInput) {
+        addLeadPhoneInput.addEventListener('input', (e) => {
+            const phone = e.target.value.trim();
+            if (duplicateWarningEl) duplicateWarningEl.classList.add('hidden');
+            if (phone.length < 6) return;
+
+            clearTimeout(duplicateCheckTimeout);
+            duplicateCheckTimeout = setTimeout(async () => {
+                try {
+                    const token = localStorage.getItem('crm_token');
+                    const res = await fetch(`/api/leads/check-duplicate?phone=${encodeURIComponent(phone)}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!res.ok) return;
+                    const result = await res.json();
+                    if (result.is_duplicate && duplicateWarningEl && duplicateMsgEl) {
+                        duplicateMsgEl.textContent = result.message || `Lead already exists (${result.contact_name})`;
+                        duplicateWarningEl.classList.remove('hidden');
+                    } else if (duplicateWarningEl) {
+                        duplicateWarningEl.classList.add('hidden');
+                    }
+                } catch (err) {
+                    console.error("Duplicate check error:", err);
+                }
+            }, 350);
+        });
+    }
 
     if (addLeadBtn) addLeadBtn.addEventListener('click', openAddLeadModal);
     if (closeAddLeadBtn) closeAddLeadBtn.addEventListener('click', closeAddLeadModal);
@@ -907,6 +1017,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData(addLeadForm);
             const data = Object.fromEntries(formData.entries());
             if (!data.project_id) delete data.project_id;
+
+            const customAnswers = collectCustomFieldValues(document.getElementById('add-lead-custom-fields-container'));
+            if (Object.keys(customAnswers).length > 0) {
+                data.questionnaire_answers = customAnswers;
+            }
             
             const submitBtn = document.getElementById('save-add-lead-btn');
             const originalText = submitBtn.innerHTML;
@@ -962,18 +1077,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (editBtn) {
             editBtn.classList.remove('hidden');
-            editBtn.addEventListener('click', () => {
+            editBtn.addEventListener('click', async () => {
                 if (!currentLeadData) return;
                 const c = currentLeadData.contact || {};
                 document.getElementById('edit-lead-name').value = c.full_name || '';
                 document.getElementById('edit-lead-phone').value = c.phone_raw || '';
                 document.getElementById('edit-lead-email').value = c.email || '';
+                const editProf = document.getElementById('edit-lead-profession');
+                if (editProf) editProf.value = c.profession || currentLeadData.profession || '';
+                const editSrv = document.getElementById('edit-lead-service-type');
+                if (editSrv) editSrv.value = c.service_type || currentLeadData.service_type || '';
                 
                 editModal.classList.remove('hidden');
                 requestAnimationFrame(() => {
                     editModal.classList.remove('opacity-0');
                     document.getElementById('edit-lead-modal-content').classList.remove('scale-95');
                 });
+
+                const existingAnswers = currentLeadData.questionnaire_answers || {};
+                await renderDynamicCustomFields(document.getElementById('edit-lead-custom-fields-container'), existingAnswers);
             });
         }
 
@@ -999,8 +1121,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     const data = {
                         full_name: document.getElementById('edit-lead-name').value.trim(),
                         phone: document.getElementById('edit-lead-phone').value.trim(),
-                        email: document.getElementById('edit-lead-email').value.trim()
+                        email: document.getElementById('edit-lead-email').value.trim(),
+                        profession: (document.getElementById('edit-lead-profession')?.value || '').trim(),
+                        service_type: (document.getElementById('edit-lead-service-type')?.value || '').trim()
                     };
+
+                    const customAnswers = collectCustomFieldValues(document.getElementById('edit-lead-custom-fields-container'));
+                    if (Object.keys(customAnswers).length > 0) {
+                        data.questionnaire_answers = customAnswers;
+                    }
 
                     const res = await fetch(`/api/leads/${currentLeadId}`, {
                         method: 'PUT',
@@ -1191,6 +1320,206 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
+    }
+
+    // Import Leads Modal Logic
+    const importBtn = document.getElementById('import-leads-btn');
+    const importModal = document.getElementById('import-lead-modal');
+    const importModalContent = document.getElementById('import-lead-modal-content');
+    const closeImportBtn = document.getElementById('close-import-modal-btn');
+    const cancelImportBtn = document.getElementById('cancel-import-btn');
+    const importForm = document.getElementById('import-lead-form');
+    const importOwnerSelect = document.getElementById('import-owner-select');
+    const importResultBox = document.getElementById('import-result-box');
+    const importSpinner = document.getElementById('import-spinner');
+    const submitImportBtn = document.getElementById('submit-import-btn');
+
+    const openImportModal = async () => {
+        if (!importModal) return;
+        importForm.reset();
+        importResultBox.className = 'hidden p-4 rounded-xl border';
+        importResultBox.innerHTML = '';
+        importModal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            importModal.classList.remove('opacity-0');
+            importModalContent.classList.remove('scale-95');
+        });
+        
+        // Populate team members into importOwnerSelect
+        try {
+            const token = localStorage.getItem('crm_token');
+            const res = await fetch('/api/team/members', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const members = await res.json();
+                importOwnerSelect.innerHTML = '<option value="">Leave Unassigned</option>';
+                members.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.id;
+                    opt.textContent = m.full_name;
+                    importOwnerSelect.appendChild(opt);
+                });
+            }
+        } catch (e) {
+            console.error("Failed to load members for import modal", e);
+        }
+    };
+
+    const closeImportModal = () => {
+        if (!importModal) return;
+        importModal.classList.add('opacity-0');
+        importModalContent.classList.add('scale-95');
+        setTimeout(() => importModal.classList.add('hidden'), 200);
+    };
+
+    if (importBtn) importBtn.addEventListener('click', openImportModal);
+    if (closeImportBtn) closeImportBtn.addEventListener('click', closeImportModal);
+    if (cancelImportBtn) cancelImportBtn.addEventListener('click', closeImportModal);
+
+    if (importForm) {
+        importForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fileInput = document.getElementById('import-file-input');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                if (window.showToast) window.showToast("Please choose a CSV file.", "error");
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const dupStrategy = document.querySelector('input[name="import_dup_strategy"]:checked')?.value || 'merge';
+            const ownerId = importOwnerSelect.value || '';
+            const defaultSource = document.getElementById('import-source-input').value.trim() || 'CSV Import';
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('duplicate_strategy', dupStrategy);
+            if (ownerId) formData.append('assigned_to_id', ownerId);
+            formData.append('default_source', defaultSource);
+
+            submitImportBtn.disabled = true;
+            importSpinner.classList.remove('hidden');
+
+            try {
+                const token = localStorage.getItem('crm_token');
+                const res = await fetch('/api/leads/import', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                const result = await res.json();
+                if (!res.ok) {
+                    throw new Error(result.error || result.msg || "Failed to import leads");
+                }
+
+                importResultBox.className = 'p-4 rounded-xl border bg-emerald-500/10 border-emerald-500/30 text-emerald-300 text-xs space-y-1 block';
+                importResultBox.innerHTML = `
+                    <div class="font-bold text-sm text-emerald-400 flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        Import Complete!
+                    </div>
+                    <div>Total Processed: <strong>${result.total_processed}</strong></div>
+                    <div>New Leads Created: <strong>${result.created_count}</strong></div>
+                    <div>Merged with Existing: <strong>${result.merged_count}</strong></div>
+                    <div>Skipped (Duplicates): <strong>${result.skipped_count}</strong></div>
+                    ${result.errors && result.errors.length ? `<div class="text-rose-400 mt-2 font-medium">Errors (${result.errors.length}): ${result.errors.slice(0, 3).map(e => e.error).join('; ')}</div>` : ''}
+                `;
+
+                if (window.showToast) window.showToast(`Imported ${result.created_count} new leads, merged ${result.merged_count}.`, "success");
+                loadLeads();
+            } catch (err) {
+                console.error(err);
+                importResultBox.className = 'p-4 rounded-xl border bg-rose-500/10 border-rose-500/30 text-rose-300 text-xs block';
+                importResultBox.innerHTML = `<strong>Error:</strong> ${err.message}`;
+                if (window.showToast) window.showToast(err.message, "error");
+            } finally {
+                submitImportBtn.disabled = false;
+                importSpinner.classList.add('hidden');
+            }
+        });
+    }
+
+    // Lead Questionnaire Modal Logic
+    const editQuestionnaireBtn = document.getElementById('drawer-edit-questionnaire-btn');
+    const questionnaireModal = document.getElementById('edit-questionnaire-modal');
+    const questionnaireModalContent = document.getElementById('edit-questionnaire-modal-content');
+    const closeQuestionnaireBtn = document.getElementById('close-questionnaire-modal-btn');
+    const cancelQuestionnaireBtn = document.getElementById('cancel-questionnaire-btn');
+    const questionnaireForm = document.getElementById('edit-questionnaire-form');
+    const questionnaireFieldsContainer = document.getElementById('questionnaire-fields-container');
+    const saveQuestionnaireBtn = document.getElementById('save-questionnaire-btn');
+
+    const openQuestionnaireModal = (leadId) => {
+        const id = leadId || currentLeadId || (currentLeadData ? currentLeadData.id : null) || window.currentLeadId;
+        if (!id) {
+            console.warn("No lead selected for questionnaire page");
+            if (window.showToast) window.showToast("Please select a lead first", "warning");
+            return;
+        }
+        window.location.href = `/lead-details.html?id=${id}`;
+    };
+
+    const closeQuestionnaireModal = () => {
+        const modal = document.getElementById('edit-questionnaire-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+        }
+    };
+
+    window.openQuestionnaireModal = openQuestionnaireModal;
+    window.closeQuestionnaireModal = closeQuestionnaireModal;
+
+    if (editQuestionnaireBtn) editQuestionnaireBtn.addEventListener('click', () => openQuestionnaireModal());
+    if (closeQuestionnaireBtn) closeQuestionnaireBtn.addEventListener('click', closeQuestionnaireModal);
+    if (cancelQuestionnaireBtn) cancelQuestionnaireBtn.addEventListener('click', closeQuestionnaireModal);
+
+    if (questionnaireForm) {
+        questionnaireForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentLeadId) return;
+
+            const formData = new FormData(questionnaireForm);
+            const answers = {};
+            for (let [key, val] of formData.entries()) {
+                if (val !== '') answers[key] = val;
+            }
+
+            saveQuestionnaireBtn.disabled = true;
+            const originalText = saveQuestionnaireBtn.innerHTML;
+            saveQuestionnaireBtn.innerHTML = 'Saving...';
+
+            try {
+                const token = localStorage.getItem('crm_token');
+                const res = await fetch(`/api/leads/${currentLeadId}/questionnaire`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ answers })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(()=>({}));
+                    throw new Error(err.error || err.msg || "Failed to save questionnaire");
+                }
+
+                if (window.showToast) window.showToast("Questionnaire answers updated!", "success");
+                closeQuestionnaireModal();
+
+                // Refresh profile in drawer
+                const refreshRes = await fetch(`/api/leads/${currentLeadId}/profile`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (refreshRes.ok) {
+                    populateDrawer(await refreshRes.json());
+                }
+            } catch (err) {
+                console.error(err);
+                if (window.showToast) window.showToast(err.message, "error");
+            } finally {
+                saveQuestionnaireBtn.disabled = false;
+                saveQuestionnaireBtn.innerHTML = originalText;
+            }
+        });
     }
 
     // Initial Load

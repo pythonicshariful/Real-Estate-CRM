@@ -57,6 +57,14 @@
           <svg class="w-4 h-4 text-fuchsia-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
           Quick Notes
         </button>
+        <button id="nav-activity-labels" onclick="switchTab('activity-labels')" class="tab-btn admin-only inline-flex md:flex w-auto md:w-full text-left px-4 py-2.5 rounded-xl text-xs text-slate-400 hover:bg-white/5 transition-all items-center gap-2.5">
+          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+          Activity Labels
+        </button>
+        <button id="nav-questionnaire" onclick="switchTab('questionnaire')" class="tab-btn admin-only inline-flex md:flex w-auto md:w-full text-left px-4 py-2.5 rounded-xl text-xs text-slate-400 hover:bg-white/5 transition-all items-center gap-2.5">
+          <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+          Lead Custom Fields
+        </button>
         <button id="nav-b2" onclick="switchTab('b2')" class="tab-btn admin-only inline-flex md:flex w-auto md:w-full text-left px-4 py-2.5 rounded-xl text-xs text-slate-400 hover:bg-white/5 transition-all items-center gap-2.5">
           <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
           Cloud Storage (B2)
@@ -90,12 +98,24 @@
             
             <!-- Config Form Column -->
             <div class="lg:col-span-6 space-y-5">
-              <div class="flex items-center justify-between">
-                <div class="text-base font-bold text-white">Meta Webhook Configuration</div>
-                <button type="button" id="test-meta-btn" onclick="testMetaWebhook()" class="btn-ghost px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5">
-                  <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                  Test Connection
-                </button>
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <div class="text-base font-bold text-white flex items-center gap-2">
+                    <span>Meta Webhook Configuration</span>
+                    <span class="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full font-bold">Facebook Ads</span>
+                  </div>
+                  <div class="text-xs text-slate-400">ফেসবুক ও ইনস্টাগ্রাম লিড অটোমেশন সেটিংস</div>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <button type="button" onclick="openMetaGuideModal()" class="btn-gradient px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-indigo-500/20">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                    <span>How to Connect (বাংলা গাইড)</span>
+                  </button>
+                  <button type="button" id="test-meta-btn" onclick="testMetaWebhook()" class="btn-ghost px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 border border-slate-700 hover:border-slate-500">
+                    <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    Test Connection
+                  </button>
+                </div>
               </div>
 
               <!-- Status Card -->
@@ -140,8 +160,14 @@
                 </div>
 
                 <div>
-                  <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Page Access Token (Optional)</label>
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Page Access Token (Optional)</label>
+                    <button type="button" onclick="openMetaGuideModal()" class="text-[11px] text-purple-400 hover:text-purple-300 underline font-semibold flex items-center gap-1">
+                      🔑 Never-Expiring (স্থায়ী) টোকেন বের করার নিয়ম →
+                    </button>
+                  </div>
                   <textarea id="meta-page-access-token" rows="2" class="w-full input-glass px-3.5 py-2 rounded-xl text-xs font-mono" placeholder="EAAB..."></textarea>
+                  <p class="text-[10px] text-slate-500 mt-1">Graph API দিয়ে লিড ডাটা সরাসরি আনার জন্য ব্যবহৃত হয়। স্থায়ী টোকেন দিলে কখনোই মেয়াদ শেষ হবে না।</p>
                 </div>
 
                 <div class="pt-2 border-t border-slate-800 flex justify-end">
@@ -150,15 +176,82 @@
               </form>
             </div>
 
+            <!-- Simulate Meta Lead Panel -->
+            <div class="lg:col-span-6">
+              <div class="chart-card border border-emerald-500/20 bg-[#0d1a14] space-y-4">
+                <div class="flex items-center gap-2 border-b border-slate-800 pb-3">
+                  <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm">🧪</div>
+                  <div>
+                    <div class="text-sm font-bold text-white">Simulate Meta Lead (Test Without Real Ads)</div>
+                    <div class="text-[11px] text-slate-400">Real Facebook Ads ছাড়াই পুরো Meta Lead pipeline টেস্ট করুন। এটি সরাসরি Leads পেজে একটি টেস্ট লিড তৈরি করবে।</div>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Full Name</label>
+                    <input type="text" id="sim-full-name" class="w-full input-glass px-3 py-2 rounded-xl text-xs" placeholder="e.g. Dr. Karim Test" value="Test Lead (Meta Simulated)">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Phone Number</label>
+                    <input type="text" id="sim-phone" class="w-full input-glass px-3 py-2 rounded-xl text-xs" placeholder="01711xxxxxx" value="01799000111">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Email</label>
+                    <input type="text" id="sim-email" class="w-full input-glass px-3 py-2 rounded-xl text-xs" placeholder="test@test.com">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Profession</label>
+                    <input type="text" id="sim-profession" class="w-full input-glass px-3 py-2 rounded-xl text-xs" placeholder="e.g. Businessman" value="Doctor">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Service Type</label>
+                    <input type="text" id="sim-service-type" class="w-full input-glass px-3 py-2 rounded-xl text-xs" placeholder="e.g. Residential Plot" value="Residential Plot">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Budget Range</label>
+                    <input type="text" id="sim-budget" class="w-full input-glass px-3 py-2 rounded-xl text-xs" placeholder="e.g. 50-80 Lakhs" value="50-80 Lakhs">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Plot Size</label>
+                    <input type="text" id="sim-plot-size" class="w-full input-glass px-3 py-2 rounded-xl text-xs" placeholder="e.g. 5 Katha" value="5 Katha">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Campaign Name</label>
+                    <input type="text" id="sim-campaign" class="w-full input-glass px-3 py-2 rounded-xl text-xs" placeholder="e.g. Eid Campaign 2025" value="TEST_SIMULATION_CAMPAIGN">
+                  </div>
+                </div>
+
+                <div id="sim-result" class="hidden p-3 rounded-xl text-xs font-semibold"></div>
+
+                <div class="pt-2 border-t border-slate-800 flex justify-between items-center">
+                  <div class="text-[10px] text-slate-500">⚡ এটি সম্পূর্ণ Meta Webhook pipeline চালায় — Auto-assign, questionnaire answers সহ।</div>
+                  <button type="button" onclick="simulateMetaLead()" id="sim-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    Simulate Lead Now
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <!-- Meta Documentation Panel (Contents of META_WEBHOOK_SETUP.md) -->
             <div class="lg:col-span-6 space-y-4">
               <div class="chart-card border border-indigo-500/30 bg-[#0f1122]">
-                <div class="flex items-center gap-2 border-b border-slate-800 pb-3 mb-4">
-                  <div class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-xs">📖</div>
-                  <div>
-                    <div class="text-sm font-bold text-white">Meta Lead Ads Webhook Setup Guide</div>
-                    <div class="text-[11px] text-slate-400">Step-by-step documentation for integrating Facebook Lead Ads</div>
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-sm">📖</div>
+                    <div>
+                      <div class="text-sm font-bold text-white flex items-center gap-2">
+                        <span>ফেসবুক কানেক্ট ও টেস্ট গাইড</span>
+                        <span class="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full font-bold">বাংলা নির্দেশিকা</span>
+                      </div>
+                      <div class="text-[11px] text-slate-400">সহজ ধাপে ফেসবুক লিড অ্যাড কানেক্ট এবং টেস্ট করার নিয়ম</div>
+                    </div>
                   </div>
+                  <button type="button" onclick="openMetaGuideModal()" class="btn-ghost px-3 py-1.5 rounded-lg text-xs font-semibold text-indigo-300 hover:text-white border border-indigo-500/30 flex items-center gap-1.5" title="বড় স্ক্রিনে দেখুন">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                    Full Screen
+                  </button>
                 </div>
 
                 <div class="h-[650px] w-full rounded-xl overflow-hidden border border-slate-800">
@@ -408,6 +501,109 @@
           </div>
         </div>
 
+        <!-- 6. ACTIVITY LABELS TAB -->
+        <div id="tab-activity-labels" class="tab-content hidden">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Label List Column -->
+            <div class="lg:col-span-7 space-y-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-base font-bold text-white">Activity Labels & Categories</div>
+                  <div class="text-xs text-slate-400">Classify call logs, customer interactions, and follow-up activities.</div>
+                </div>
+              </div>
+
+              <div class="chart-card p-0 overflow-hidden">
+                <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/40">
+                  <div class="text-xs font-bold text-white uppercase tracking-wider">Active Labels</div>
+                  <div class="text-xs text-slate-400" id="label-count-badge">0 Labels</div>
+                </div>
+                <div id="activity-labels-list" class="divide-y divide-slate-800/60">
+                  <div class="p-4 text-xs text-slate-500">Loading activity labels...</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Create / Edit Label Column -->
+            <div class="lg:col-span-5 space-y-4">
+              <div class="chart-card space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <div class="text-sm font-bold text-white" id="label-form-title">Create Activity Label</div>
+                  <button type="button" id="label-reset-btn" onclick="resetLabelForm()" class="hidden text-xs text-indigo-400 hover:text-indigo-300">New Label</button>
+                </div>
+                <form id="activity-label-form" onsubmit="saveActivityLabel(event)" class="space-y-4">
+                  <input type="hidden" id="label-edit-id" value="">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Label Name *</label>
+                    <input type="text" id="label-name" required class="w-full input-glass px-3.5 py-2.5 rounded-xl text-xs text-slate-200" placeholder="e.g. Price Negotiation / Site Visit">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Badge Color *</label>
+                    <div class="flex items-center gap-3">
+                      <input type="color" id="label-color" value="#6366f1" class="w-10 h-10 rounded-xl bg-transparent border-0 cursor-pointer">
+                      <input type="text" id="label-color-hex" value="#6366f1" class="w-28 input-glass px-3 py-2 rounded-xl text-xs font-mono uppercase text-slate-200" placeholder="#6366F1">
+                      <div id="label-preview-badge" class="px-3 py-1.5 rounded-lg text-xs font-semibold border" style="background: rgba(99, 102, 241, 0.15); color: #6366f1; border-color: rgba(99, 102, 241, 0.3);">
+                        Preview
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Description (Optional)</label>
+                    <textarea id="label-description" rows="2" class="w-full input-glass px-3.5 py-2 rounded-xl text-xs text-slate-200" placeholder="Short description for sales agents"></textarea>
+                  </div>
+                  <div class="pt-2 border-t border-slate-800 flex justify-end">
+                    <button type="submit" id="label-save-btn" class="btn-gradient px-5 py-2 rounded-xl text-xs font-bold">Save Label</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 7. LEAD QUESTIONNAIRE TAB -->
+        <div id="tab-questionnaire" class="tab-content hidden">
+          <div class="space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div class="text-base font-bold text-white">Lead Custom Fields Configuration</div>
+                <div class="text-xs text-slate-400">Add, edit, or remove custom lead fields. Fields added here dynamically appear in the Add Lead form, Edit Lead form, Meta Lead Ads, and the Lead Drawer.</div>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="resetQuestionnaireDefaults()" class="btn-ghost border border-amber-500/40 text-amber-300 hover:text-white px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                  Reset Standard 12 Fields
+                </button>
+                <button type="button" onclick="openAddQuestionModal()" class="btn-gradient px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                  Add Custom Field
+                </button>
+              </div>
+            </div>
+
+            <!-- Questions Table Card -->
+            <div class="chart-card p-0 overflow-hidden">
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="border-b border-slate-800 bg-slate-900/40 text-[11px] uppercase tracking-wider text-slate-400">
+                      <th class="py-3 px-4 w-12 text-center">#</th>
+                      <th class="py-3 px-4">Question Text</th>
+                      <th class="py-3 px-4">Field Key</th>
+                      <th class="py-3 px-4">Type</th>
+                      <th class="py-3 px-4">Options</th>
+                      <th class="py-3 px-4 text-center">Required</th>
+                      <th class="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="questionnaire-tbody" class="divide-y divide-slate-800/60 text-xs">
+                    <tr><td colspan="7" class="py-4 px-4 text-center text-slate-500">Loading questions...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </main>
@@ -450,10 +646,14 @@
     }
 
     async function loadMetaSettings() {
+      const urlInput = document.getElementById('meta-webhook-url');
+      if (urlInput && window.location.origin) {
+        urlInput.value = window.location.origin + '/api/webhooks/meta';
+      }
       try {
         const data = await fetchAPI('/api/settings/meta-webhook');
         if (!data) return;
-        if (data.webhook_url) document.getElementById('meta-webhook-url').value = data.webhook_url;
+        if (data.webhook_url && urlInput) urlInput.value = data.webhook_url;
         document.getElementById('meta-verify-token').value = data.meta_verify_token || '';
         document.getElementById('meta-app-secret').value = data.meta_app_secret || '';
         document.getElementById('meta-app-id').value = data.meta_app_id || '';
@@ -506,6 +706,60 @@
         }
       } catch (e) {
         if (window.showToast) window.showToast(e.message, 'error');
+      }
+    }
+
+    async function simulateMetaLead() {
+      const btn = document.getElementById('sim-btn');
+      const resultBox = document.getElementById('sim-result');
+      const originalText = btn.innerHTML;
+
+      const payload = {
+        full_name: document.getElementById('sim-full-name').value || 'Test Lead (Meta Simulated)',
+        phone: document.getElementById('sim-phone').value || '01799000111',
+        email: document.getElementById('sim-email').value || '',
+        profession: document.getElementById('sim-profession').value || 'Doctor',
+        service_type: document.getElementById('sim-service-type').value || 'Residential Plot',
+        budget: document.getElementById('sim-budget').value || '50-80 Lakhs',
+        plot_size: document.getElementById('sim-plot-size').value || '5 Katha',
+        campaign_name: document.getElementById('sim-campaign').value || 'TEST_SIMULATION_CAMPAIGN'
+      };
+
+      try {
+        btn.disabled = true;
+        btn.innerHTML = `<span class="animate-spin inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full mr-1.5"></span> Simulating...`;
+        resultBox.classList.add('hidden');
+
+        const res = await fetchAPI('/api/settings/simulate-meta-lead', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+
+        if (res && res.success) {
+          resultBox.className = 'p-3 rounded-xl text-xs font-medium bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 block space-y-1';
+          resultBox.innerHTML = `
+            <div class="font-bold flex items-center gap-1.5 text-emerald-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              ${res.message}
+            </div>
+            <div class="text-[11px] text-slate-300 mt-1">
+              Lead: <strong>${payload.full_name}</strong> | Phone: <strong>${payload.phone}</strong> | Profession: <strong>${payload.profession}</strong>
+            </div>
+            <div class="text-[10px] text-emerald-400/80 mt-1">
+              👉 Check the <a href="/leads.html" class="underline font-bold hover:text-white" target="_blank">Leads page</a> to see this lead auto-assigned with questionnaire answers!
+            </div>
+          `;
+          if (window.showToast) window.showToast('Test lead simulated successfully!', 'success');
+        } else {
+          throw new Error(res.message || 'Simulation failed');
+        }
+      } catch (err) {
+        resultBox.className = 'p-3 rounded-xl text-xs font-medium bg-rose-500/10 border border-rose-500/30 text-rose-300 block';
+        resultBox.innerHTML = `⚠️ Simulation Error: ${err.message}`;
+        if (window.showToast) window.showToast(err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
       }
     }
 
@@ -817,6 +1071,283 @@
       }
     }
 
+    // === Activity Labels Management ===
+    let allActivityLabels = [];
+
+    const updateLabelColorPreview = () => {
+      const color = document.getElementById('label-color').value;
+      document.getElementById('label-color-hex').value = color.toUpperCase();
+      const badge = document.getElementById('label-preview-badge');
+      badge.style.color = color;
+      badge.style.background = `${color}26`;
+      badge.style.borderColor = `${color}55`;
+    };
+
+    document.getElementById('label-color')?.addEventListener('input', updateLabelColorPreview);
+    document.getElementById('label-color-hex')?.addEventListener('input', (e) => {
+      let val = e.target.value;
+      if (!val.startsWith('#')) val = '#' + val;
+      if (/^#[0-9A-F]{6}$/i.test(val)) {
+        document.getElementById('label-color').value = val;
+        updateLabelColorPreview();
+      }
+    });
+
+    function resetLabelForm() {
+      document.getElementById('label-edit-id').value = '';
+      document.getElementById('label-name').value = '';
+      document.getElementById('label-color').value = '#6366f1';
+      document.getElementById('label-description').value = '';
+      document.getElementById('label-form-title').textContent = 'Create Activity Label';
+      document.getElementById('label-reset-btn').classList.add('hidden');
+      updateLabelColorPreview();
+    }
+
+    async function loadActivityLabels() {
+      try {
+        const listContainer = document.getElementById('activity-labels-list');
+        if (!listContainer) return;
+        const labels = await fetchAPI('/api/settings/activity-labels');
+        if (!labels) return;
+        allActivityLabels = labels;
+        document.getElementById('label-count-badge').textContent = `${labels.length} Label${labels.length === 1 ? '' : 's'}`;
+
+        if (labels.length === 0) {
+          listContainer.innerHTML = '<div class="p-6 text-center text-xs text-slate-500">No activity labels created yet. Add one using the form.</div>';
+          return;
+        }
+
+        listContainer.innerHTML = labels.map(l => `
+          <div class="p-4 flex items-center justify-between hover:bg-slate-900/40 transition-colors">
+            <div class="flex items-center gap-3">
+              <span class="w-3.5 h-3.5 rounded-full flex-shrink-0" style="background: ${l.color}"></span>
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold border" style="background: ${l.color}22; color: ${l.color}; border-color: ${l.color}44;">
+                    ${l.name}
+                  </span>
+                </div>
+                ${l.description ? `<div class="text-[11px] text-slate-400 mt-1">${l.description}</div>` : ''}
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick='editActivityLabel(${JSON.stringify(l).replace(/'/g, "&#39;")})' class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-slate-800 transition-colors" title="Edit">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+              </button>
+              <button onclick="deleteActivityLabel(${l.id})" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-colors" title="Delete">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        if (window.showToast) window.showToast(e.message, 'error');
+      }
+    }
+
+    function editActivityLabel(lbl) {
+      document.getElementById('label-edit-id').value = lbl.id;
+      document.getElementById('label-name').value = lbl.name || '';
+      document.getElementById('label-color').value = lbl.color || '#6366f1';
+      document.getElementById('label-description').value = lbl.description || '';
+      document.getElementById('label-form-title').textContent = 'Edit Activity Label';
+      document.getElementById('label-reset-btn').classList.remove('hidden');
+      updateLabelColorPreview();
+    }
+
+    async function saveActivityLabel(e) {
+      e.preventDefault();
+      const id = document.getElementById('label-edit-id').value;
+      const payload = {
+        name: document.getElementById('label-name').value.trim(),
+        color: document.getElementById('label-color').value,
+        description: document.getElementById('label-description').value.trim()
+      };
+
+      try {
+        if (id) {
+          await fetchAPI(`/api/settings/activity-labels/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+          if (window.showToast) window.showToast("Activity label updated!", "success");
+        } else {
+          await fetchAPI('/api/settings/activity-labels', { method: 'POST', body: JSON.stringify(payload) });
+          if (window.showToast) window.showToast("Activity label created!", "success");
+        }
+        resetLabelForm();
+        loadActivityLabels();
+      } catch (err) {
+        if (window.showToast) window.showToast(err.message, "error");
+      }
+    }
+
+    async function deleteActivityLabel(id) {
+      if (!confirm("Are you sure you want to delete this activity label?")) return;
+      try {
+        await fetchAPI(`/api/settings/activity-labels/${id}`, { method: 'DELETE' });
+        if (window.showToast) window.showToast("Label deleted", "success");
+        loadActivityLabels();
+      } catch (err) {
+        if (window.showToast) window.showToast(err.message, "error");
+      }
+    }
+
+    // === Lead Questionnaire Management ===
+    let allQuestionnaire = [];
+
+    async function loadQuestionnaireSettings() {
+      try {
+        const tbody = document.getElementById('questionnaire-tbody');
+        if (!tbody) return;
+        const questions = await fetchAPI('/api/settings/questionnaire');
+        if (!questions) return;
+        allQuestionnaire = questions;
+
+        if (questions.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-xs text-slate-500">No questions defined yet. Click "Reset Standard 12 Questions" to load the real estate defaults.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = questions.map((q, idx) => `
+          <tr class="hover:bg-slate-900/40 transition-colors">
+            <td class="py-3 px-4 text-center font-mono text-slate-400 font-bold">${q.order_index !== undefined ? q.order_index : idx + 1}</td>
+            <td class="py-3 px-4 font-semibold text-slate-200">${q.question_text}</td>
+            <td class="py-3 px-4 font-mono text-indigo-400">${q.question_key}</td>
+            <td class="py-3 px-4">
+              <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700">
+                ${q.question_type}
+              </span>
+            </td>
+            <td class="py-3 px-4 text-slate-400 max-w-xs truncate" title="${(q.options || []).join(', ')}">
+              ${(q.options && q.options.length) ? q.options.join(', ') : '<span class="text-slate-600">--</span>'}
+            </td>
+            <td class="py-3 px-4 text-center">
+              ${q.is_required ? '<span class="text-emerald-400 font-bold">Yes</span>' : '<span class="text-slate-500">No</span>'}
+            </td>
+            <td class="py-3 px-4 text-right whitespace-nowrap">
+              <button onclick='editQuestion(${JSON.stringify(q).replace(/'/g, "&#39;")})' class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-slate-800 transition-colors mr-1" title="Edit">
+                <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+              </button>
+              <button onclick="deleteQuestionnaireQuestion(${q.id})" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-colors" title="Delete">
+                <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        if (window.showToast) window.showToast(e.message, 'error');
+      }
+    }
+
+    function toggleQuestionOptions() {
+      const type = document.getElementById('q-type').value;
+      const optsCont = document.getElementById('q-options-container');
+      if (type === 'SELECT') {
+        optsCont.classList.remove('hidden');
+      } else {
+        optsCont.classList.add('hidden');
+      }
+    }
+
+    function openAddQuestionModal() {
+      document.getElementById('question-modal-title').textContent = 'Add Questionnaire Question';
+      document.getElementById('q-edit-id').value = '';
+      document.getElementById('q-text').value = '';
+      document.getElementById('q-key').value = '';
+      document.getElementById('q-type').value = 'TEXT';
+      document.getElementById('q-options').value = '';
+      document.getElementById('q-order').value = allQuestionnaire.length + 1;
+      document.getElementById('q-required').checked = false;
+      toggleQuestionOptions();
+
+      const modal = document.getElementById('question-modal');
+      const content = document.getElementById('question-modal-content');
+      modal.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        modal.classList.remove('opacity-0');
+        content.classList.remove('scale-95');
+      });
+    }
+
+    function editQuestion(q) {
+      document.getElementById('question-modal-title').textContent = 'Edit Questionnaire Question';
+      document.getElementById('q-edit-id').value = q.id;
+      document.getElementById('q-text').value = q.question_text || '';
+      document.getElementById('q-key').value = q.question_key || '';
+      document.getElementById('q-type').value = q.question_type || 'TEXT';
+      document.getElementById('q-options').value = (q.options || []).join(', ');
+      document.getElementById('q-order').value = q.order_index || 1;
+      document.getElementById('q-required').checked = !!q.is_required;
+      toggleQuestionOptions();
+
+      const modal = document.getElementById('question-modal');
+      const content = document.getElementById('question-modal-content');
+      modal.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        modal.classList.remove('opacity-0');
+        content.classList.remove('scale-95');
+      });
+    }
+
+    function closeQuestionModal() {
+      const modal = document.getElementById('question-modal');
+      const content = document.getElementById('question-modal-content');
+      modal.classList.add('opacity-0');
+      content.classList.add('scale-95');
+      setTimeout(() => modal.classList.add('hidden'), 200);
+    }
+
+    async function saveQuestion(e) {
+      e.preventDefault();
+      const id = document.getElementById('q-edit-id').value;
+      const type = document.getElementById('q-type').value;
+      const rawOptions = document.getElementById('q-options').value.trim();
+      const options = type === 'SELECT' ? rawOptions.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+      const payload = {
+        question_text: document.getElementById('q-text').value.trim(),
+        question_key: document.getElementById('q-key').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_'),
+        question_type: type,
+        options: options,
+        order_index: parseInt(document.getElementById('q-order').value) || 1,
+        is_required: document.getElementById('q-required').checked
+      };
+
+      try {
+        if (id) {
+          await fetchAPI(`/api/settings/questionnaire/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+          if (window.showToast) window.showToast("Question updated!", "success");
+        } else {
+          await fetchAPI('/api/settings/questionnaire', { method: 'POST', body: JSON.stringify(payload) });
+          if (window.showToast) window.showToast("Question created!", "success");
+        }
+        closeQuestionModal();
+        loadQuestionnaireSettings();
+      } catch (err) {
+        if (window.showToast) window.showToast(err.message, "error");
+      }
+    }
+
+    async function deleteQuestionnaireQuestion(id) {
+      if (!confirm("Are you sure you want to delete this question?")) return;
+      try {
+        await fetchAPI(`/api/settings/questionnaire/${id}`, { method: 'DELETE' });
+        if (window.showToast) window.showToast("Question deleted", "success");
+        loadQuestionnaireSettings();
+      } catch (err) {
+        if (window.showToast) window.showToast(err.message, "error");
+      }
+    }
+
+    async function resetQuestionnaireDefaults() {
+      if (!confirm("Reset lead questionnaire back to the standard 12 Real Estate Meta questions?")) return;
+      try {
+        const res = await fetchAPI('/api/settings/questionnaire/reset', { method: 'POST' });
+        if (window.showToast) window.showToast(res.message || "Questionnaire reset to default 12 questions!", "success");
+        loadQuestionnaireSettings();
+      } catch (err) {
+        if (window.showToast) window.showToast(err.message, "error");
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       const role = localStorage.getItem('crm_role');
       
@@ -832,6 +1363,8 @@
         loadEmailSettings();
         loadB2Settings();
         loadQuickNotes();
+        loadActivityLabels();
+        loadQuestionnaireSettings();
         
         // Auto-upload company logo on file selection
         const logoInput = document.getElementById('logo-input');
@@ -851,7 +1384,107 @@
       }
       
       loadMyProfile();
+
+      if (window.location.hash === '#meta' || window.location.hash === '#meta-guide' || localStorage.getItem('settings_active_tab') === 'meta') {
+        localStorage.removeItem('settings_active_tab');
+        switchTab('meta');
+        if (window.location.hash === '#meta-guide') {
+          setTimeout(() => openMetaGuideModal(), 200);
+        }
+      }
     });
+
+    function openMetaGuideModal() {
+      const modal = document.getElementById('meta-guide-modal');
+      if (!modal) return;
+      modal.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        modal.classList.remove('opacity-0');
+      });
+    }
+
+    function closeMetaGuideModal() {
+      const modal = document.getElementById('meta-guide-modal');
+      if (!modal) return;
+      modal.classList.add('opacity-0');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 200);
+    }
+    window.openMetaGuideModal = openMetaGuideModal;
+    window.closeMetaGuideModal = closeMetaGuideModal;
   </script>
+
+  <!-- Add/Edit Questionnaire Question Modal -->
+  <div id="question-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl transform scale-95 transition-transform duration-200" id="question-modal-content">
+      <div class="border-b border-slate-800 p-5 flex justify-between items-center bg-slate-900/50">
+        <h3 class="font-bold text-white text-lg" id="question-modal-title">Add Questionnaire Question</h3>
+        <button onclick="closeQuestionModal()" class="text-slate-400 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="question-form" onsubmit="saveQuestion(event)" class="p-6 space-y-4">
+        <input type="hidden" id="q-edit-id" value="">
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Question Text *</label>
+          <input type="text" id="q-text" required class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500" placeholder="e.g. Which location are you interested in?">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Field Key *</label>
+            <input type="text" id="q-key" required class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm font-mono text-slate-200 focus:outline-none focus:border-indigo-500" placeholder="e.g. location_preference">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Question Type *</label>
+            <select id="q-type" onchange="toggleQuestionOptions()" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="TEXT">Text</option>
+              <option value="SELECT">Select Dropdown</option>
+              <option value="NUMBER">Number</option>
+              <option value="BOOLEAN">Yes / No</option>
+            </select>
+          </div>
+        </div>
+        <div id="q-options-container" class="hidden">
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Dropdown Options (Comma-separated)</label>
+          <input type="text" id="q-options" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500" placeholder="e.g. Gulshan, Banani, Uttara, Mirpur">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Display Order</label>
+            <input type="number" id="q-order" value="1" min="1" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+          <div class="flex items-center pt-6">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="q-required" class="rounded bg-slate-800 border-slate-700 text-indigo-500 focus:ring-indigo-500 w-4 h-4">
+              <span class="text-xs text-slate-300 font-semibold uppercase">Required Question</span>
+            </label>
+          </div>
+        </div>
+        <div class="pt-4 flex justify-end gap-3 border-t border-slate-800">
+          <button type="button" onclick="closeQuestionModal()" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-800 transition-colors">Cancel</button>
+          <button type="submit" id="q-save-btn" class="btn-gradient px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2">
+            Save Question
+          </button>
+        </div>
+      </form>
+    </div>
+  <!-- Meta Guide Fullscreen Modal -->
+  <div id="meta-guide-modal" class="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 p-4">
+    <div class="bg-[#0f1122] border border-slate-800 rounded-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">📖</span>
+          <h3 class="font-bold text-white text-base">Facebook (Meta) Lead Ads Connect & Testing Guide — বাংলা গাইড</h3>
+        </div>
+        <button onclick="closeMetaGuideModal()" class="text-slate-400 hover:text-white p-2 rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="flex-1 w-full bg-[#0a0b14]">
+        <iframe src="/meta_guide.html" class="w-full h-full border-0"></iframe>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

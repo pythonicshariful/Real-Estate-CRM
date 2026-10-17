@@ -5,9 +5,11 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from datetime import datetime, date, timezone
 from sqlalchemy import func
 from app.utils.rbac import is_admin
+from app.extensions import limiter
 
 
 @dashboard_bp.route('/badges', methods=['GET'])
+@limiter.exempt
 @jwt_required()
 def get_badges():
     user_id = int(get_jwt_identity())

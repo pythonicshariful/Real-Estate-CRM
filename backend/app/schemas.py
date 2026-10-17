@@ -13,3 +13,7 @@ class LeadCreateSchema(Schema):
     notes = fields.Str(load_default=None)
     budget_min = fields.Decimal(load_default=None)
     budget_max = fields.Decimal(load_default=None)
+    profession = fields.Str(load_default=None)
+    service_type = fields.Str(load_default=None)
+    activity_label = fields.Str(load_default=None)
+    questionnaire_answers = fields.Dict(load_default=None)
