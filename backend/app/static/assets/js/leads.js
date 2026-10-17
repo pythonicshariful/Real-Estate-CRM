@@ -995,7 +995,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!res.ok) return;
                     const result = await res.json();
                     if (result.is_duplicate && duplicateWarningEl && duplicateMsgEl) {
-                        duplicateMsgEl.textContent = result.message || `Lead already exists (${result.contact_name})`;
+                        let msg = result.message || `Lead already exists (${result.contact_name})`;
+                        if (result.opportunity_id) {
+                            duplicateMsgEl.innerHTML = `${msg} — <a href="/lead-details.html?id=${result.opportunity_id}" target="_blank" class="underline font-bold text-amber-200 hover:text-white inline-flex items-center gap-1">View Lead <svg class="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg></a>`;
+                        } else {
+                            duplicateMsgEl.textContent = msg;
+                        }
                         duplicateWarningEl.classList.remove('hidden');
                     } else if (duplicateWarningEl) {
                         duplicateWarningEl.classList.add('hidden');
@@ -1042,9 +1047,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (res.status === 401) {
                     throw new Error("Session expired. Please log in again.");
                 }
+
+                if (res.status === 409) {
+                    const errData = await res.json();
+                    const oppId = errData.details?.opportunity_id;
+                    const confirmMsg = `${errData.message || "A lead already exists for this contact."}\n\nDo you want to FORCE create a duplicate lead anyway? (Click Cancel to view existing lead instead)`;
+                    if (confirm(confirmMsg)) {
+                        data.force_create = true;
+                        const forceRes = await fetch('/api/leads/', {
+                            method: 'POST',
+                            headers: { 
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(data)
+                        });
+                        if (!forceRes.ok) {
+                            const forceErr = await forceRes.json();
+                            throw new Error(forceErr.message || forceErr.error || "Failed to force create lead");
+                        }
+                        if (window.showToast) window.showToast("Duplicate lead created per your confirmation.", "warning");
+                        closeAddLeadModal();
+                        loadLeads();
+                        return;
+                    } else {
+                        if (oppId) {
+                            window.open(`/lead-details.html?id=${oppId}`, '_blank');
+                        }
+                        return;
+                    }
+                }
+
                 if (!res.ok) {
                     const errData = await res.json();
-                    throw new Error(errData.error || errData.msg || "Failed to create lead");
+                    throw new Error(errData.error || errData.msg || errData.message || "Failed to create lead");
                 }
                 
                 if (window.showToast) window.showToast("Lead created successfully!", "success");

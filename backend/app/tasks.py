@@ -372,8 +372,8 @@ def process_meta_webhook(payload_dict: dict, app=None):
     app = _get_app(app)
     with app.app_context():
         from app.extensions import db
-        from app.models import Contact, Inquiry, Opportunity, PipelineStage, SLAEvent, SLAStatus
-        from app.utils.phone import normalize_phone
+        from app.models import Contact, Inquiry, Opportunity, PipelineStage, SLAEvent, SLAStatus, Note, AuditLog
+        from app.utils.phone import normalize_phone, find_existing_contact
         import requests as http_req
 
         entries = payload_dict.get('entry', [])
@@ -419,11 +419,7 @@ def process_meta_webhook(payload_dict: dict, app=None):
                 phone_norm = normalize_phone(phone_raw) if phone_raw else None
 
                 # Deduplicate contact
-                contact = None
-                if phone_norm:
-                    contact = Contact.query.filter_by(phone_normalized=phone_norm).first()
-                if not contact and email:
-                    contact = Contact.query.filter_by(email=email).first()
+                contact = find_existing_contact(phone=phone_raw, email=email)
 
                 profession = field_data.get('profession', field_data.get('job_title', field_data.get('occupation')))
                 service_type = field_data.get('service_type', field_data.get('service', field_data.get('property_type')))
@@ -454,7 +450,11 @@ def process_meta_webhook(payload_dict: dict, app=None):
                         contact.profession = profession
                     if service_type and not getattr(contact, 'service_type', None):
                         contact.service_type = service_type
-                    logger.info(f'Duplicate contact found: {contact.id} — creating new inquiry')
+                    if email and not contact.email:
+                        contact.email = email
+                    if phone_norm and not contact.phone_normalized:
+                        contact.phone_normalized = phone_norm
+                    logger.info(f'Existing contact found: {contact.id} — deduplicating')
 
                 # Create immutable Inquiry record
                 inquiry = Inquiry(
@@ -473,6 +473,47 @@ def process_meta_webhook(payload_dict: dict, app=None):
                 )
                 db.session.add(inquiry)
                 db.session.flush()
+
+                # Check if contact already has an active Opportunity
+                terminal_stages = ['SOLD', 'CLOSED_LOST', 'INVALID', 'BOUGHT_ELSEWHERE', 'UNREACHABLE']
+                active_opp = Opportunity.query.filter_by(
+                    contact_id=contact.id,
+                    is_deleted=False
+                ).filter(~Opportunity.pipeline_stage.in_(terminal_stages)).order_by(Opportunity.created_at.desc()).first()
+
+                if active_opp:
+                    # Merge inquiry into existing active opportunity instead of creating a duplicate card
+                    if questionnaire_answers:
+                        curr_answers = dict(active_opp.questionnaire_answers or {})
+                        curr_answers.update(questionnaire_answers)
+                        active_opp.questionnaire_answers = curr_answers
+
+                    qa_summary = "\n".join([f"• {k}: {v}" for k, v in questionnaire_answers.items()]) if questionnaire_answers else "None"
+                    note = Note(
+                        opportunity_id=active_opp.id,
+                        contact_id=contact.id,
+                        created_by_id=active_opp.assigned_to_id or 1,
+                        content=f"📌 [Meta Lead Ads Re-submission]\nExisting lead submitted another form.\n• Campaign: {campaign_id or 'N/A'}\n• Form: {form_id or 'N/A'}\n• Answers:\n{qa_summary}"
+                    )
+                    db.session.add(note)
+
+                    audit = AuditLog(
+                        user_id=active_opp.assigned_to_id or 1,
+                        table_name='opportunities',
+                        record_id=active_opp.id,
+                        action='UPDATE',
+                        field_name='inquiry',
+                        activity_label='Meta Re-submission',
+                        new_value=f"Merged inquiry {inquiry.id} from Meta Lead Ads into existing lead #{active_opp.id}"
+                    )
+                    db.session.add(audit)
+                    db.session.commit()
+
+                    logger.info(
+                        f'Duplicate Meta lead merged: contact={contact.id}, '
+                        f'inquiry={inquiry.id}, merged_into_opp={active_opp.id}'
+                    )
+                    continue
 
                 # Auto-assign lead owner based on date/time schedule or equal round-robin
                 assigned_owner = assign_lead_owner_auto(app=app)

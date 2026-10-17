@@ -212,8 +212,8 @@ def simulate_meta_lead():
     data = request.get_json() or {}
 
     full_name = data.get('full_name', 'Test Lead (Simulated)')
-    phone = data.get('phone', '01700000000')
-    email = data.get('email', f'testlead_{uuid.uuid4().hex[:6]}@simulate.com')
+    phone = data.get('phone', '01712345678')
+    email = data.get('email', 'testlead@simulate.com')
     profession = data.get('profession', 'Businessman')
     service_type = data.get('service_type', 'Residential Plot')
     budget = data.get('budget', '50-80 Lakhs')

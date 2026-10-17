@@ -17,3 +17,4 @@ class LeadCreateSchema(Schema):
     service_type = fields.Str(load_default=None)
     activity_label = fields.Str(load_default=None)
     questionnaire_answers = fields.Dict(load_default=None)
+    force_create = fields.Bool(load_default=False)

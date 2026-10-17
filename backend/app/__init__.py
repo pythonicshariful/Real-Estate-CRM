@@ -231,11 +231,27 @@ def _auto_migrate_db(app):
 
             # Seed defaults
             try:
-                from app.models import ActivityLabel, LeadQuestionnaireQuestion
+                from app.models import ActivityLabel, LeadQuestionnaireQuestion, Contact
+                from app.utils.phone import normalize_phone
                 ActivityLabel.seed_defaults()
                 LeadQuestionnaireQuestion.seed_defaults()
-            except Exception:
-                pass
+
+                # Auto-heal any contacts with unnormalized or raw phone numbers
+                unnorm_contacts = Contact.query.filter(
+                    (Contact.phone_normalized == None) | 
+                    (~Contact.phone_normalized.like('+%'))
+                ).limit(1000).all()
+                updated_count = 0
+                for c in unnorm_contacts:
+                    norm = normalize_phone(c.phone_raw or c.phone_normalized)
+                    if norm and norm != c.phone_normalized:
+                        c.phone_normalized = norm
+                        updated_count += 1
+                if updated_count > 0:
+                    db.session.commit()
+                    app.logger.info(f"Auto-healed {updated_count} contact phone numbers to E.164 normalized format.")
+            except Exception as seed_err:
+                app.logger.warning(f"Seed/backfill step note: {seed_err}")
         except Exception as e:
             app.logger.warning(f"Auto-migration check skipped/failed: {e}")
 

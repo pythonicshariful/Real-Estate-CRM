@@ -81,14 +81,42 @@ def create_lead():
     service_type = sanitize_input(validated_data.get('service_type'))
     activity_label = sanitize_input(validated_data.get('activity_label'))
     questionnaire_answers = validated_data.get('questionnaire_answers') or {}
-    
-    contact = Contact.query.filter_by(phone_normalized=phone).first()
-    
+    force_create = validated_data.get('force_create', False)
+
+    from app.utils.phone import normalize_phone, find_existing_contact
+    phone_norm = normalize_phone(phone)
+    contact = find_existing_contact(phone=phone, email=email)
+
+    if contact and not force_create:
+        terminal_stages = ['SOLD', 'CLOSED_LOST', 'INVALID', 'BOUGHT_ELSEWHERE', 'UNREACHABLE']
+        active_opp = Opportunity.query.filter_by(
+            contact_id=contact.id,
+            is_deleted=False
+        ).filter(~Opportunity.pipeline_stage.in_(terminal_stages)).order_by(Opportunity.created_at.desc()).first()
+
+        if active_opp:
+            assigned_name = active_opp.assigned_to.full_name if active_opp.assigned_to else "Unassigned"
+            stage_str = active_opp.pipeline_stage.value if hasattr(active_opp.pipeline_stage, 'value') else str(active_opp.pipeline_stage)
+            return jsonify({
+                "status": "error",
+                "code": 409,
+                "is_duplicate": True,
+                "message": f"Duplicate Lead: {contact.full_name} is already an active lead (Assigned: {assigned_name} | Stage: {stage_str}).",
+                "details": {
+                    "contact_id": contact.id,
+                    "opportunity_id": active_opp.id,
+                    "contact_name": contact.full_name,
+                    "phone": contact.phone_raw or contact.phone_normalized,
+                    "stage": stage_str,
+                    "assigned_to": assigned_name
+                }
+            }), 409
+
     if not contact:
         contact = Contact(
             full_name=full_name,
             phone_raw=phone,
-            phone_normalized=phone,
+            phone_normalized=phone_norm or phone,
             email=email,
             source=source,
             profession=profession,
@@ -101,6 +129,10 @@ def create_lead():
             contact.profession = profession
         if service_type and not contact.service_type:
             contact.service_type = service_type
+        if email and not contact.email:
+            contact.email = email
+        if phone_norm and not contact.phone_normalized:
+            contact.phone_normalized = phone_norm
         
     project_id = validated_data.get('project_id')
 
@@ -1496,7 +1528,7 @@ def check_lead_duplicate():
     Check if a contact or active opportunity already exists with the given phone or email.
     Used for real-time frontend duplicate alerts and prevention.
     """
-    from app.utils.phone import normalize_phone
+    from app.utils.phone import find_existing_contact
     body = request.get_json(silent=True) or {}
     phone = request.args.get('phone') or body.get('phone')
     email = request.args.get('email') or body.get('email')
@@ -1504,22 +1536,7 @@ def check_lead_duplicate():
     if not phone and not email:
         return jsonify({"is_duplicate": False, "match": None})
 
-    phone = phone.strip() if phone else None
-    if phone:
-        if phone.startswith('880'):
-            phone = '+' + phone
-        elif phone.startswith('01') and len(phone) == 11:
-            phone = '+88' + phone
-    email = email.strip().lower() if email else None
-    phone_norm = normalize_phone(phone) if phone else None
-    
-    contact = None
-    if phone_norm:
-        contact = Contact.query.filter((Contact.phone_normalized == phone_norm) | (Contact.phone_raw == phone_norm)).first()
-    if not contact and phone:
-        contact = Contact.query.filter((Contact.phone_raw == phone) | (Contact.phone_normalized == phone)).first()
-    if not contact and email:
-        contact = Contact.query.filter_by(email=email).first()
+    contact = find_existing_contact(phone=phone, email=email)
 
     if not contact:
         return jsonify({"is_duplicate": False, "match": None})
