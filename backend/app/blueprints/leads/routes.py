@@ -1952,4 +1952,222 @@ def import_leads():
     }), 200
 
 
+# ---------------------------------------------------------------------------
+# Duplicate Leads Cleanup & Auto-Merge API (Admin Only)
+# ---------------------------------------------------------------------------
+
+@leads_bp.route('/duplicate-count', methods=['GET'])
+@jwt_required()
+def get_duplicate_lead_count():
+    claims = get_jwt()
+    role = claims.get('role')
+    if not is_admin(role):
+        return jsonify({"error": "Admin access required"}), 403
+
+    from app.utils.phone import extract_core_phone_digits
+    from collections import defaultdict
+
+    active_opps = Opportunity.query.filter(Opportunity.is_deleted == False).all()
+    opps_by_contact = defaultdict(list)
+    for opp in active_opps:
+        opps_by_contact[opp.contact_id].append(opp)
+
+    contacts = Contact.query.filter(Contact.is_deleted == False).all()
+    contact_by_key = defaultdict(list)
+    for c in contacts:
+        core_digits = extract_core_phone_digits(c.phone_raw or c.phone_normalized)
+        if core_digits and len(core_digits) >= 9:
+            contact_by_key[f"phone:{core_digits}"].append(c)
+        elif c.email:
+            contact_by_key[f"email:{c.email.strip().lower()}"].append(c)
+
+    duplicate_contact_groups = 0
+    for key, c_list in contact_by_key.items():
+        if len(c_list) > 1:
+            duplicate_contact_groups += 1
+
+    duplicate_leads_count = 0
+    duplicate_groups_count = 0
+    group_details = []
+
+    visited_contacts = set()
+    for key, c_list in contact_by_key.items():
+        c_ids = [c.id for c in c_list]
+        group_opps = [opp for c_id in c_ids for opp in opps_by_contact.get(c_id, [])]
+        for c in c_list:
+            visited_contacts.add(c.id)
+        if len(group_opps) > 1:
+            duplicate_groups_count += 1
+            duplicate_leads_count += (len(group_opps) - 1)
+            group_details.append({
+                "group_key": key,
+                "name": c_list[0].full_name,
+                "phone": c_list[0].phone_raw,
+                "total_leads": len(group_opps),
+                "duplicate_count": len(group_opps) - 1
+            })
+
+    for c_id, opps in opps_by_contact.items():
+        if c_id not in visited_contacts and len(opps) > 1:
+            c = Contact.query.get(c_id)
+            duplicate_groups_count += 1
+            duplicate_leads_count += (len(opps) - 1)
+            group_details.append({
+                "group_key": f"contact:{c_id}",
+                "name": c.full_name if c else "Unknown",
+                "phone": c.phone_raw if c else None,
+                "total_leads": len(opps),
+                "duplicate_count": len(opps) - 1
+            })
+
+    return jsonify({
+        "duplicate_groups": duplicate_groups_count,
+        "duplicate_leads": duplicate_leads_count,
+        "duplicate_contact_groups": duplicate_contact_groups,
+        "details": group_details
+    })
+
+
+@leads_bp.route('/cleanup-duplicates', methods=['POST'])
+@jwt_required()
+def cleanup_duplicate_leads():
+    claims = get_jwt()
+    role = claims.get('role')
+    user_id = int(get_jwt_identity())
+    if not is_admin(role):
+        return jsonify({"error": "Admin access required"}), 403
+
+    from app.utils.phone import extract_core_phone_digits
+    from collections import defaultdict
+
+    merged_opps_count = 0
+    merged_contacts_count = 0
+
+    # Step 1: Consolidate duplicate Contacts sharing the same phone or email
+    contacts = Contact.query.filter(Contact.is_deleted == False).order_by(Contact.id.asc()).all()
+    contact_by_key = defaultdict(list)
+    for c in contacts:
+        core_digits = extract_core_phone_digits(c.phone_raw or c.phone_normalized)
+        if core_digits and len(core_digits) >= 9:
+            contact_by_key[f"phone:{core_digits}"].append(c)
+        elif c.email:
+            contact_by_key[f"email:{c.email.strip().lower()}"].append(c)
+
+    for key, c_list in contact_by_key.items():
+        if len(c_list) > 1:
+            primary_contact = c_list[0]
+            for secondary_contact in c_list[1:]:
+                Opportunity.query.filter_by(contact_id=secondary_contact.id).update(
+                    {"contact_id": primary_contact.id}, synchronize_session='fetch'
+                )
+                Inquiry.query.filter_by(contact_id=secondary_contact.id).update(
+                    {"contact_id": primary_contact.id}, synchronize_session='fetch'
+                )
+                CallLog.query.filter_by(contact_id=secondary_contact.id).update(
+                    {"contact_id": primary_contact.id}, synchronize_session='fetch'
+                )
+                Note.query.filter_by(contact_id=secondary_contact.id).update(
+                    {"contact_id": primary_contact.id}, synchronize_session='fetch'
+                )
+                Appointment.query.filter_by(contact_id=secondary_contact.id).update(
+                    {"contact_id": primary_contact.id}, synchronize_session='fetch'
+                )
+                Reservation.query.filter_by(contact_id=secondary_contact.id).update(
+                    {"contact_id": primary_contact.id}, synchronize_session='fetch'
+                )
+
+                if not primary_contact.email and secondary_contact.email:
+                    primary_contact.email = secondary_contact.email
+                if not primary_contact.profession and secondary_contact.profession:
+                    primary_contact.profession = secondary_contact.profession
+                if not primary_contact.service_type and secondary_contact.service_type:
+                    primary_contact.service_type = secondary_contact.service_type
+
+                secondary_contact.is_deleted = True
+                secondary_contact.deleted_at = datetime.now(timezone.utc)
+                merged_contacts_count += 1
+
+    db.session.flush()
+
+    # Step 2: Merge duplicate Opportunities for every Contact
+    all_opps = Opportunity.query.filter(Opportunity.is_deleted == False).order_by(Opportunity.created_at.asc()).all()
+    opps_by_contact = defaultdict(list)
+    for opp in all_opps:
+        opps_by_contact[opp.contact_id].append(opp)
+
+    for contact_id, opp_list in opps_by_contact.items():
+        if len(opp_list) > 1:
+            def opp_priority(o):
+                stage_val = o.pipeline_stage.value if hasattr(o.pipeline_stage, 'value') else str(o.pipeline_stage)
+                has_calls = CallLog.query.filter_by(opportunity_id=o.id).count()
+                has_notes = Note.query.filter_by(opportunity_id=o.id).count()
+                score = (has_calls * 5) + (has_notes * 3)
+                if stage_val not in ['NEW']:
+                    score += 20
+                return score
+
+            sorted_opps = sorted(opp_list, key=opp_priority, reverse=True)
+            primary_opp = sorted_opps[0]
+            duplicate_opps = sorted_opps[1:]
+
+            contact_obj = Contact.query.get(contact_id)
+
+            for dup_opp in duplicate_opps:
+                CallLog.query.filter_by(opportunity_id=dup_opp.id).update(
+                    {"opportunity_id": primary_opp.id}, synchronize_session='fetch'
+                )
+                Appointment.query.filter_by(opportunity_id=dup_opp.id).update(
+                    {"opportunity_id": primary_opp.id}, synchronize_session='fetch'
+                )
+                Note.query.filter_by(opportunity_id=dup_opp.id).update(
+                    {"opportunity_id": primary_opp.id}, synchronize_session='fetch'
+                )
+                Reservation.query.filter_by(opportunity_id=dup_opp.id).update(
+                    {"opportunity_id": primary_opp.id}, synchronize_session='fetch'
+                )
+
+                if dup_opp.questionnaire_answers:
+                    merged_qa = dict(primary_opp.questionnaire_answers or {})
+                    merged_qa.update(dup_opp.questionnaire_answers)
+                    primary_opp.questionnaire_answers = merged_qa
+
+                if not primary_opp.project_id and dup_opp.project_id:
+                    primary_opp.project_id = dup_opp.project_id
+
+                stage_str = dup_opp.pipeline_stage.value if hasattr(dup_opp.pipeline_stage, 'value') else str(dup_opp.pipeline_stage)
+                created_str = dup_opp.created_at.strftime('%Y-%m-%d %H:%M') if dup_opp.created_at else 'N/A'
+                merge_note = Note(
+                    opportunity_id=primary_opp.id,
+                    contact_id=contact_id,
+                    created_by_id=user_id,
+                    content=f"📌 [Auto-Merge] Merged duplicate lead #{dup_opp.id} (Stage: {stage_str}, Created: {created_str}) into this primary lead."
+                )
+                db.session.add(merge_note)
+
+                dup_opp.is_deleted = True
+                dup_opp.deleted_at = datetime.now(timezone.utc)
+
+                audit = AuditLog(
+                    user_id=user_id,
+                    table_name='opportunities',
+                    record_id=dup_opp.id,
+                    action='DELETE',
+                    field_name='is_deleted',
+                    old_value='False',
+                    new_value=f"Auto-merged into primary lead #{primary_opp.id}"
+                )
+                db.session.add(audit)
+
+                merged_opps_count += 1
+
+    db.session.commit()
+
+    return jsonify({
+        "status": "success",
+        "merged_opportunities": merged_opps_count,
+        "merged_contacts": merged_contacts_count,
+        "message": f"Successfully cleaned and merged {merged_opps_count} duplicate lead(s) into their primary leads!"
+    }), 200
+
+
 

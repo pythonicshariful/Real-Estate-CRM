@@ -1104,6 +1104,61 @@ document.addEventListener('DOMContentLoaded', () => {
         const bulkAssignBtn = document.getElementById('bulk-assign-btn');
         if (bulkAssignBtn) bulkAssignBtn.classList.remove('hidden');
 
+        const cleanDuplicatesBtn = document.getElementById('clean-duplicates-btn');
+        if (cleanDuplicatesBtn) {
+            cleanDuplicatesBtn.classList.remove('hidden');
+            cleanDuplicatesBtn.addEventListener('click', async () => {
+                const token = localStorage.getItem('crm_token');
+                try {
+                    const countRes = await fetch('/api/leads/duplicate-count', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!countRes.ok) throw new Error("Failed to check duplicate count");
+                    const countData = await countRes.json();
+
+                    if (countData.duplicate_leads === 0) {
+                        if (window.showToast) window.showToast("No duplicate leads found! All leads are already unique.", "info");
+                        return;
+                    }
+
+                    const sample = countData.details?.slice(0, 3).map(d => `• ${d.name} (${d.phone || 'N/A'}): ${d.duplicate_count} duplicate(s)`).join('\n') || '';
+                    const extra = countData.details?.length > 3 ? `\n...and ${countData.details.length - 3} more` : '';
+
+                    const confirmMsg = `Found ${countData.duplicate_leads} duplicate lead(s) across ${countData.duplicate_groups} contact(s):\n\n${sample}${extra}\n\nThis will merge all call logs, activities, and notes into the primary lead and remove the duplicate cards.\n\nDo you want to proceed with Auto-Clean?`;
+
+                    if (!confirm(confirmMsg)) return;
+
+                    const originalHtml = cleanDuplicatesBtn.innerHTML;
+                    cleanDuplicatesBtn.innerHTML = '<svg class="animate-spin h-4 w-4 text-amber-400 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Cleaning...';
+                    cleanDuplicatesBtn.disabled = true;
+
+                    const res = await fetch('/api/leads/cleanup-duplicates', {
+                        method: 'POST',
+                        headers: { 
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    cleanDuplicatesBtn.innerHTML = originalHtml;
+                    cleanDuplicatesBtn.disabled = false;
+
+                    if (!res.ok) {
+                        const err = await res.json();
+                        throw new Error(err.message || err.error || "Failed to cleanup duplicates");
+                    }
+
+                    const result = await res.json();
+                    if (window.showToast) window.showToast(result.message || "Duplicates cleaned and merged successfully!", "success");
+                    loadLeads();
+                } catch (err) {
+                    console.error("Clean duplicates error:", err);
+                    if (cleanDuplicatesBtn) cleanDuplicatesBtn.disabled = false;
+                    if (window.showToast) window.showToast(err.message, "error");
+                }
+            });
+        }
+
         const editBtn = document.getElementById('drawer-edit-btn');
         const deleteBtn = document.getElementById('drawer-delete-btn');
         const editModal = document.getElementById('edit-lead-modal');
