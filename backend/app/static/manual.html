@@ -250,169 +250,685 @@
 
     <!-- Section 3: Deep Dive into Modules M-01 to M-12 -->
     <section class="space-y-6">
-      <h2 class="text-xl font-bold text-white flex items-center gap-2">
-        <span class="w-3 h-3 rounded-full bg-cyan-500"></span>
-        ৩. আর্কিটেকচারের ১২টি কোর মডিউলের বিস্তারিত ব্যবহারের গাইড
-      </h2>
+      <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-4">
+        <div>
+          <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-cyan-500"></span>
+            ৩. আর্কিটেকচারের ১২টি কোর মডিউলের আইটেমভিত্তিক পুঙ্খানুপুঙ্খ অডিট
+          </h2>
+          <p class="text-xs text-slate-400 mt-1">প্রতিটি মডিউলের অভ্যন্তরীণ সাব-আইটেম, ডাটাবেস মডেল, এপিআই রুট এবং টেস্ট করার নিয়মাবলী।</p>
+        </div>
+        <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+          ALL 12 MODULES 100% IMPLEMENTED
+        </span>
+      </div>
 
       <!-- M-01 -->
       <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl space-y-3 card-box">
         <div class="flex items-center justify-between flex-wrap gap-2">
-          <h3 class="text-base font-bold text-indigo-400">M-01: Multi-Channel Lead Intake & Instant Capture</h3>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">100% IMPLEMENTED</span>
+            <h3 class="text-base font-bold text-indigo-400">M-01: Multi-Channel Lead Intake & Instant Capture</h3>
+          </div>
           <a href="https://southeastlandmark.pythonicshariful.tech/leads.html" target="_blank" class="text-xs bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 px-3 py-1 rounded-lg hover:bg-indigo-600/30">Open Leads Hub ↗</a>
         </div>
-        <p class="text-xs text-slate-300">
-          <strong>বৈশিষ্ট্য:</strong> মেটা ফেসবুক এডস ওয়েবহুক, ওয়েবসাইট ফর্ম ইন্টিগ্রেশন এবং এক্সেল/সিএসভি ইমপোর্টার। নতুন কোনো লিড আসার সাথে সাথে কোনো রিফ্রেশ ছাড়াই সিস্টেমে যুক্ত হয়।
-        </p>
-        <div class="p-3 bg-slate-950 rounded-xl text-xs text-slate-400 space-y-1">
-          <strong class="text-slate-200 block">ব্যবহারের নিয়ম:</strong>
-          <div>1. <a href="https://southeastlandmark.pythonicshariful.tech/leads.html" class="text-indigo-400">Leads Hub</a> পেজে গিয়ে <strong>+ Add Lead</strong> বাটনে চাপ দিন।</div>
-          <div>2. গ্রাহকের নাম, ফোন, প্রজেক্ট, বাজেট ও সোর্স (Facebook / Website / Referral) প্রদান করুন।</div>
-          <div>3. ফাইল থেকে শত শত লিড আপলোড করতে <strong>Import CSV</strong> সিলেক্ট করুন।</div>
+        <div class="overflow-x-auto rounded-xl border border-slate-800/80">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
+                <th class="p-2.5">সাব-আইটেম নাম</th>
+                <th class="p-2.5">আর্কিটেকচার স্পেসিফিকেশন</th>
+                <th class="p-2.5 text-center">স্থিতি</th>
+                <th class="p-2.5">ব্যাকএন্ড মডেল ও এন্ডপয়েন্ট</th>
+                <th class="p-2.5">ফ্রন্টএন্ড UI লোকেশন ও টেস্টের নিয়ম</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60 text-slate-300">
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">মেটা ফেসবুক লিড এডস</td>
+                <td class="p-2.5">রিয়েল-টাইম মেটা ওয়েব-হুক ও HMAC ভ্যালিডেশন</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">POST /api/webhooks/meta</td>
+                <td class="p-2.5"><a href="/settings.html" class="text-indigo-400">Settings</a> পেজের Meta Webhook সেটআপ।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">ওয়েবসাইট পাবলিক ফর্ম</td>
+                <td class="p-2.5">ল্যান্ডিং পেজ থেকে লিড রিসিভ পাবলিক API</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">POST /api/webhooks/website</td>
+                <td class="p-2.5">ওয়েবসাইট ফর্ম সাবমিট হলে স্বয়ংক্রিয় লিড তৈরি।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">বালক CSV লিড আপলোড</td>
+                <td class="p-2.5">শত শত লিড ড্র্যাগ-এন্ড-ড্রপ এক্সেল আপলোড</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">POST /api/leads/import</td>
+                <td class="p-2.5"><a href="/leads.html" class="text-indigo-400">Leads Hub</a>-এ <strong>Import</strong> বাটন ক্লিক।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">নমুনা CSV ডাউনলোড</td>
+                <td class="p-2.5">১-ক্লিকে প্রমিত কলামের নমুনা CSV নামানো</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">GET /api/leads/sample-csv</td>
+                <td class="p-2.5">ইম্পোর্ট মডালে <strong>Download Sample CSV</strong> বাটন।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">ম্যানুয়াল কুইক এন্ট্রি</td>
+                <td class="p-2.5">কল বা ওয়াক-ইন ক্রেতার তাৎক্ষণিক এন্ট্রি</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">POST /api/leads/</td>
+                <td class="p-2.5"><a href="/leads.html" class="text-indigo-400">Leads Hub</a>-এ <strong>+ Add Lead</strong> মডাল।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">জিরো ডাটা ওভাররাইট</td>
+                <td class="p-2.5">পূর্বের ডাটা অক্ষত রেখে নতুন ডিল ওপেন</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">Contact (1) ➔ Opportunity (N)</td>
+                <td class="p-2.5"><a href="/lead-details.html" class="text-indigo-400">Lead Details</a> টাইমলাইনে পূর্বের সব লগ সংরক্ষিত থাকে।</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
       <!-- M-02 -->
       <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl space-y-3 card-box">
         <div class="flex items-center justify-between flex-wrap gap-2">
-          <h3 class="text-base font-bold text-indigo-400">M-02: Contact Identity, De-duplication & Client Pool</h3>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">100% IMPLEMENTED</span>
+            <h3 class="text-base font-bold text-indigo-400">M-02: Contact Identity, De-duplication & Client Pool</h3>
+          </div>
           <a href="https://southeastlandmark.pythonicshariful.tech/contacts.html" target="_blank" class="text-xs bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 px-3 py-1 rounded-lg hover:bg-indigo-600/30">Open Contacts ↗</a>
         </div>
-        <p class="text-xs text-slate-300">
-          <strong>বৈশিষ্ট্য:</strong> ডুপ্লিকেট রোধে অটোমেটিক ফোন নাম্বার ভ্যালিডেশন। ১ জন কন্টাক্টের অধীনে পূর্ববর্তী সব লিড, সাইট ভিজিট এবং ক্রয়কৃত প্লটের লাইফটাইম হিসাব সংরক্ষিত থাকে।
-        </p>
-        <div class="p-3 bg-slate-950 rounded-xl text-xs text-slate-400 space-y-1">
-          <strong class="text-slate-200 block">ব্যবহারের নিয়ম:</strong>
-          <div>1. <a href="https://southeastlandmark.pythonicshariful.tech/contacts.html" class="text-indigo-400">Contacts</a> পেজে গিয়ে ক্লায়েন্টের মোবাইল নম্বর দিয়ে ফিল্টার করুন।</div>
-          <div>2. ক্লায়েন্টের প্রোফাইলে ক্লিক করলেই দেখতে পাবেন তিনি এর আগে কোন কোন প্রজেক্ট ভিজিট করেছেন বা কি কি কথা হয়েছে।</div>
+        <div class="overflow-x-auto rounded-xl border border-slate-800/80">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
+                <th class="p-2.5">সাব-আইটেম নাম</th>
+                <th class="p-2.5">আর্কিটেকচার স্পেসিফিকেশন</th>
+                <th class="p-2.5 text-center">স্থিতি</th>
+                <th class="p-2.5">ব্যাকএন্ড মডেল ও এন্ডপয়েন্ট</th>
+                <th class="p-2.5">ফ্রন্টএন্ড UI লোকেশন ও টেস্টের নিয়ম</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60 text-slate-300">
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">1:N কন্টাক্ট রিলেশন</td>
+                <td class="p-2.5">গ্রাহকের ১টি প্রোফাইলে একাধিক প্লট অপরচুনিটি</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">Contact.opportunities = relationship()</td>
+                <td class="p-2.5"><a href="/contacts.html" class="text-indigo-400">Contacts</a> পেজে গ্রাহকে ক্লিক করলে সমস্ত ডিল দেখা যায়।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">ফোন নরমালাইজেশন</td>
+                <td class="p-2.5">আন্তর্জাতিক E.164 স্ট্যান্ডার্ড রূপান্তর (+8801...)</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">app/utils/phone.py (normalize_phone)</td>
+                <td class="p-2.5">লিড সেভ করলে স্বয়ংক্রিয়ভাবে +8801... ফরম্যাট হয়।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">ডুপ্লিকেট চেক ও মার্জ</td>
+                <td class="p-2.5">ডুপ্লিকেট শনাক্ত ও এক ক্লিকে ক্লিনআপ</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">POST /api/leads/clean-duplicates</td>
+                <td class="p-2.5"><a href="/leads.html" class="text-indigo-400">Leads Hub</a>-এ <strong>Clean Duplicates</strong> বাটন।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">প্রস্পেক্টস সেন্ট্রাল পুল</td>
+                <td class="p-2.5">কোল্ড লিড ও প্রাথমিক সম্ভাব্য ক্রেতা পুল</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">/api/leads/prospects</td>
+                <td class="p-2.5"><a href="/prospects.html" class="text-indigo-400">Prospects</a> পেজে কোল্ড লিডদের আলাদা নার্চার ভিউ।</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
       <!-- M-03 -->
       <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl space-y-3 card-box">
         <div class="flex items-center justify-between flex-wrap gap-2">
-          <h3 class="text-base font-bold text-indigo-400">M-03: Dynamic Lead Scoring & Qualification (BANT)</h3>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">100% IMPLEMENTED</span>
+            <h3 class="text-base font-bold text-indigo-400">M-03: Dynamic Lead Scoring & Qualification (BANT)</h3>
+          </div>
           <a href="https://southeastlandmark.pythonicshariful.tech/leads.html" target="_blank" class="text-xs bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 px-3 py-1 rounded-lg hover:bg-indigo-600/30">Open Leads Hub ↗</a>
         </div>
-        <p class="text-xs text-slate-300">
-          <strong>বৈশিষ্ট্য:</strong> BANT স্কোরিং ফ্রেমওয়ার্ক। বাজেট (Budget), সিদ্ধান্ত গ্রহণের ক্ষমতা (Authority), প্লটের প্রয়োজনীয়তা (Need) এবং সময়সীমা (Timeline) যাচাই করে ১০০-তে স্কোর নির্ধারণ ও প্রায়োরিটি ট্যাগিং (URGENT / HIGH / MEDIUM / LOW)।
-        </p>
-        <div class="p-3 bg-slate-950 rounded-xl text-xs text-slate-400 space-y-1">
-          <strong class="text-slate-200 block">ব্যবহারের নিয়ম:</strong>
-          <div>1. লিড কার্ডে থাকা <strong>Qualify</strong> বাটনে চাপ দিন।</div>
-          <div>2. চেকলিস্ট থেকে ক্লায়েন্টের ইনভেস্টমেন্ট সক্ষমতা সিলেক্ট করুন। সিস্টেম অটোমেটিক স্কোর আপডেট করে স্টেজটিকে <code>QUALIFIED</code>-এ উন্নীত করবে।</div>
+        <div class="overflow-x-auto rounded-xl border border-slate-800/80">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
+                <th class="p-2.5">সাব-আইটেম নাম</th>
+                <th class="p-2.5">আর্কিটেকচার স্পেসিফিকেশন</th>
+                <th class="p-2.5 text-center">স্থিতি</th>
+                <th class="p-2.5">ব্যাকএন্ড মডেল ও এন্ডপয়েন্ট</th>
+                <th class="p-2.5">ফ্রন্টএন্ড UI লোকেশন ও টেস্টের নিয়ম</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60 text-slate-300">
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">BANT ফ্রেমওয়ার্ক</td>
+                <td class="p-2.5">Budget, Authority, Need, Timeline ইনপুট</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">Opportunity.budget, authority_level</td>
+                <td class="p-2.5"><a href="/leads.html" class="text-indigo-400">Leads Hub</a>-এ <strong>Qualify</strong> বাটনের ড্রপডাউন ফর্ম।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">ডায়নামিক স্কোর (০-১০০)</td>
+                <td class="p-2.5">BANT ইনপুটে স্বয়ংক্রিয় গাণিতিক স্কোর</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">Opportunity.qualification_score</td>
+                <td class="p-2.5">ফর্ম সাবমিট করলে লিড কার্ডে স্কোর ব্যাজ ভেসে ওঠে।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">৪-লেভেল প্রায়োরিটি</td>
+                <td class="p-2.5">URGENT, HIGH, MEDIUM, LOW ব্যাজিং</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">LeadPriority enum in models.py</td>
+                <td class="p-2.5"><a href="/pipeline.html" class="text-indigo-400">Pipeline</a> ও Leads পেজে কালার-কোডেড ব্যাজ।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">লিড টেম্পারেচার</td>
+                <td class="p-2.5">HOT, WARM, COLD টেম্পারেচার ট্যাগ</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">LeadTemperature enum in models.py</td>
+                <td class="p-2.5">কার্ডে অগ্নি প্রতীকের সাথে লাল/হলুদ/নীল ট্যাগ।</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
       <!-- M-04 -->
       <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl space-y-3 card-box">
         <div class="flex items-center justify-between flex-wrap gap-2">
-          <h3 class="text-base font-bold text-indigo-400">M-04: Smart Lead Distribution & 15-Minute SLA</h3>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">100% IMPLEMENTED</span>
+            <h3 class="text-base font-bold text-indigo-400">M-04: Smart Lead Distribution & 15-Minute SLA Engine</h3>
+          </div>
           <a href="https://southeastlandmark.pythonicshariful.tech/lead-owners.html" target="_blank" class="text-xs bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 px-3 py-1 rounded-lg hover:bg-indigo-600/30">Open Lead Owners ↗</a>
         </div>
-        <p class="text-xs text-slate-300">
-          <strong>বৈশিষ্ট্য:</strong> ক্যাপাসিটি রাউন্ড-রবিন ডিস্ট্রিবিউশন। লিড আসার ১৫ মিনিটের মধ্যে প্রথম যোগাযোগ করতে হবে। ১০ মিনিটে ওয়ার্নিং অ্যালার্ট এবং ২০ মিনিটে ম্যানেজার ড্যাশবোর্ডে এস্কেলেশন ট্রিগার হয়।
-        </p>
-        <div class="p-3 bg-slate-950 rounded-xl text-xs text-slate-400 space-y-1">
-          <strong class="text-slate-200 block">ব্যবহারের নিয়ম:</strong>
-          <div>1. সেলস এক্সিকিউটিভ তার ড্যাশবোর্ডে নতুন লিডের উপর ১৫ মিনিটের লাইভ কাউন্টডাউন টাইমার দেখতে পাবেন।</div>
-          <div>2. অবিলম্বে <strong>Call</strong> বাটনে চাপ দিয়ে কথা বলে আউটকাম লগ করলে SLA রক্ষা পায়।</div>
+        <div class="overflow-x-auto rounded-xl border border-slate-800/80">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
+                <th class="p-2.5">সাব-আইটেম নাম</th>
+                <th class="p-2.5">আর্কিটেকচার স্পেসিফিকেশন</th>
+                <th class="p-2.5 text-center">স্থিতি</th>
+                <th class="p-2.5">ব্যাকএন্ড মডেল ও এন্ডপয়েন্ট</th>
+                <th class="p-2.5">ফ্রন্টএন্ড UI লোকেশন ও টেস্টের নিয়ম</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60 text-slate-300">
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">ক্যাপাসিটি রাউন্ড-রবিন</td>
+                <td class="p-2.5">সক্রিয় লিড লোড দেখে নতুন লিড এসাইন</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">User.max_lead_capacity, assign_round_robin</td>
+                <td class="p-2.5"><a href="/team.html" class="text-indigo-400">Team</a> পেজে প্রতি অফিসারের ক্যাপাসিটি ফিল্ড।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">অন-ডিউটি / অফ-ডিউটি</td>
+                <td class="p-2.5">ছুটির দিনে রাউন্ড-রবিন ডিস্ট্রিবিউশন বাইপাস</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">User.is_on_duty</td>
+                <td class="p-2.5"><a href="/team.html" class="text-indigo-400">Team</a> পেজে ডিউটি স্ট্যাটাস টগল সুইচ।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">১৫-মিনিট SLA টাইমার</td>
+                <td class="p-2.5">নতুন লিড আসলেই কাউন্টডাউন শুরু</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">Opportunity.sla_deadline, SLAStatus</td>
+                <td class="p-2.5"><a href="/leads.html" class="text-indigo-400">Leads Hub</a>-এ কার্ডের উপর লাইভ কাউন্টডাউন টাইমার।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">ম্যানেজার এস্কেলেশন</td>
+                <td class="p-2.5">২০ মিনিটে ম্যানেজার স্ক্রিনে রেড এলার্ট</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">SLAStatus.MANAGER_ALERTED</td>
+                <td class="p-2.5"><a href="/admin-dashboard.html" class="text-indigo-400">Admin Dashboard</a>-এ লাল সতর্কবার্তা ফ্ল্যাশ।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">লিড রি-অ্যাসাইনমেন্ট</td>
+                <td class="p-2.5">ম্যানেজার লেভেলে লিড অন্য এজেন্টে রি-অ্যাসাইন</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">PUT /api/leads/&lt;id&gt;/reassign</td>
+                <td class="p-2.5"><a href="/lead-owners.html" class="text-indigo-400">Lead Owners</a> পেজে <strong>Reassign</strong> বাটন।</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
-      <!-- M-05 & M-06 -->
+      <!-- M-05 -->
       <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl space-y-3 card-box">
         <div class="flex items-center justify-between flex-wrap gap-2">
-          <h3 class="text-base font-bold text-indigo-400">M-05 & M-06: Communications, Activities & Task Engine</h3>
-          <a href="https://southeastlandmark.pythonicshariful.tech/tasks.html" target="_blank" class="text-xs bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 px-3 py-1 rounded-lg hover:bg-indigo-600/30">Open Tasks Engine ↗</a>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">100% IMPLEMENTED</span>
+            <h3 class="text-base font-bold text-indigo-400">M-05: Telephony & Multi-Channel Communications Suite</h3>
+          </div>
+          <a href="https://southeastlandmark.pythonicshariful.tech/activities.html" target="_blank" class="text-xs bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 px-3 py-1 rounded-lg hover:bg-indigo-600/30">Open Activities ↗</a>
         </div>
-        <p class="text-xs text-slate-300">
-          <strong>বৈশিষ্ট্য:</strong> ১-ক্লিক কল ডায়ালিং, কল আউটকাম (Connected, Busy, Ringing, Voicemail) লগিং, ক্লাউড অডিও রেকর্ডিং প্লেব্যাক, এবং ক্রমানুসারে নেক্সট অ্যাকশন ডেডলাইন ম্যানেজমেন্ট।
-        </p>
-        <div class="p-3 bg-slate-950 rounded-xl text-xs text-slate-400 space-y-1">
-          <strong class="text-slate-200 block">ব্যবহারের নিয়ম:</strong>
-          <div>1. <a href="https://southeastlandmark.pythonicshariful.tech/tasks.html" class="text-indigo-400">Tasks</a> পেজে আজকের নির্ধারিত কল তালিকা প্রদর্শিত হয়।</div>
-          <div>2. কথা বলার পর গ্রাহক পুনরায় ফোন দিতে বললে পরবর্তী তারিখ ও সময় সিলেক্ট করুন। সিস্টেম সময়মতো লাল নোটিফিকেশন প্রদর্শন করবে।</div>
+        <div class="overflow-x-auto rounded-xl border border-slate-800/80">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
+                <th class="p-2.5">সাব-আইটেম নাম</th>
+                <th class="p-2.5">আর্কিটেকচার স্পেসিফিকেশন</th>
+                <th class="p-2.5 text-center">স্থিতি</th>
+                <th class="p-2.5">ব্যাকএন্ড মডেল ও এন্ডপয়েন্ট</th>
+                <th class="p-2.5">ফ্রন্টএন্ড UI লোকেশন ও টেস্টের নিয়ম</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60 text-slate-300">
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">১-ক্লিক ব্রাউজার ডায়ালার</td>
+                <td class="p-2.5">ডিভাইসের ডায়ালারে সরাসরি কল ট্রিগার</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">tel: Protocol Handler</td>
+                <td class="p-2.5"><a href="/leads.html" class="text-indigo-400">Leads Hub</a>-এ কার্ডের <strong>Call</strong> বাটন।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">কল আউটকাম ড্রপডাউন</td>
+                <td class="p-2.5">Connected, Busy, Switched Off, Ringing নির্বাচন</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">ActivityOutcome enum in models.py</td>
+                <td class="p-2.5">কল শেষে ড্রপডাউন থেকে আউটকাম বাছাই বাধ্যতামূলক।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">৫টি ডিউরেশন ব্যান্ড</td>
+                <td class="p-2.5">&lt;1m, 1-3m, 3-5m, 5-10m, &gt;10m নির্বাচন</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">DurationBand enum in models.py</td>
+                <td class="p-2.5"><a href="/leads.html" class="text-indigo-400">Call Modal</a>-এ ডিউরেশন ব্যান্ড সিলেক্ট অপশন।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">ক্লাউড কল অডিও রেকর্ডিং</td>
+                <td class="p-2.5">Backblaze B2 স্টোরেজে অডিও আপলোড ও প্লেব্যাক</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">CallLog.recording_url, b2_storage.py</td>
+                <td class="p-2.5"><a href="/activities.html" class="text-indigo-400">Activities</a> পেজে ব্রাউজার অডিও প্লেয়ার।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">হোয়াটসঅ্যাপ ও এসএমএস</td>
+                <td class="p-2.5">১-ক্লিকে টেমপ্লেট মেসেজ হোয়াটসঅ্যাপে প্রেরণ</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">WhatsApp Web Protocol Integration</td>
+                <td class="p-2.5"><a href="/leads.html" class="text-indigo-400">Leads Hub</a>-এ <strong>WhatsApp</strong> বাটন।</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- M-06 -->
+      <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl space-y-3 card-box">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">100% IMPLEMENTED</span>
+            <h3 class="text-base font-bold text-indigo-400">M-06: Task & Follow-up Management Engine</h3>
+          </div>
+          <a href="https://southeastlandmark.pythonicshariful.tech/tasks.html" target="_blank" class="text-xs bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 px-3 py-1 rounded-lg hover:bg-indigo-600/30">Open Tasks ↗</a>
+        </div>
+        <div class="overflow-x-auto rounded-xl border border-slate-800/80">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
+                <th class="p-2.5">সাব-আইটেম নাম</th>
+                <th class="p-2.5">আর্কিটেকচার স্পেসিফিকেশন</th>
+                <th class="p-2.5 text-center">স্থিতি</th>
+                <th class="p-2.5">ব্যাকএন্ড মডেল ও এন্ডপয়েন্ট</th>
+                <th class="p-2.5">ফ্রন্টএন্ড UI লোকেশন ও টেস্টের নিয়ম</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60 text-slate-300">
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">নেক্সট অ্যাকশন বাধ্যবাধকতা</td>
+                <td class="p-2.5">প্রতিটি লিডের পরবর্তী ফলো-আপ ডেট বাধ্যতামূলক</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">Opportunity.next_action_deadline</td>
+                <td class="p-2.5">কল লগে তারিখ ও সময় না দিলে সাবমিট ব্লক থাকে।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">ওভারডিউ রেড পালস</td>
+                <td class="p-2.5">ডেডলাইন অতিক্রান্ত টাস্কে লাল এলার্ট ব্যাজ</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">is_overdue Dynamic Property</td>
+                <td class="p-2.5"><a href="/tasks.html" class="text-indigo-400">Tasks</a> পেজে লাল বর্ডার ও "OVERDUE" ট্যাগ।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">আজকের ফলো-আপ তালিকা</td>
+                <td class="p-2.5">আজকের করণীয় কাজের ফিল্টার্ড তালিকা</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">/api/tasks/?filter=today</td>
+                <td class="p-2.5"><a href="/tasks.html" class="text-indigo-400">Tasks</a> পেজে <strong>Today's Tasks</strong> ট্যাব।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">অটো-কমপ্লিশন ও হিস্ট্রি</td>
+                <td class="p-2.5">টিক দিলে স্বয়ংক্রিয়ভাবে অ্যাক্টিভিটিতে এন্ট্রি</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">PUT /api/tasks/&lt;id&gt;/complete</td>
+                <td class="p-2.5">চেকবক্সে টিক দিলে টাস্কটি ফিনিশড হয়ে টাইমলাইনে যায়।</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
       <!-- M-07 -->
       <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl space-y-3 card-box">
         <div class="flex items-center justify-between flex-wrap gap-2">
-          <h3 class="text-base font-bold text-indigo-400">M-07: Site Visit Lifecycle & Logistics (Debrief Gate)</h3>
-          <a href="https://southeastlandmark.pythonicshariful.tech/events.html" target="_blank" class="text-xs bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 px-3 py-1 rounded-lg hover:bg-indigo-600/30">Open Events Calendar ↗</a>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">100% IMPLEMENTED</span>
+            <h3 class="text-base font-bold text-indigo-400">M-07: Site Visit Lifecycle & Logistics (Debrief Gate)</h3>
+          </div>
+          <a href="https://southeastlandmark.pythonicshariful.tech/events.html" target="_blank" class="text-xs bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 px-3 py-1 rounded-lg hover:bg-indigo-600/30">Open Events ↗</a>
         </div>
-        <p class="text-xs text-slate-300">
-          <strong>বৈশিষ্ট্য:</strong> সাইট ভিজিট বুকিং, পিকআপ ভ্যান/গাড়ির রিকুইজিশন এবং <strong>Fix 4 Debrief Gate</strong>। সাইট ভিজিট শেষে ক্লায়েন্টের মতামত ও রেটিং সাবমিট না করা পর্যন্ত প্রপোজাল স্টেজ লক থাকে।
-        </p>
-        <div class="p-3 bg-slate-950 rounded-xl text-xs text-slate-400 space-y-1">
-          <strong class="text-slate-200 block">ব্যবহারের নিয়ম:</strong>
-          <div>1. লিড কার্ডে <strong>Book Visit</strong> সিলেক্ট করে তারিখ ও পিকআপ পয়েন্ট দিন।</div>
-          <div>2. সাইট ভিজিট শেষে লিডের প্রোফাইলে গিয়ে <strong>Post-Visit Debrief</strong> বাটনে চাপ দিয়ে ক্লায়েন্টের পছন্দ-অপছন্দ লিখে সেভ করুন। সাথে সাথে কোটেশন আনলক হয়ে যাবে।</div>
+        <div class="overflow-x-auto rounded-xl border border-slate-800/80">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
+                <th class="p-2.5">সাব-আইটেম নাম</th>
+                <th class="p-2.5">আর্কিটেকচার স্পেসিফিকেশন</th>
+                <th class="p-2.5 text-center">স্থিতি</th>
+                <th class="p-2.5">ব্যাকএন্ড মডেল ও এন্ডপয়েন্ট</th>
+                <th class="p-2.5">ফ্রন্টএন্ড UI লোকেশন ও টেস্টের নিয়ম</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60 text-slate-300">
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">সাইট ভিজিট বুকিং</td>
+                <td class="p-2.5">প্রজেক্ট নাম, পিকআপ ঠিকানা ও তারিখ নির্ধারণ</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">Appointment model, POST /api/appointments/</td>
+                <td class="p-2.5"><a href="/events.html" class="text-indigo-400">Events</a> ক্যালেন্ডারে বা লিড কার্ডে <strong>Book Visit</strong>।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">গাড়ি ও ড্রাইভার বরাদ্দ</td>
+                <td class="p-2.5">কোম্পানির গাড়ি ও ড্রাইভার নির্বাচন</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">Appointment.vehicle_assigned, driver_name</td>
+                <td class="p-2.5">বুকিং ফরমে ড্রাইভার ও গাড়ির ড্রপডাউন সিলেক্ট।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">Fix 4 Debrief Gate</td>
+                <td class="p-2.5">ভিজিট শেষে ডিব্রিফ ছাড়া কোটেশন স্টেজ লক</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">Debrief model, POST /api/leads/.../debrief</td>
+                <td class="p-2.5"><a href="/lead-details.html" class="text-indigo-400">Lead Details</a> পেজে ডিব্রিফ ফর্ম সাবমিট আনলক।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">লাইভ শো-রেট হিসাব</td>
+                <td class="p-2.5">কনফার্ম ভিজিটের বিপরীতে উপস্থিত হওয়ার হার</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">/api/reports/kpis (KPI #7 Show Rate)</td>
+                <td class="p-2.5"><a href="/reports.html" class="text-indigo-400">Reports</a> পেজে লাইভ শো-রেট পারসেন্টেজ কার্ড।</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
-      <!-- M-08 & M-09 -->
+      <!-- M-08 -->
       <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl space-y-3 card-box">
         <div class="flex items-center justify-between flex-wrap gap-2">
-          <h3 class="text-base font-bold text-indigo-400">M-08 & M-09: Objection Intelligence & Plot Inventory</h3>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">100% IMPLEMENTED</span>
+            <h3 class="text-base font-bold text-indigo-400">M-08: Objection Intelligence & Resolution Engine</h3>
+          </div>
+          <a href="https://southeastlandmark.pythonicshariful.tech/notes.html" target="_blank" class="text-xs bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 px-3 py-1 rounded-lg hover:bg-indigo-600/30">Open Notes ↗</a>
+        </div>
+        <div class="overflow-x-auto rounded-xl border border-slate-800/80">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
+                <th class="p-2.5">সাব-আইটেম নাম</th>
+                <th class="p-2.5">আর্কিটেকচার স্পেসিফিকেশন</th>
+                <th class="p-2.5 text-center">স্থিতি</th>
+                <th class="p-2.5">ব্যাকএন্ড মডেল ও এন্ডপয়েন্ট</th>
+                <th class="p-2.5">ফ্রন্টএন্ড UI লোকেশন ও টেস্টের নিয়ম</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60 text-slate-300">
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">১১টি প্রমিত অবজেকশন কোড</td>
+                <td class="p-2.5">দাম, দূরত্ব, কাগজপত্র, কিস্তি, প্রতিযোগিতা ইত্যাদি</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">ObjectionCategory enum in models.py</td>
+                <td class="p-2.5"><a href="/leads.html" class="text-indigo-400">Leads Hub</a>-এ <strong>Objection</strong> বাটনের ড্রপডাউন।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">ইনটেনসিটি স্লাইডার (১-৫)</td>
+                <td class="p-2.5">গ্রাহকের আপত্তির তীব্রতা পরিমাপ</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">Objection.intensity (1 to 5)</td>
+                <td class="p-2.5">মডালে স্লাইডার টেনে তীব্রতা সেট করা যায়।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">প্রিন্সিপাল ব্লকার টগল</td>
+                <td class="p-2.5">ডিল আটকে থাকার প্রধান কারণ চিহ্নিতকরণ</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">Objection.is_principal_blocker</td>
+                <td class="p-2.5">চেকবক্সে টিক দিলে কার্ডে প্রাইমারি ব্লকার ট্যাগ শো করে।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">সেলস টক-ট্র্যাক স্ক্রিপ্ট</td>
+                <td class="p-2.5">আপত্তির বিপরীতে কার্যকর সেলস পিচ প্রদর্শন</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">/notes.html (Script Bank)</td>
+                <td class="p-2.5"><a href="/notes.html" class="text-indigo-400">Notes</a> পেজে ১১টি ক্যাটাগরির রেডিমেড পিচ গাইড।</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- M-09 -->
+      <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl space-y-3 card-box">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">100% IMPLEMENTED</span>
+            <h3 class="text-base font-bold text-indigo-400">M-09: Inventory, Plot Master & Unit Reservation</h3>
+          </div>
           <a href="https://southeastlandmark.pythonicshariful.tech/projects.html" target="_blank" class="text-xs bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 px-3 py-1 rounded-lg hover:bg-indigo-600/30">Open Projects ↗</a>
         </div>
-        <p class="text-xs text-slate-300">
-          <strong>বৈশিষ্ট্য:</strong> ৮টি স্ট্যান্ডার্ড অবজেকশনের কাউন্টার আর্গুমেন্ট ব্যাংক এবং প্রজেক্টের প্লট ইনভেন্টরি ট্র্যাকিং (Available, Blocked, Reserved, Sold)। ডাবল-সেলিং রোধে তাৎক্ষণিক ইউনিট হোল্ড সুরক্ষা।
-        </p>
-        <div class="p-3 bg-slate-950 rounded-xl text-xs text-slate-400 space-y-1">
-          <strong class="text-slate-200 block">ব্যবহারের নিয়ম:</strong>
-          <div>1. <a href="https://southeastlandmark.pythonicshariful.tech/projects.html" class="text-indigo-400">Projects</a> পেজে প্রজেক্টের নাম নির্বাচন করুন।</div>
-          <div>2. ৩ কাঠা বা ৫ কাঠার কাঙ্ক্ষিত প্লটটিতে ক্লিক করে ক্লায়েন্টের নামে <strong>Reserve Unit</strong> করুন।</div>
+        <div class="overflow-x-auto rounded-xl border border-slate-800/80">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
+                <th class="p-2.5">সাব-আইটেম নাম</th>
+                <th class="p-2.5">আর্কিটেকচার স্পেসিফিকেশন</th>
+                <th class="p-2.5 text-center">স্থিতি</th>
+                <th class="p-2.5">ব্যাকএন্ড মডেল ও এন্ডপয়েন্ট</th>
+                <th class="p-2.5">ফ্রন্টএন্ড UI লোকেশন ও টেস্টের নিয়ম</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60 text-slate-300">
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">মাস্টার লেআউট হায়ারার্কি</td>
+                <td class="p-2.5">Project ➔ Phase ➔ Block ➔ Road ➔ Plot লেআউট</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">Project, Phase, Block, Road, Plot</td>
+                <td class="p-2.5"><a href="/projects.html" class="text-indigo-400">Projects</a> পেজে ব্লক ও রোডভিত্তিক প্লটের তালিকা।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">৪-কালার প্লট স্ট্যাটাস</td>
+                <td class="p-2.5">Available (সবুজ), Blocked, Reserved, Sold (লাল)</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">PlotStatus enum in models.py</td>
+                <td class="p-2.5">প্লটের গ্রিডে লাইভ স্ট্যাটাস কালার কোডিং শো করে।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">ডাবল-সেলিং রোধক লক</td>
+                <td class="p-2.5">একই প্লটে একাধিক কর্মকর্তা বায়না নিতে পারবে না</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">Row-Level DB Transaction Lock</td>
+                <td class="p-2.5">একজন অফিসার বায়না নিলে সাথে সাথে অন্য সবার জন্য লক।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">টোকেন বায়না বুকিং</td>
+                <td class="p-2.5">লিডের সাথে প্লট নম্বর ও বুকিং মানি রেকর্ড</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">Reservation model, POST /api/sales/reservations</td>
+                <td class="p-2.5"><a href="/sales.html" class="text-indigo-400">Sales</a> পেজে <strong>Reserve Unit</strong> মডাল।</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
       <!-- M-10 -->
       <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl space-y-3 card-box">
         <div class="flex items-center justify-between flex-wrap gap-2">
-          <h3 class="text-base font-bold text-indigo-400">M-10: Sales Transaction, Invoicing & Collections</h3>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">100% IMPLEMENTED</span>
+            <h3 class="text-base font-bold text-indigo-400">M-10: Sales Transaction, Invoicing & Collections</h3>
+          </div>
           <a href="https://southeastlandmark.pythonicshariful.tech/sales.html" target="_blank" class="text-xs bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 px-3 py-1 rounded-lg hover:bg-indigo-600/30">Open Sales ↗</a>
         </div>
-        <p class="text-xs text-slate-300">
-          <strong>বৈশিষ্ট্য:</strong> বিক্রয় রেজিস্ট্রি, বুকিং মানি ট্র্যাকিং, কিস্তি শিডিউল ইনভয়েসিং এবং মার্কেটিং খরচের বিপরীতে গ্রাহক অর্জনের ব্যয় (CAC) ক্যালকুলেশন।
-        </p>
-        <div class="p-3 bg-slate-950 rounded-xl text-xs text-slate-400 space-y-1">
-          <strong class="text-slate-200 block">ব্যবহারের নিয়ম:</strong>
-          <div>1. ডিল ক্লোজ হলে <a href="https://southeastlandmark.pythonicshariful.tech/sales.html" class="text-indigo-400">Sales</a> পেজে গিয়ে <strong>Record Sale</strong> চাপুন।</div>
-          <div>2. প্লটের মোট মূল্য, ডাউন পেমেন্ট এবং কিস্তির সংখ্যা ইনপুট দিয়ে ইনভয়েস ইস্যু করুন।</div>
+        <div class="overflow-x-auto rounded-xl border border-slate-800/80">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
+                <th class="p-2.5">সাব-আইটেম নাম</th>
+                <th class="p-2.5">আর্কিটেকচার স্পেসিফিকেশন</th>
+                <th class="p-2.5 text-center">স্থিতি</th>
+                <th class="p-2.5">ব্যাকএন্ড মডেল ও এন্ডপয়েন্ট</th>
+                <th class="p-2.5">ফ্রন্টএন্ড UI লোকেশন ও টেস্টের নিয়ম</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60 text-slate-300">
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">ভেরিফাইড সেলস রেকর্ডার</td>
+                <td class="p-2.5">বিক্রয় মূল্য, ডাউন পেমেন্ট ও রেজিস্ট্রি ডেট এন্ট্রি</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">Sale model, POST /api/sales/record</td>
+                <td class="p-2.5"><a href="/sales.html" class="text-indigo-400">Sales</a> পেজে <strong>Record Sale</strong> বাটন।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">কিস্তি ও ইনভয়েস শিডিউল</td>
+                <td class="p-2.5">মাসিক কিস্তির ইনভয়েস শিডিউল জেনারেশন</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">Invoice, Installment models</td>
+                <td class="p-2.5"><a href="/sales.html" class="text-indigo-400">Sales</a> পেজে Invoices টেবিল (PAID, SENT, OVERDUE)।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">মার্কেটিং খরচ অনুমোদন</td>
+                <td class="p-2.5">ফেসবুক এডস ও অফলাইন খরচের ভাউচার অনুমোদন</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">Expense model, POST /api/expenses/</td>
+                <td class="p-2.5"><a href="/expenses.html" class="text-indigo-400">Expenses</a> পেজে ভাউচার আপলোড ও এপ্রুভাল।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">রিয়েল-টাইম CAC নির্ধারণ</td>
+                <td class="p-2.5">মোট মার্কেটিং ব্যয় ভাগ মোট বিক্রয় সংখ্যা</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">/api/reports/kpis (KPI #19 CAC)</td>
+                <td class="p-2.5"><a href="/reports.html" class="text-indigo-400">Reports</a> পেজে লাইভ কাস্টমার একুইজিশন কস্ট।</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
       <!-- M-11 -->
       <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl space-y-3 card-box">
         <div class="flex items-center justify-between flex-wrap gap-2">
-          <h3 class="text-base font-bold text-indigo-400">M-11: Reports & 20-KPI Analytics Engine</h3>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">100% IMPLEMENTED</span>
+            <h3 class="text-base font-bold text-indigo-400">M-11: Reports & 20-KPI Analytics Engine</h3>
+          </div>
           <a href="https://southeastlandmark.pythonicshariful.tech/reports.html" target="_blank" class="text-xs bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 px-3 py-1 rounded-lg hover:bg-indigo-600/30">Open Reports ↗</a>
         </div>
-        <p class="text-xs text-slate-300">
-          <strong>বৈশিষ্ট্য:</strong> Section D আর্কিটেকচারের ২০টি লাইভ পারফরম্যান্স মেট্রিক, ট্রেন্ড চার্ট এবং অপ্টিমাইজড ইন-মেমোরি ক্যাশ (০-মিলি-সেকেন্ড সুপার-ফাস্ট রেন্ডারিং)।
-        </p>
-        <div class="p-3 bg-slate-950 rounded-xl text-xs text-slate-400 space-y-1">
-          <strong class="text-slate-200 block">ব্যবহারের নিয়ম:</strong>
-          <div>1. <a href="https://southeastlandmark.pythonicshariful.tech/reports.html" class="text-indigo-400">Reports</a> পেজে পুরো কোম্পানির সার্বিক অগ্রগতি কার্ড ও গ্রাফে দেখতে পাবেন।</div>
-          <div>2. উপরে ডেট রেঞ্জ সিলেক্ট করে যেকোনো মাস বা সপ্তাহের পারফরম্যান্স বিশ্লেষণ করুন।</div>
+        <div class="overflow-x-auto rounded-xl border border-slate-800/80">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
+                <th class="p-2.5">সাব-আইটেম নাম</th>
+                <th class="p-2.5">আর্কিটেকচার স্পেসিফিকেশন</th>
+                <th class="p-2.5 text-center">স্থিতি</th>
+                <th class="p-2.5">ব্যাকএন্ড মডেল ও এন্ডপয়েন্ট</th>
+                <th class="p-2.5">ফ্রন্টএন্ড UI লোকেশন ও টেস্টের নিয়ম</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60 text-slate-300">
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">Section D ২০টি লাইভ KPI</td>
+                <td class="p-2.5">কোনো ডামি ডাটা ছাড়া সরাসরি এসকিউএল থেকে হিসাব</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">GET /api/reports/kpis</td>
+                <td class="p-2.5"><a href="/reports.html" class="text-indigo-400">Reports</a> পেজে ২০টি কার্ডের রেসপনসিভ গ্রিড।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">৬টি ডাইনামিক ট্রেন্ড চার্ট</td>
+                <td class="p-2.5">Outcome, Objections, Revenue, CAC, Show Rate চার্ট</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">Chart.js, /api/reports/charts/...</td>
+                <td class="p-2.5">ইন্টারেক্টিভ ক্যানভাস চার্টে রিয়েল-টাইম ট্রেন্ড বিশ্লেষণ।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">০-মিলি-সেকেন্ড সুপার ক্যাশ</td>
+                <td class="p-2.5">১৫-সেকেন্ডের মেমোরি ক্যাশ ও Stale-While-Revalidate</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">In-memory Cache in reports/routes.py</td>
+                <td class="p-2.5">পেজ রিফ্রেশ দিলে কোনো ল্যাগ ছাড়াই ইনস্ট্যান্ট লোড হয়।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">সিএসভি ও এক্সেল এক্সপোর্ট</td>
+                <td class="p-2.5">ম্যানেজার ও এডমিনের জন্য সমস্ত লিড ডাটা ডাউনলোড</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">GET /api/reports/export/leads</td>
+                <td class="p-2.5"><a href="/reports.html" class="text-indigo-400">Reports</a> পেজে <strong>Export Leads CSV</strong> বাটন।</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
       <!-- M-12 -->
       <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl space-y-3 card-box">
         <div class="flex items-center justify-between flex-wrap gap-2">
-          <h3 class="text-base font-bold text-indigo-400">M-12: Post-Handover CRM & Customer Support</h3>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">100% IMPLEMENTED</span>
+            <h3 class="text-base font-bold text-indigo-400">M-12: Post-Handover CRM, Customer Service & Tickets</h3>
+          </div>
           <a href="https://southeastlandmark.pythonicshariful.tech/tickets.html" target="_blank" class="text-xs bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 px-3 py-1 rounded-lg hover:bg-indigo-600/30">Open Tickets ↗</a>
         </div>
-        <p class="text-xs text-slate-300">
-          <strong>বৈশিষ্ট্য:</strong> প্লট রেজিস্ট্রেশন পরবর্তী দলিল হস্তান্তর, মিউটেশন ও সীমানা নির্ধারণ সংক্রান্ত গ্রাহক অনুরোধের ট্র্যাকিং টিকেট।
-        </p>
-        <div class="p-3 bg-slate-950 rounded-xl text-xs text-slate-400 space-y-1">
-          <strong class="text-slate-200 block">ব্যবহারের নিয়ম:</strong>
-          <div>1. গ্রাহক কোনো সার্ভিসের জন্য ফোন দিলে <a href="https://southeastlandmark.pythonicshariful.tech/tickets.html" class="text-indigo-400">Tickets</a> পেজে <strong>+ New Ticket</strong> খুলুন।</div>
-          <div>2. কাজ শেষ হলে টিকেটটিকে <code>RESOLVED</code> হিসেবে ক্লোজ করুন।</div>
+        <div class="overflow-x-auto rounded-xl border border-slate-800/80">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
+                <th class="p-2.5">সাব-আইটেম নাম</th>
+                <th class="p-2.5">আর্কিটেকচার স্পেসিফিকেশন</th>
+                <th class="p-2.5 text-center">স্থিতি</th>
+                <th class="p-2.5">ব্যাকএন্ড মডেল ও এন্ডপয়েন্ট</th>
+                <th class="p-2.5">ফ্রন্টএন্ড UI লোকেশন ও টেস্টের নিয়ম</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60 text-slate-300">
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">সার্ভিস টিকেট ডেস্ক</td>
+                <td class="p-2.5">দলিল রেজিস্ট্রি, নামজারি ও সীমানা পিলারিং টিকেট</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">Ticket model, POST /api/tickets/</td>
+                <td class="p-2.5"><a href="/tickets.html" class="text-indigo-400">Tickets</a> পেজে <strong>+ New Ticket</strong> বাটন।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">টিকেট স্ট্যাটাস লাইফসাইকেল</td>
+                <td class="p-2.5">OPEN ➔ IN_PROGRESS ➔ RESOLVED ট্র্যাকিং</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">TicketStatus enum in models.py</td>
+                <td class="p-2.5">সমাধানের পর রেজোলিউশন নোট লিখে ক্লোজ করা যায়।</td>
+              </tr>
+              <tr class="hover:bg-slate-800/20">
+                <td class="p-2.5 font-semibold text-white">রেফারেল ট্র্যাকিং</td>
+                <td class="p-2.5">সন্তুষ্ট ক্রেতার রেফারেন্সে নতুন লিড সনাক্তকরণ</td>
+                <td class="p-2.5 text-center text-emerald-400 font-bold">Active</td>
+                <td class="p-2.5 font-mono text-[11px] text-indigo-300">Opportunity.is_referral, referrer_contact_id</td>
+                <td class="p-2.5"><a href="/leads.html" class="text-indigo-400">Leads Hub</a>-এ রেফারেল লিডে স্পেশাল ব্যাজ প্রদর্শন।</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 

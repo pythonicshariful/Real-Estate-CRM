@@ -2415,4 +2415,207 @@ def cleanup_duplicate_leads():
     }), 200
 
 
+@leads_bp.route('/sample-csv', methods=['GET'])
+def download_sample_csv():
+    """Generates and serves a sample CSV template for importing leads."""
+    import io
+    import csv
+    from flask import Response
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Standard CSV Headers
+    writer.writerow([
+        'Full Name',
+        'Phone Number',
+        'Email Address',
+        'Profession',
+        'Lead Source',
+        'Project or Service Type',
+        'Budget (BDT)',
+        'Notes'
+    ])
+    
+    # Realistic Sample Rows
+    writer.writerow([
+        'Dr. Aminul Islam',
+        '+8801711223344',
+        'aminul.islam@example.com',
+        'Doctor',
+        'Facebook Ads',
+        'Residential Plot 5 Katha',
+        '8500000',
+        'Interested in South-facing plot, wants visit next Friday'
+    ])
+    writer.writerow([
+        'Farhana Sultana',
+        '+8801819876543',
+        'farhana.sultana@example.com',
+        'Banker',
+        'Website Form',
+        'Commercial Plot',
+        '12000000',
+        'Prefers 3-year installment facility'
+    ])
+    writer.writerow([
+        'Engr. Zahid Hasan',
+        '+8801915678901',
+        'zahid.hasan@example.com',
+        'Civil Engineer',
+        'Walk-in',
+        'Duplex Plot 10 Katha',
+        '18000000',
+        'Urgent inquiry, cash buyer'
+    ])
+    
+    response = Response(output.getvalue(), mimetype='text/csv')
+    response.headers['Content-Disposition'] = 'attachment; filename=southeast_landmark_leads_sample.csv'
+    return response
+
+
+@leads_bp.route('/import', methods=['POST'])
+@jwt_required()
+def import_leads_csv():
+    """Import multiple leads from an uploaded CSV file."""
+    import io
+    import csv
+    
+    claims = get_jwt()
+    role = claims.get('role')
+    user_id = int(get_jwt_identity())
+    
+    file = request.files.get('file')
+    if not file:
+        return jsonify({"status": "error", "message": "No CSV file uploaded. Please select a valid .csv file."}), 400
+        
+    filename = file.filename.lower()
+    if not filename.endswith('.csv'):
+        return jsonify({"status": "error", "message": "Invalid file format. Only CSV (.csv) files are supported."}), 400
+        
+    try:
+        content = file.stream.read().decode('utf-8-sig', errors='ignore')
+        stream = io.StringIO(content)
+        reader = csv.reader(stream)
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Failed to read file: {str(e)}"}), 400
+        
+    rows = list(reader)
+    if not rows or len(rows) < 2:
+        return jsonify({"status": "error", "message": "The CSV file is empty or missing data rows."}), 400
+        
+    raw_headers = [h.strip().lower().replace(' ', '_').replace('-', '_') for h in rows[0]]
+    
+    def find_col_idx(possible_names):
+        for idx, h in enumerate(raw_headers):
+            if any(p in h for p in possible_names):
+                return idx
+        return -1
+
+    idx_name = find_col_idx(['name', 'full_name', 'client', 'customer'])
+    idx_phone = find_col_idx(['phone', 'mobile', 'contact', 'cell', 'number'])
+    idx_email = find_col_idx(['email', 'mail'])
+    idx_prof = find_col_idx(['prof', 'job', 'occupation', 'title'])
+    idx_source = find_col_idx(['source', 'channel', 'campaign', 'origin'])
+    idx_service = find_col_idx(['service', 'project', 'type', 'plot', 'interest'])
+    idx_budget = find_col_idx(['budget', 'price', 'amount', 'val'])
+    idx_notes = find_col_idx(['note', 'comment', 'remark', 'desc'])
+    
+    if idx_name == -1 or idx_phone == -1:
+        return jsonify({
+            "status": "error",
+            "message": "CSV header must contain at least 'Full Name' and 'Phone Number' columns."
+        }), 400
+        
+    from app.utils.phone import normalize_phone, find_existing_contact
+    from app.utils.security import sanitize_input
+    
+    imported_count = 0
+    duplicate_count = 0
+    failed_count = 0
+    errors = []
+    
+    for row_idx, row in enumerate(rows[1:], start=2):
+        if not any(row):
+            continue
+            
+        name_val = row[idx_name].strip() if idx_name < len(row) else ''
+        phone_val = row[idx_phone].strip() if idx_phone < len(row) else ''
+        email_val = row[idx_email].strip() if idx_email != -1 and idx_email < len(row) else None
+        prof_val = row[idx_prof].strip() if idx_prof != -1 and idx_prof < len(row) else None
+        source_val = row[idx_source].strip() if idx_source != -1 and idx_source < len(row) else 'CSV Import'
+        service_val = row[idx_service].strip() if idx_service != -1 and idx_service < len(row) else 'Residential Plot'
+        budget_val = row[idx_budget].strip() if idx_budget != -1 and idx_budget < len(row) else None
+        notes_val = row[idx_notes].strip() if idx_notes != -1 and idx_notes < len(row) else None
+        
+        if not name_val or not phone_val:
+            failed_count += 1
+            errors.append(f"Row {row_idx}: Missing Name or Phone")
+            continue
+            
+        norm_phone = normalize_phone(phone_val)
+        if not norm_phone:
+            failed_count += 1
+            errors.append(f"Row {row_idx}: Invalid phone number '{phone_val}'")
+            continue
+            
+        contact = find_existing_contact(phone=norm_phone, email=email_val)
+        if not contact:
+            contact = Contact(
+                full_name=sanitize_input(name_val),
+                phone_raw=sanitize_input(phone_val),
+                phone_normalized=norm_phone,
+                email=sanitize_input(email_val) if email_val else None,
+                profession=sanitize_input(prof_val) if prof_val else None,
+                source=sanitize_input(source_val),
+                created_by_id=user_id
+            )
+            db.session.add(contact)
+            db.session.flush()
+        else:
+            duplicate_count += 1
+            if prof_val and not contact.profession:
+                contact.profession = sanitize_input(prof_val)
+            if email_val and not contact.email:
+                contact.email = sanitize_input(email_val)
+                
+        opp = Opportunity(
+            contact_id=contact.id,
+            assigned_to_id=user_id,
+            pipeline_stage=PipelineStage.NEW,
+            service_type=sanitize_input(service_val),
+            questionnaire_answers={
+                "profession": prof_val,
+                "budget": budget_val,
+                "notes": notes_val,
+                "imported_from": "CSV",
+                "import_row": row_idx
+            } if (prof_val or budget_val or notes_val) else {}
+        )
+        db.session.add(opp)
+        db.session.flush()
+        
+        if notes_val:
+            note_obj = Note(
+                opportunity_id=opp.id,
+                contact_id=contact.id,
+                created_by_id=user_id,
+                content=f"📝 [CSV Import Note]: {sanitize_input(notes_val)}"
+            )
+            db.session.add(note_obj)
+            
+        imported_count += 1
+        
+    db.session.commit()
+    
+    return jsonify({
+        "status": "success",
+        "imported": imported_count,
+        "duplicates": duplicate_count,
+        "failed": failed_count,
+        "errors": errors[:5],
+        "message": f"Successfully imported {imported_count} lead(s) ({duplicate_count} matched existing contacts)."
+    }), 200
+
+
 

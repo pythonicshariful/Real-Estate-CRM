@@ -2047,6 +2047,121 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ── Bulk Import CSV Modal (M-01) ──────────────────────────────────────────
+    window.openImportModal = function() {
+        const modal = document.getElementById('import-modal');
+        if (!modal) return;
+        const form = document.getElementById('import-leads-form');
+        if (form) form.reset();
+        const text = document.getElementById('file-chosen-text');
+        if (text) text.textContent = 'Drag and drop your .csv file here, or click to browse';
+        const statusBox = document.getElementById('import-status-box');
+        if (statusBox) {
+            statusBox.className = 'hidden p-3 rounded-xl text-xs space-y-1';
+            statusBox.innerHTML = '';
+        }
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+    };
+
+    window.closeImportModal = function() {
+        const modal = document.getElementById('import-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+        }
+    };
+
+    const importLeadsBtn = document.getElementById('import-leads-btn');
+    if (importLeadsBtn) {
+        importLeadsBtn.addEventListener('click', openImportModal);
+    }
+
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('import-csv-file');
+    if (dropZone && fileInput) {
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-indigo-500', 'bg-indigo-500/10');
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('border-indigo-500', 'bg-indigo-500/10');
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-indigo-500', 'bg-indigo-500/10');
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                document.getElementById('file-chosen-text').textContent = `Selected: ${e.dataTransfer.files[0].name}`;
+            }
+        });
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                document.getElementById('file-chosen-text').textContent = `Selected: ${fileInput.files[0].name}`;
+            }
+        });
+    }
+
+    const importForm = document.getElementById('import-leads-form');
+    if (importForm) {
+        importForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fileInput = document.getElementById('import-csv-file');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                if (window.showToast) window.showToast('Please select a CSV file first', 'error');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submit-import-btn');
+            const statusBox = document.getElementById('import-status-box');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg> Importing...`;
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const token = localStorage.getItem('crm_token');
+                const res = await fetch('/api/leads/import', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    throw new Error(data.message || data.error || 'Import failed');
+                }
+
+                statusBox.className = 'p-3 rounded-xl text-xs space-y-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300';
+                statusBox.innerHTML = `
+                    <div class="font-bold flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        Import Complete!
+                    </div>
+                    <div>${data.message}</div>
+                    ${data.errors && data.errors.length > 0 ? `<div class="text-rose-400 mt-1">Warnings: ${data.errors.join(', ')}</div>` : ''}
+                `;
+                statusBox.classList.remove('hidden');
+
+                if (window.showToast) window.showToast(`Imported ${data.imported} lead(s) successfully!`, 'success');
+                setTimeout(() => {
+                    closeImportModal();
+                    loadLeads();
+                }, 1500);
+            } catch (err) {
+                console.error(err);
+                statusBox.className = 'p-3 rounded-xl text-xs space-y-1 bg-rose-500/10 border border-rose-500/30 text-rose-300';
+                statusBox.innerHTML = `<strong>Error:</strong> ${err.message}`;
+                statusBox.classList.remove('hidden');
+                if (window.showToast) window.showToast(err.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg> <span>Start Import</span>`;
+            }
+        });
+    }
+
     // Initial Load
     loadLeads();
 });
