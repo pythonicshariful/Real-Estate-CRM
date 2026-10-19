@@ -113,20 +113,31 @@
       </div>
 
       <!-- Quick Actions -->
-      <div class="px-6 py-4 border-b border-slate-800/60 flex gap-3 bg-slate-900/20">
-        <button id="drawer-call-btn" class="flex-1 btn-gradient py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg> Log Call / Activity
+      <div class="px-6 py-4 border-b border-slate-800/60 flex flex-wrap gap-2 bg-slate-900/20">
+        <button id="drawer-call-btn" class="flex-1 min-w-[120px] btn-gradient py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg> Log Call
         </button>
-        <button id="drawer-appt-btn" class="flex-1 btn-ghost py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border border-slate-700">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg> Book Appt
+        <button id="drawer-appt-btn" class="flex-1 min-w-[110px] btn-ghost py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-slate-700 hover:border-indigo-500">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg> Book Appt
+        </button>
+        <button id="drawer-debrief-btn" class="flex-1 min-w-[110px] btn-ghost py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-purple-500/40 text-purple-300 hover:bg-purple-500/10">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg> Post-Visit Debrief
+        </button>
+        <button id="drawer-objection-btn" class="flex-1 min-w-[110px] btn-ghost py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-amber-500/40 text-amber-300 hover:bg-amber-500/10">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> Log Objection
+        </button>
+        <button id="drawer-exit-btn" class="flex-1 min-w-[90px] btn-ghost py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-rose-500/40 text-rose-300 hover:bg-rose-500/10">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg> Exit Lead
         </button>
       </div>
 
       <!-- Drawer Tabs -->
-      <div class="flex border-b border-slate-800/60 px-6 gap-2">
-        <button id="tab-overview" class="py-3 px-4 text-sm font-medium text-indigo-400 border-b-2 border-indigo-500 drawer-tab" data-target="content-overview">Overview & Timeline</button>
-        <button id="tab-notes" class="py-3 px-4 text-sm font-medium text-slate-500 border-b-2 border-transparent hover:text-slate-300 drawer-tab" data-target="content-notes">Notes</button>
-        <button id="tab-files" class="py-3 px-4 text-sm font-medium text-slate-500 border-b-2 border-transparent hover:text-slate-300 drawer-tab" data-target="content-files">Files</button>
+      <div class="flex border-b border-slate-800/60 px-6 gap-1 overflow-x-auto">
+        <button id="tab-overview" class="py-3 px-3 text-xs font-semibold text-indigo-400 border-b-2 border-indigo-500 drawer-tab whitespace-nowrap" data-target="content-overview">Overview</button>
+        <button id="tab-objections" class="py-3 px-3 text-xs font-semibold text-slate-500 border-b-2 border-transparent hover:text-slate-300 drawer-tab whitespace-nowrap" data-target="content-objections">Objections</button>
+        <button id="tab-coaching" class="py-3 px-3 text-xs font-semibold text-slate-500 border-b-2 border-transparent hover:text-slate-300 drawer-tab whitespace-nowrap" data-target="content-coaching">Coaching</button>
+        <button id="tab-notes" class="py-3 px-3 text-xs font-semibold text-slate-500 border-b-2 border-transparent hover:text-slate-300 drawer-tab whitespace-nowrap" data-target="content-notes">Notes</button>
+        <button id="tab-files" class="py-3 px-3 text-xs font-semibold text-slate-500 border-b-2 border-transparent hover:text-slate-300 drawer-tab whitespace-nowrap" data-target="content-files">Files</button>
       </div>
 
       <!-- Drawer Content Scrollable -->
@@ -159,6 +170,14 @@
             <div class="bg-slate-900/50 rounded-xl p-3 border border-slate-800/60">
               <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Service Type</div>
               <div class="text-sm font-medium text-slate-200 truncate" id="drawer-service-type">--</div>
+            </div>
+            <div class="bg-slate-900/50 rounded-xl p-3 border border-slate-800/60">
+              <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Manager Assessment (Fix 5)</div>
+              <div class="text-sm font-bold text-indigo-400 truncate" id="drawer-manager-label">--</div>
+            </div>
+            <div class="bg-slate-900/50 rounded-xl p-3 border border-slate-800/60">
+              <div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Final Result (Fix 1)</div>
+              <div class="text-sm font-bold text-emerald-400 truncate" id="drawer-final-result">--</div>
             </div>
           </div>
           
@@ -200,6 +219,32 @@
             <div class="space-y-3" id="drawer-notes-list">
               <!-- Notes injected here -->
             </div>
+          </div>
+        </div>
+
+        <!-- Tab: Objections (M-08) -->
+        <div id="content-objections" class="drawer-content-pane hidden space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Logged Objections</h3>
+            <button onclick="openObjectionModal()" class="btn-ghost px-2.5 py-1 text-xs text-amber-300 border border-amber-500/40 hover:bg-amber-500/10 rounded-lg font-semibold flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg> Log Objection
+            </button>
+          </div>
+          <div id="drawer-objections-list" class="space-y-3">
+            <div class="text-xs text-slate-500">Loading objections...</div>
+          </div>
+        </div>
+
+        <!-- Tab: Coaching (M-05 & M-09) -->
+        <div id="content-coaching" class="drawer-content-pane hidden space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Manager Coaching Scorecard</h3>
+            <button onclick="openCoachingModal()" class="btn-ghost px-2.5 py-1 text-xs text-indigo-300 border border-indigo-500/40 hover:bg-indigo-500/10 rounded-lg font-semibold flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg> New Scorecard
+            </button>
+          </div>
+          <div id="drawer-coaching-list" class="space-y-3">
+            <div class="text-xs text-slate-500">Loading coaching logs...</div>
           </div>
         </div>
 
@@ -642,6 +687,306 @@
     </div>
   </div>
 
+
+  <!-- Post-Visit Debrief Modal (Fix 4 & M-07) -->
+  <div id="debrief-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl transform scale-95 transition-transform duration-200" id="debrief-modal-content">
+      <div class="border-b border-slate-800 p-5 flex justify-between items-center bg-slate-900/50">
+        <div>
+          <h3 class="font-bold text-white text-lg flex items-center gap-2">
+            <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+            Post-Visit Debrief
+          </h3>
+          <p class="text-xs text-slate-400 mt-0.5">Mandatory post-visit debrief & objection capture (Fix 4 & M-07)</p>
+        </div>
+        <button onclick="closeDebriefModal()" class="text-slate-400 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="debrief-form" class="p-6 space-y-4">
+        <input type="hidden" id="debrief-appt-id">
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Debrief Notes <span class="text-rose-500">*</span></label>
+          <textarea id="debrief-notes" rows="3" required class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 placeholder-slate-600" placeholder="Summarize what occurred during the site visit or client meeting..."></textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Principal Objection (M-08 Codes)</label>
+          <select id="debrief-objection-code" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+            <option value="">-- No Major Objection --</option>
+            <option value="DEVELOPMENT_VISIBILITY">DEVELOPMENT_VISIBILITY — Site Development Visibility</option>
+            <option value="SHAH_ALI_BRIDGE_DOUBT">SHAH_ALI_BRIDGE_DOUBT — Shah Ali Bridge / Road Doubts</option>
+            <option value="DISTANCE">DISTANCE — Distance / Commute Concerns</option>
+            <option value="PRICE">PRICE — Price / Affordability</option>
+            <option value="PAYMENT_TERMS">PAYMENT_TERMS — Payment Terms / Installment Schedule</option>
+            <option value="TRUST_DOCUMENTATION">TRUST_DOCUMENTATION — Trust / Land Documentation / Legal Clearance</option>
+            <option value="FAMILY_APPROVAL">FAMILY_APPROVAL — Family / Partner Approval</option>
+            <option value="TIMING">TIMING — Timing / Not Ready Yet</option>
+            <option value="CASH_FLOW">CASH_FLOW — Cash Flow / Liquidity Delay</option>
+            <option value="COMPETITOR">COMPETITOR — Considering Competitor Project</option>
+            <option value="NO_RESPONSE_POST_VISIT">NO_RESPONSE_POST_VISIT — No Response Post-Visit</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Objection Intensity</label>
+            <select id="debrief-intensity" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="LOW">Low (Mild Concern)</option>
+              <option value="MEDIUM" selected>Medium (Negotiable)</option>
+              <option value="HIGH">High (Dealbreaker)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Competitor Name (if any)</label>
+            <input type="text" id="debrief-competitor" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 placeholder-slate-600" placeholder="e.g. Bashundhara / Jolshiri">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Executive Response</label>
+          <input type="text" id="debrief-response" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 placeholder-slate-600" placeholder="How did you address this objection?">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Next Action Type <span class="text-rose-500">*</span></label>
+            <select id="debrief-next-action-type" required class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="CALL">Call</option>
+              <option value="MEETING">Meeting</option>
+              <option value="VISIT">Second Visit</option>
+              <option value="WHATSAPP">WhatsApp</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Next Action Deadline <span class="text-rose-500">*</span></label>
+            <input type="datetime-local" id="debrief-next-action-deadline" required style="color-scheme: dark;" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+        </div>
+        <div class="pt-4 flex justify-end gap-3 border-t border-slate-800">
+          <button type="button" onclick="closeDebriefModal()" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-800 transition-colors">Cancel</button>
+          <button type="submit" class="btn-gradient px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2">Submit Debrief</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Alternative Exit Modal (Section A: 5 Alternative Exits) -->
+  <div id="exit-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl transform scale-95 transition-transform duration-200" id="exit-modal-content">
+      <div class="border-b border-slate-800 p-5 flex justify-between items-center bg-slate-900/50">
+        <div>
+          <h3 class="font-bold text-white text-lg flex items-center gap-2">
+            <svg class="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            Route to Alternative Exit
+          </h3>
+          <p class="text-xs text-slate-400 mt-0.5">Section A Pipeline Architecture: 5 Controlled Exit Stages</p>
+        </div>
+        <button onclick="closeExitModal()" class="text-slate-400 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="exit-form" class="p-6 space-y-4">
+        <input type="hidden" id="exit-lead-id">
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Exit Stage <span class="text-rose-500">*</span></label>
+          <select id="exit-stage-select" required onchange="handleExitStageChange()" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+            <option value="CLOSED_LOST">CLOSED_LOST (Mandatory Reason Code + Authorising Officer)</option>
+            <option value="NURTURE">NURTURE (Long-term Nurture Campaign + Follow-up Date)</option>
+            <option value="BOUGHT_ELSEWHERE">BOUGHT_ELSEWHERE (Purchased from Competitor)</option>
+            <option value="INVALID">INVALID (Spam / Wrong Number / Disqualified)</option>
+            <option value="UNREACHABLE">UNREACHABLE (Exhausted Contact Protocol)</option>
+          </select>
+        </div>
+
+        <!-- Dynamic Closed Lost Fields -->
+        <div id="exit-closed-lost-fields" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Reason Code <span class="text-rose-500">*</span></label>
+            <select id="exit-reason-code" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="PRICE">Price / Budget Too High</option>
+              <option value="DEVELOPMENT_VISIBILITY">Development Visibility on Site</option>
+              <option value="SHAH_ALI_BRIDGE_DOUBT">Shah Ali Bridge / Road Doubts</option>
+              <option value="DISTANCE">Distance / Commute Concerns</option>
+              <option value="PAYMENT_TERMS">Payment Terms / Cash Flow Constraints</option>
+              <option value="TRUST_DOCUMENTATION">Trust / Documentation / Approval Hesitation</option>
+              <option value="COMPETITOR">Chose Competitor</option>
+              <option value="TIMING">Postponed Purchase Decision</option>
+              <option value="FAMILY_APPROVAL">Family / Co-decision Maker Rejected</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Competitor Name (if any)</label>
+              <input type="text" id="exit-competitor-name" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 placeholder-slate-600" placeholder="e.g. Ashiyan / Purbachal">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Authorising Officer <span class="text-rose-500">*</span></label>
+              <input type="text" id="exit-authorising-officer" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 placeholder-slate-600" placeholder="Manager / GM / TL Name">
+            </div>
+          </div>
+        </div>
+
+        <!-- Dynamic Nurture Fields -->
+        <div id="exit-nurture-fields" class="space-y-4 hidden">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Reactivation Campaign <span class="text-rose-500">*</span></label>
+            <select id="exit-campaign-name" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="Q3_ROAD_MILESTONE">Shah Ali Bridge / Road Milestone Update</option>
+              <option value="FESTIVE_OFFER">Eid / Festive Payment Concession</option>
+              <option value="DEVELOPMENT_PROGRESS">Site Work & Piling Progress Video</option>
+              <option value="INVESTOR_ROUND">Quarterly Plot Price Appreciation Advisory</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Scheduled Follow-up Date <span class="text-rose-500">*</span></label>
+            <input type="date" id="exit-follow-up-date" style="color-scheme: dark;" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Detailed Reason / Notes <span class="text-rose-500">*</span></label>
+          <textarea id="exit-notes" rows="3" required class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 placeholder-slate-600" placeholder="Detailed explanation for exiting this lead..."></textarea>
+        </div>
+
+        <div class="pt-4 flex justify-end gap-3 border-t border-slate-800">
+          <button type="button" onclick="closeExitModal()" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-800 transition-colors">Cancel</button>
+          <button type="submit" class="btn-gradient px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2">Confirm Exit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Log Objection Modal (M-08) -->
+  <div id="objection-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl transform scale-95 transition-transform duration-200" id="objection-modal-content">
+      <div class="border-b border-slate-800 p-5 flex justify-between items-center bg-slate-900/50">
+        <div>
+          <h3 class="font-bold text-white text-lg flex items-center gap-2">
+            <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            Log Objection (M-08 Intelligence)
+          </h3>
+          <p class="text-xs text-slate-400 mt-0.5">Categorize against 11 architecture objection codes</p>
+        </div>
+        <button onclick="closeObjectionModal()" class="text-slate-400 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="objection-form" class="p-6 space-y-4">
+        <input type="hidden" id="obj-lead-id">
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Objection Code <span class="text-rose-500">*</span></label>
+          <select id="obj-category" required class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+            <option value="DEVELOPMENT_VISIBILITY">DEVELOPMENT_VISIBILITY — Site Development Visibility</option>
+            <option value="SHAH_ALI_BRIDGE_DOUBT">SHAH_ALI_BRIDGE_DOUBT — Shah Ali Bridge / Road Doubts</option>
+            <option value="DISTANCE">DISTANCE — Distance / Commute Concerns</option>
+            <option value="PRICE">PRICE — Price / Affordability</option>
+            <option value="PAYMENT_TERMS">PAYMENT_TERMS — Payment Terms / Installment Schedule</option>
+            <option value="TRUST_DOCUMENTATION">TRUST_DOCUMENTATION — Trust / Land Documentation / Legal Clearance</option>
+            <option value="FAMILY_APPROVAL">FAMILY_APPROVAL — Family / Partner Approval</option>
+            <option value="TIMING">TIMING — Timing / Not Ready Yet</option>
+            <option value="CASH_FLOW">CASH_FLOW — Cash Flow / Liquidity Delay</option>
+            <option value="COMPETITOR">COMPETITOR — Considering Competitor Project</option>
+            <option value="NO_RESPONSE_POST_VISIT">NO_RESPONSE_POST_VISIT — No Response Post-Visit</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Specific Client Objection <span class="text-rose-500">*</span></label>
+          <textarea id="obj-specific" rows="2" required class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 placeholder-slate-600" placeholder="Exact words or concern raised by client..."></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Intensity Level (1-5)</label>
+            <select id="obj-intensity" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="1">1 — Mild Curiosity</option>
+              <option value="2">2 — Hesitation</option>
+              <option value="3" selected>3 — Serious Roadblock</option>
+              <option value="4">4 — Critical Concern</option>
+              <option value="5">5 — Dealbreaker</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Competitor Name (if any)</label>
+            <input type="text" id="obj-competitor" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 placeholder-slate-600" placeholder="e.g. Bashundhara / Purbachal">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Executive Response</label>
+          <input type="text" id="obj-response" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 placeholder-slate-600" placeholder="How did you respond?">
+        </div>
+        <div class="flex items-center gap-4 pt-2">
+          <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-300">
+            <input type="checkbox" id="obj-is-principal" checked class="rounded bg-slate-800 border-slate-700 text-indigo-500">
+            <span>Primary Blocker (Principal Objection)</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-300">
+            <input type="checkbox" id="obj-reactivation" class="rounded bg-slate-800 border-slate-700 text-indigo-500">
+            <span>Reactivation Eligible (Once Milestones Met)</span>
+          </label>
+        </div>
+        <div class="pt-4 flex justify-end gap-3 border-t border-slate-800">
+          <button type="button" onclick="closeObjectionModal()" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-800 transition-colors">Cancel</button>
+          <button type="submit" class="btn-gradient px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2">Save Objection</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Manager Coaching Modal (M-05 & M-09) -->
+  <div id="coaching-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl transform scale-95 transition-transform duration-200" id="coaching-modal-content">
+      <div class="border-b border-slate-800 p-5 flex justify-between items-center bg-slate-900/50">
+        <div>
+          <h3 class="font-bold text-white text-lg flex items-center gap-2">
+            <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            Manager Coaching Scorecard
+          </h3>
+          <p class="text-xs text-slate-400 mt-0.5">Quality Assurance & Call Coaching (M-05 & M-09)</p>
+        </div>
+        <button onclick="closeCoachingModal()" class="text-slate-400 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="coaching-form" class="p-6 space-y-4">
+        <input type="hidden" id="coach-lead-id">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Executive <span class="text-rose-500">*</span></label>
+            <select id="coach-executive-select" required class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+              <!-- Dynamically populated -->
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Overall Score (1 - 10) <span class="text-rose-500">*</span></label>
+            <select id="coach-score" required class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 font-bold text-amber-400">
+              <option value="10">10 / 10 — Outstanding Performance</option>
+              <option value="9">9 / 10 — Excellent Pitch & Objection Handling</option>
+              <option value="8" selected>8 / 10 — Very Good Execution</option>
+              <option value="7">7 / 10 — Good, Minor Adjustments Needed</option>
+              <option value="6">6 / 10 — Satisfactory, Re-pitch Bridge Point</option>
+              <option value="5">5 / 10 — Needs Improvement on Trust Pitch</option>
+              <option value="4">4 / 10 — Poor Script Adherence</option>
+              <option value="3">3 / 10 — Unprepared for Key Objections</option>
+              <option value="2">2 / 10 — Critical Failure</option>
+              <option value="1">1 / 10 — Unacceptable</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Strengths Observed</label>
+          <textarea id="coach-strengths" rows="2" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 placeholder-slate-600" placeholder="Positive points in the pitch, empathy, tone..."></textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Areas for Improvement</label>
+          <textarea id="coach-improvements" rows="2" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 placeholder-slate-600" placeholder="Where the executive faltered or missed cues..."></textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Action Items / Corrective Tasks</label>
+          <textarea id="coach-action-items" rows="2" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 placeholder-slate-600" placeholder="Specific drills, documentation review, or call rehearsals assigned..."></textarea>
+        </div>
+        <div class="pt-4 flex justify-end gap-3 border-t border-slate-800">
+          <button type="button" onclick="closeCoachingModal()" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-800 transition-colors">Cancel</button>
+          <button type="submit" class="btn-gradient px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2">Save Scorecard</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <script src="/assets/js/sidebar.js"></script>
   <script type="module" src="/assets/js/app.js"></script>

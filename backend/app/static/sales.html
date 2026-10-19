@@ -11,12 +11,17 @@
   <main class="flex-1 flex flex-col h-screen overflow-hidden">
     <header class="glass-dark border-b border-slate-800/60 min-h-14 py-2 md:py-0 flex items-center justify-between px-4 md:px-6 flex-shrink-0 flex-wrap gap-2">
       <div>
-        <div class="text-sm font-bold text-white">Sales Hub</div>
-        <div class="text-xs text-slate-500">Invoices, billing and revenue collection performance</div>
+        <div class="text-sm font-bold text-white">Commercial & Sales Hub</div>
+        <div class="text-xs text-slate-500">M-10 Plot Allocations, Reservations, Billing & Revenue Collection</div>
       </div>
-      <button onclick="openInvoiceModal()" class="btn-gradient px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg> New Invoice
-      </button>
+      <div class="flex gap-2">
+        <button onclick="openReservationModal()" class="btn-ghost border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> New Reservation
+        </button>
+        <button onclick="openInvoiceModal()" class="btn-gradient px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg> New Invoice
+        </button>
+      </div>
     </header>
 
     <div class="flex-1 overflow-y-auto p-5 space-y-5">
@@ -40,8 +45,14 @@
         </div>
       </div>
 
-      <!-- Invoices Table -->
-      <div class="chart-card overflow-x-auto">
+      <!-- Navigation Tabs (M-10 Suite) -->
+      <div class="flex border-b border-slate-800 gap-2">
+        <button id="tab-btn-invoices" onclick="switchSalesTab('invoices')" class="py-2.5 px-4 text-xs font-bold text-indigo-400 border-b-2 border-indigo-500 sales-tab-btn">Invoices & Billing</button>
+        <button id="tab-btn-reservations" onclick="switchSalesTab('reservations')" class="py-2.5 px-4 text-xs font-bold text-slate-500 border-b-2 border-transparent hover:text-slate-300 sales-tab-btn">Plot & Unit Reservations (M-10)</button>
+      </div>
+
+      <!-- Pane: Invoices Table -->
+      <div id="pane-invoices" class="chart-card overflow-x-auto">
         <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div class="chart-title">Recent Invoices</div>
           <select id="filter-status" onchange="fetchInvoices()" class="input-glass px-2 py-1.5 rounded-lg text-xs">
@@ -54,23 +65,55 @@
           </select>
         </div>
         <div class="overflow-x-auto w-full">
-<table class="crm-table w-full text-left border-collapse">
-          <thead>
-            <tr>
-              <th>Invoice #</th>
-              <th>Client</th>
-              <th>Amount</th>
-              <th>Issued Date</th>
-              <th>Due Date</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="invoices-table-body">
-            <tr><td colspan="7" class="text-center text-slate-500 py-10">Loading invoices...</td></tr>
-          </tbody>
-        </table>
-</div>
+          <table class="crm-table w-full text-left border-collapse">
+            <thead>
+              <tr>
+                <th>Invoice #</th>
+                <th>Client</th>
+                <th>Amount</th>
+                <th>Issued Date</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="invoices-table-body">
+              <tr><td colspan="7" class="text-center text-slate-500 py-10">Loading invoices...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Pane: Reservations Table (M-10) -->
+      <div id="pane-reservations" class="chart-card overflow-x-auto hidden">
+        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div>
+            <div class="chart-title">Plot & Unit Reservations</div>
+            <p class="text-xs text-slate-400">Formal reservations, booking advances, money receipts & approving officers</p>
+          </div>
+          <button onclick="openReservationModal()" class="btn-gradient px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1">
+            + Reserve Unit
+          </button>
+        </div>
+        <div class="overflow-x-auto w-full">
+          <table class="crm-table w-full text-left border-collapse">
+            <thead>
+              <tr>
+                <th>Unit Ref / Plot</th>
+                <th>Client Name</th>
+                <th>Project</th>
+                <th>Booking Advance (BDT)</th>
+                <th>Money Receipt #</th>
+                <th>Payment Method</th>
+                <th>Approving Officer</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="reservations-table-body">
+              <tr><td colspan="8" class="text-center text-slate-500 py-10">Loading reservations...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </main>
@@ -130,6 +173,72 @@
     </div>
   </div>
 
+  <!-- Reservation Modal (Module M-10) -->
+  <div id="reservation-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+    <div class="glass-dark border border-white/10 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl">
+      <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center">
+        <div>
+          <h3 class="font-bold text-white text-lg flex items-center gap-2">
+            <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Reserve Plot / Unit (M-10)
+          </h3>
+          <p class="text-xs text-slate-400 mt-0.5">Commercial booking advance, money receipt & allocation</p>
+        </div>
+        <button onclick="closeReservationModal()" class="text-slate-400 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="reservation-form" onsubmit="saveReservation(event)" class="p-6 space-y-4">
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Customer / Lead <span class="text-rose-500">*</span></label>
+          <select id="res-lead-id" required class="w-full input-glass px-3 py-2 rounded-xl text-sm bg-slate-950">
+            <!-- Dynamically populated from leads -->
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Project</label>
+            <select id="res-project-id" class="w-full input-glass px-3 py-2 rounded-xl text-sm bg-slate-950">
+              <option value="">-- Select Project --</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Unit Reference / Plot # <span class="text-rose-500">*</span></label>
+            <input type="text" id="res-unit-ref" required class="w-full input-glass px-3 py-2 rounded-xl text-sm" placeholder="e.g. Plot #12, Road #4">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Booking Advance (BDT) <span class="text-rose-500">*</span></label>
+            <input type="number" step="0.01" id="res-amount" required class="w-full input-glass px-3 py-2 rounded-xl text-sm font-mono text-emerald-400" placeholder="e.g. 500000">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Money Receipt # <span class="text-rose-500">*</span></label>
+            <input type="text" id="res-receipt-no" required class="w-full input-glass px-3 py-2 rounded-xl text-sm font-mono" placeholder="e.g. MR-2026-104">
+          </div>
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Payment Method</label>
+          <select id="res-payment-method" class="w-full input-glass px-3 py-2 rounded-xl text-sm bg-slate-950">
+            <option value="BANK_TRANSFER">Bank Transfer / EFTN</option>
+            <option value="CHEQUE">Cheque / Pay Order</option>
+            <option value="CASH">Cash</option>
+            <option value="CARD">Debit / Credit Card</option>
+            <option value="MOBILE_BANKING">bKash / Nagad</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Booking Notes / Terms</label>
+          <textarea id="res-notes" rows="2" class="w-full input-glass px-3 py-2 rounded-xl text-sm" placeholder="Forfeiture terms, down payment timeline..."></textarea>
+        </div>
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-800">
+          <button type="button" onclick="closeReservationModal()" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-800 transition-colors">Cancel</button>
+          <button type="submit" class="btn-gradient px-6 py-2.5 rounded-xl text-sm font-semibold text-white">Issue Reservation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div id="toast-container"></div>
   <script src="/assets/js/sidebar.js"></script>
   <script type="module" src="/assets/js/app.js"></script>
@@ -137,7 +246,9 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       fetchInvoices();
+      fetchReservations();
       fetchClients();
+      loadLeadsAndProjectsForReservations();
       
       document.getElementById('inv-issued').value = new Date().toISOString().substring(0, 10);
       document.getElementById('inv-due').value = new Date().toISOString().substring(0, 10);
@@ -147,6 +258,146 @@
         await saveInvoice();
       });
     });
+
+    // Tab switcher
+    window.switchSalesTab = function(tab) {
+      const btnInvoices = document.getElementById('tab-btn-invoices');
+      const btnRes = document.getElementById('tab-btn-reservations');
+      const paneInvoices = document.getElementById('pane-invoices');
+      const paneRes = document.getElementById('pane-reservations');
+
+      if (tab === 'invoices') {
+        btnInvoices.className = "py-2.5 px-4 text-xs font-bold text-indigo-400 border-b-2 border-indigo-500 sales-tab-btn";
+        btnRes.className = "py-2.5 px-4 text-xs font-bold text-slate-500 border-b-2 border-transparent hover:text-slate-300 sales-tab-btn";
+        paneInvoices.classList.remove('hidden');
+        paneRes.classList.add('hidden');
+      } else {
+        btnRes.className = "py-2.5 px-4 text-xs font-bold text-emerald-400 border-b-2 border-emerald-500 sales-tab-btn";
+        btnInvoices.className = "py-2.5 px-4 text-xs font-bold text-slate-500 border-b-2 border-transparent hover:text-slate-300 sales-tab-btn";
+        paneRes.classList.remove('hidden');
+        paneInvoices.classList.add('hidden');
+      }
+    };
+
+    async function loadLeadsAndProjectsForReservations() {
+      try {
+        const token = localStorage.getItem('crm_token');
+        const [leadsRes, projRes] = await Promise.all([
+          fetch('/api/leads/', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('/api/projects/', { headers: { 'Authorization': `Bearer ${token}` } })
+        ]);
+        if (leadsRes.ok) {
+          const leads = await leadsRes.json();
+          const sel = document.getElementById('res-lead-id');
+          if (sel) {
+            sel.innerHTML = '<option value="">-- Select Lead / Client --</option>' + leads.map(l => {
+              const name = l.contact?.full_name || `Lead #${l.id}`;
+              const phone = l.contact?.phone || '';
+              return `<option value="${l.id}">${name} (${phone}) — ${l.pipeline_stage}</option>`;
+            }).join('');
+          }
+        }
+        if (projRes.ok) {
+          const projs = await projRes.json();
+          const pSel = document.getElementById('res-project-id');
+          if (pSel) {
+            pSel.innerHTML = '<option value="">-- Select Project --</option>' + projs.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function fetchReservations() {
+      try {
+        const token = localStorage.getItem('crm_token');
+        const res = await fetch('/api/leads/reservations', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Failed to fetch reservations');
+        const reservations = await res.json();
+        renderReservations(reservations);
+      } catch (err) {
+        console.error("Reservations fetch error:", err);
+      }
+    }
+
+    function renderReservations(reservations) {
+      const tbody = document.getElementById('reservations-table-body');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      if (!reservations || reservations.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center text-slate-500 py-10">No unit reservations found. Create a reservation to track booking advances.</td></tr>`;
+        return;
+      }
+
+      reservations.forEach(r => {
+        const amt = parseFloat(r.booking_amount || 0);
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="font-bold text-white">${r.unit_reference}</td>
+          <td class="font-medium text-slate-200">${r.customer_name} <div class="text-[10px] text-slate-500">${r.customer_phone || ''}</div></td>
+          <td class="text-indigo-400 text-xs">${r.project_name || 'N/A'}</td>
+          <td class="font-semibold text-emerald-400 font-mono">৳${amt.toLocaleString()}</td>
+          <td class="font-mono text-amber-300 text-xs">#${r.receipt_number}</td>
+          <td><span class="badge bg-slate-800 text-slate-300 border border-slate-700">${r.payment_method || 'BANK'}</span></td>
+          <td class="text-xs text-slate-300">${r.approving_officer_name || 'Authorized Officer'}</td>
+          <td class="text-xs text-slate-400">${r.created_at ? new Date(r.created_at).toLocaleDateString() : '--'}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    window.openReservationModal = function() {
+      document.getElementById('reservation-form').reset();
+      document.getElementById('res-receipt-no').value = `MR-${Date.now().toString().slice(-6)}`;
+      const modal = document.getElementById('reservation-modal');
+      modal.classList.remove('hidden');
+      setTimeout(() => modal.classList.remove('opacity-0'), 10);
+    };
+
+    window.closeReservationModal = function() {
+      const modal = document.getElementById('reservation-modal');
+      modal.classList.add('opacity-0');
+      setTimeout(() => modal.classList.add('hidden'), 200);
+    };
+
+    window.saveReservation = async function(e) {
+      if (e) e.preventDefault();
+      const leadId = document.getElementById('res-lead-id').value;
+      if (!leadId) {
+        alert("Please select a lead/client");
+        return;
+      }
+
+      const payload = {
+        unit_reference: document.getElementById('res-unit-ref').value,
+        booking_amount: parseFloat(document.getElementById('res-amount').value),
+        receipt_number: document.getElementById('res-receipt-no').value,
+        payment_method: document.getElementById('res-payment-method').value,
+        project_id: document.getElementById('res-project-id').value ? parseInt(document.getElementById('res-project-id').value) : undefined,
+        notes: document.getElementById('res-notes').value
+      };
+
+      try {
+        const token = localStorage.getItem('crm_token');
+        const res = await fetch(`/api/leads/${leadId}/reservations`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(()=>({}));
+          throw new Error(err.error || "Failed to create reservation");
+        }
+        alert("Plot Reservation created successfully! Pipeline stage advanced to RESERVATION_RECEIVED.");
+        closeReservationModal();
+        fetchReservations();
+      } catch (err) {
+        alert(err.message);
+      }
+    };
 
     async function fetchClients() {
       try {

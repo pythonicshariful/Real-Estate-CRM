@@ -353,6 +353,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const contactName = lead.contact?.full_name || `Lead #${lead.id}`;
             const initials = contactName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'L';
 
+            // Calculate lead age (M-04)
+            let leadAgeText = '';
+            if (lead.created_at) {
+                const diffMs = Date.now() - new Date(lead.created_at).getTime();
+                const diffHrs = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60)));
+                const diffDays = Math.floor(diffHrs / 24);
+                leadAgeText = diffDays > 0 ? `${diffDays}d ${diffHrs % 24}h` : `${diffHrs}h`;
+            }
+
+            // Priority badge (M-04)
+            const prio = (lead.priority || 'MEDIUM').toUpperCase();
+            let prioClass = 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30';
+            if (prio === 'URGENT') prioClass = 'bg-rose-500/20 text-rose-300 border-rose-500/40';
+            else if (prio === 'HIGH') prioClass = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+            else if (prio === 'LOW') prioClass = 'bg-slate-800 text-slate-400 border-slate-700';
+
             const card = document.createElement('div');
             card.className = `chart-card border-l-4 ${borderClass} hover:bg-white/[0.03] cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 transition-colors`;
             
@@ -363,7 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${initials}
                   </div>
                   <div>
-                    <div class="font-bold text-white text-sm flex items-center gap-2">
+                    <div class="font-bold text-white text-sm flex items-center gap-2 flex-wrap">
                         <a href="/lead-details.html?id=${lead.id}" class="hover:text-indigo-400 hover:underline transition-colors" onclick="event.stopPropagation()">${contactName}</a>
                         <button class="star-btn hover:scale-110 transition-transform" data-id="${lead.id}" data-starred="${lead.is_starred}">
                             <svg class="w-4 h-4 ${lead.is_starred ? 'text-yellow-400 fill-current' : 'text-slate-500'}" viewBox="0 0 24 24" stroke="currentColor" fill="none"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
@@ -372,20 +388,28 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button class="temp-btn badge ${lead.lead_temperature === 'HOT' ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' : lead.lead_temperature === 'WARM' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-blue-500/20 text-blue-400 border-blue-500/30'} hover:opacity-80 transition-opacity" data-id="${lead.id}" data-temp="${lead.lead_temperature}">
                             ${lead.lead_temperature || 'COLD'}
                         </button>
-                        ${lead.is_overdue ? '<span class="badge badge-overdue">Overdue</span>' : ''}
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${prioClass}">${prio}</span>
+                        ${lead.is_overdue ? '<span class="badge badge-overdue">SLA Overdue</span>' : ''}
+                        ${leadAgeText ? `<span class="text-[10px] text-slate-500 font-mono bg-slate-900/80 px-2 py-0.5 rounded border border-slate-800" title="Lead Age">${leadAgeText}</span>` : ''}
                     </div>
                     <div class="text-[11px] text-slate-400 mt-1 flex flex-wrap gap-x-4 gap-y-1">
                       <span class="flex items-center gap-1" title="Phone">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
                         ${lead.contact?.phone || '--'}
                       </span>
-                      <span class="flex items-center gap-1" title="Email">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                        ${lead.contact?.email || '--'}
-                      </span>
+                      ${(lead.contact?.profession || lead.profession) ? `
+                      <span class="flex items-center gap-1 text-slate-300 font-medium" title="Profession / Job Title">
+                        <svg class="w-3 h-3 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                        ${lead.contact?.profession || lead.profession}
+                      </span>` : ''}
+                      ${(lead.contact?.source || lead.source) ? `
+                      <span class="flex items-center gap-1 text-slate-400" title="Source">
+                        <svg class="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                        ${lead.contact?.source || lead.source}
+                      </span>` : ''}
                       ${lead.project_name ? `
                       <span class="flex items-center gap-1" title="Project">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                        <svg class="w-3 h-3 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                         ${lead.project_name}
                       </span>` : ''}
                       <span class="flex items-center gap-1 text-slate-500" title="Added">
@@ -395,22 +419,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                   </div>
                 </div>
-                <div class="flex flex-col md:flex-row gap-2 md:items-center">
+                <div class="flex flex-col sm:flex-row gap-2 sm:items-center flex-wrap">
                   ${IS_ADMIN && lead.assigned_to_name ? `
                     <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold" style="background: ${lead.assigned_to_color || '#6366f1'}22; color: ${lead.assigned_to_color || '#6366f1'}; border: 1px solid ${lead.assigned_to_color || '#6366f1'}44">
                       <span class="w-2 h-2 rounded-full" style="background: ${lead.assigned_to_color || '#6366f1'}"></span>
                       ${lead.assigned_to_name}
                     </div>
                   ` : ''}
-                  <a href="tel:${lead.contact?.phone || ''}" class="call-action-btn btn-ghost px-3 py-2 rounded-lg text-xs font-medium border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10 transition-colors inline-flex items-center gap-1" onclick="event.stopPropagation()">
+                  <a href="tel:${lead.contact?.phone || ''}" class="call-action-btn btn-ghost px-3 py-1.5 rounded-lg text-xs font-medium border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10 transition-colors inline-flex items-center gap-1" onclick="event.stopPropagation()">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
                     Call
                   </a>
-                  <button class="log-activity-btn btn-ghost px-3 py-2 rounded-lg text-xs font-medium border border-slate-700 hover:border-indigo-500 transition-colors" data-id="${lead.id}">
+                  <button class="log-activity-btn btn-ghost px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-700 hover:border-indigo-500 transition-colors" data-id="${lead.id}">
                     Log Activity
                   </button>
-                  <a href="/lead-details.html?id=${lead.id}" class="view-profile-btn btn-gradient px-4 py-2 rounded-lg text-xs font-semibold shadow-lg inline-flex items-center gap-1.5" onclick="event.stopPropagation()">
-                    View Profile →
+                  <button class="exit-lead-btn btn-ghost px-2.5 py-1.5 rounded-lg text-xs font-medium border border-rose-500/30 text-rose-300 hover:bg-rose-500/10 transition-colors" data-id="${lead.id}">
+                    Exit Lead
+                  </button>
+                  <a href="/lead-details.html?id=${lead.id}" class="view-profile-btn btn-gradient px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-lg inline-flex items-center gap-1" onclick="event.stopPropagation()">
+                    Profile →
                   </a>
                 </div>
             `;
@@ -419,11 +446,14 @@ document.addEventListener('DOMContentLoaded', () => {
             card.addEventListener('click', (e) => {
                 const starBtn = e.target.closest('.star-btn');
                 const tempBtn = e.target.closest('.temp-btn');
+                const exitBtn = e.target.closest('.exit-lead-btn');
                 
                 if (starBtn) {
                     toggleStar(lead.id, starBtn.dataset.starred !== 'true');
                 } else if (tempBtn) {
                     toggleTemperature(lead.id, tempBtn.dataset.temp);
+                } else if (exitBtn) {
+                    openExitModal(lead.id);
                 } else if (e.target.closest('.log-activity-btn')) {
                     if (window.showCallModal) window.showCallModal(lead.id);
                 } else {
@@ -674,6 +704,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const srvEl = document.getElementById('drawer-service-type');
         if (srvEl) srvEl.textContent = c.service_type || data.service_type || '--';
 
+        const mgrLabelEl = document.getElementById('drawer-manager-label');
+        if (mgrLabelEl) {
+            const rawLabel = data.manager_label || data.manager_assessment || 'STANDARD';
+            mgrLabelEl.textContent = rawLabel.replace(/_/g, ' ');
+            if (rawLabel === 'INTERVENTION_REQUIRED') {
+                mgrLabelEl.className = 'text-sm font-black text-rose-400 truncate';
+            } else if (rawLabel === 'HIGH_INTENT') {
+                mgrLabelEl.className = 'text-sm font-black text-amber-400 truncate';
+            } else {
+                mgrLabelEl.className = 'text-sm font-bold text-indigo-400 truncate';
+            }
+        }
+        const finResultEl = document.getElementById('drawer-final-result');
+        if (finResultEl) finResultEl.textContent = data.final_result ? data.final_result.replace(/_/g, ' ') : '--';
+
         // Render Custom Questions
         const customQContainer = document.getElementById('drawer-custom-questions-container');
         const customQGrid = document.getElementById('drawer-custom-questions');
@@ -812,6 +857,23 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 bulkDeleteBtn.classList.add('hidden');
             }
+        }
+
+        // M-08 Objections & M-05/M-09 Coaching
+        loadDrawerObjections(data.id);
+        loadDrawerCoaching(data.id);
+
+        const debriefBtn = document.getElementById('drawer-debrief-btn');
+        if (debriefBtn) {
+            debriefBtn.onclick = () => openDebriefModalForLead(data.id);
+        }
+        const objBtn = document.getElementById('drawer-objection-btn');
+        if (objBtn) {
+            objBtn.onclick = () => openObjectionModal(data.id);
+        }
+        const exitBtn = document.getElementById('drawer-exit-btn');
+        if (exitBtn) {
+            exitBtn.onclick = () => openExitModal(data.id);
         }
     }
 
@@ -1613,6 +1675,379 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // =========================================================================
+    // Architecture v2.0 Module Functions: Debrief, Exit, Objections, Coaching
+    // =========================================================================
+
+    // ── Drawer: Objections (M-08) ─────────────────────────────────────────────
+    async function loadDrawerObjections(leadId) {
+        const container = document.getElementById('drawer-objections-list');
+        if (!container || !leadId) return;
+        try {
+            const token = localStorage.getItem('crm_token');
+            const res = await fetch(`/api/leads/${leadId}/objections`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error("Failed to load objections");
+            const objections = await res.json();
+            if (objections.length === 0) {
+                container.innerHTML = '<div class="text-xs text-slate-500 py-4 text-center">No objections logged yet.</div>';
+                return;
+            }
+            container.innerHTML = objections.map(o => `
+                <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3 space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">${o.category || 'OBJECTION'}</span>
+                        <span class="text-[10px] text-slate-500">Intensity: <strong class="text-rose-400">${o.intensity || 3}/5</strong></span>
+                    </div>
+                    <div class="text-xs text-slate-200 font-medium">${o.specific_objection}</div>
+                    ${o.competitor_name ? `<div class="text-[11px] text-purple-400">Competitor: ${o.competitor_name}</div>` : ''}
+                    ${o.executive_response ? `<div class="text-[11px] text-slate-400 bg-slate-800/40 p-2 rounded border border-slate-700/40"><strong class="text-slate-300">Executive Response:</strong> ${o.executive_response}</div>` : ''}
+                    <div class="text-[10px] text-slate-500 flex justify-between pt-1">
+                        <span>${formatDate(o.created_at)}</span>
+                        ${o.is_principal ? '<span class="text-rose-400 font-semibold">Primary Blocker</span>' : ''}
+                    </div>
+                </div>
+            `).join('');
+        } catch (e) {
+            console.error("Failed to load objections", e);
+            container.innerHTML = '<div class="text-xs text-rose-400 py-2">Error loading objections</div>';
+        }
+    }
+
+    // ── Drawer: Coaching (M-05 & M-09) ────────────────────────────────────────
+    async function loadDrawerCoaching(leadId) {
+        const container = document.getElementById('drawer-coaching-list');
+        if (!container) return;
+        try {
+            const token = localStorage.getItem('crm_token');
+            const res = await fetch('/api/leads/coaching', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error("Failed to load coaching logs");
+            const logs = await res.json();
+            const relevant = logs.filter(l => l.opportunity_id === leadId);
+            if (relevant.length === 0) {
+                container.innerHTML = '<div class="text-xs text-slate-500 py-4 text-center">No manager coaching scorecards recorded yet.</div>';
+                return;
+            }
+            container.innerHTML = relevant.map(c => `
+                <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-white">Score: <strong class="text-amber-400 text-sm">${c.score}/10</strong></span>
+                        <span class="text-[10px] text-slate-500">${formatDate(c.session_date || c.created_at)}</span>
+                    </div>
+                    ${c.strengths ? `<div class="text-xs text-emerald-400 bg-emerald-500/10 p-2 rounded border border-emerald-500/20"><strong>Strengths:</strong> ${c.strengths}</div>` : ''}
+                    ${c.areas_for_improvement ? `<div class="text-xs text-amber-300 bg-amber-500/10 p-2 rounded border border-amber-500/20"><strong>Improvement:</strong> ${c.areas_for_improvement}</div>` : ''}
+                    ${c.action_items ? `<div class="text-xs text-indigo-300 bg-indigo-500/10 p-2 rounded border border-indigo-500/20"><strong>Action Items:</strong> ${c.action_items}</div>` : ''}
+                </div>
+            `).join('');
+        } catch (e) {
+            console.error("Failed to load coaching", e);
+            container.innerHTML = '<div class="text-xs text-rose-400 py-2">Error loading coaching scorecards</div>';
+        }
+    }
+
+    // ── Alternative Exit Modal (Section A) ────────────────────────────────────
+    window.openExitModal = function(leadId) {
+        const id = leadId || currentLeadId || window.currentLeadId;
+        if (!id) return;
+        document.getElementById('exit-lead-id').value = id;
+        document.getElementById('exit-form').reset();
+        handleExitStageChange();
+
+        const modal = document.getElementById('exit-modal');
+        const content = document.getElementById('exit-modal-content');
+        modal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            modal.classList.remove('opacity-0');
+            content.classList.remove('scale-95');
+        });
+    };
+
+    window.closeExitModal = function() {
+        const modal = document.getElementById('exit-modal');
+        const content = document.getElementById('exit-modal-content');
+        modal.classList.add('opacity-0');
+        content.classList.add('scale-95');
+        setTimeout(() => modal.classList.add('hidden'), 200);
+    };
+
+    window.handleExitStageChange = function() {
+        const stage = document.getElementById('exit-stage-select').value;
+        const lostFields = document.getElementById('exit-closed-lost-fields');
+        const nurtureFields = document.getElementById('exit-nurture-fields');
+        if (stage === 'CLOSED_LOST') {
+            lostFields.classList.remove('hidden');
+            nurtureFields.classList.add('hidden');
+        } else if (stage === 'NURTURE') {
+            lostFields.classList.add('hidden');
+            nurtureFields.classList.remove('hidden');
+        } else {
+            lostFields.classList.add('hidden');
+            nurtureFields.classList.add('hidden');
+        }
+    };
+
+    const exitForm = document.getElementById('exit-form');
+    if (exitForm) {
+        exitForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const leadId = document.getElementById('exit-lead-id').value;
+            const target_stage = document.getElementById('exit-stage-select').value;
+            const notes = document.getElementById('exit-notes').value;
+            const payload = { target_stage, notes };
+
+            if (target_stage === 'CLOSED_LOST') {
+                payload.reason_code = document.getElementById('exit-reason-code').value;
+                payload.competitor_name = document.getElementById('exit-competitor-name').value;
+                payload.authorising_officer = document.getElementById('exit-authorising-officer').value;
+            } else if (target_stage === 'NURTURE') {
+                payload.campaign_name = document.getElementById('exit-campaign-name').value;
+                payload.follow_up_date = document.getElementById('exit-follow-up-date').value;
+            }
+
+            try {
+                const token = localStorage.getItem('crm_token');
+                const res = await fetch(`/api/leads/${leadId}/exit`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) {
+                    const err = await res.json().catch(()=>({}));
+                    throw new Error(err.error || err.msg || "Failed to exit lead");
+                }
+                if (window.showToast) window.showToast(`Lead routed to ${target_stage} successfully!`, "success");
+                closeExitModal();
+                loadLeads();
+                if (currentLeadId === parseInt(leadId)) {
+                    openDrawer(leadId);
+                }
+            } catch (err) {
+                console.error(err);
+                if (window.showToast) window.showToast(err.message, "error");
+            }
+        });
+    }
+
+    // ── Post-Visit Debrief Modal (Fix 4 & M-07) ────────────────────────────────
+    window.openDebriefModal = function(apptId) {
+        document.getElementById('debrief-appt-id').value = apptId;
+        document.getElementById('debrief-form').reset();
+        const modal = document.getElementById('debrief-modal');
+        const content = document.getElementById('debrief-modal-content');
+        modal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            modal.classList.remove('opacity-0');
+            content.classList.remove('scale-95');
+        });
+    };
+
+    window.openDebriefModalForLead = async function(leadId) {
+        const id = leadId || currentLeadId;
+        if (!id) return;
+        try {
+            const token = localStorage.getItem('crm_token');
+            const res = await fetch(`/api/leads/${id}/appointments`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const appts = await res.json();
+                if (appts.length > 0) {
+                    // Pick latest appointment
+                    openDebriefModal(appts[appts.length - 1].id);
+                    return;
+                }
+            }
+            if (window.showToast) window.showToast("No appointment found. Book an appointment first.", "info");
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    window.closeDebriefModal = function() {
+        const modal = document.getElementById('debrief-modal');
+        const content = document.getElementById('debrief-modal-content');
+        modal.classList.add('opacity-0');
+        content.classList.add('scale-95');
+        setTimeout(() => modal.classList.add('hidden'), 200);
+    };
+
+    const debriefForm = document.getElementById('debrief-form');
+    if (debriefForm) {
+        debriefForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const apptId = document.getElementById('debrief-appt-id').value;
+            const payload = {
+                notes: document.getElementById('debrief-notes').value,
+                principal_objection: document.getElementById('debrief-objection-code').value || undefined,
+                objection_intensity: document.getElementById('debrief-intensity').value,
+                competitor_name: document.getElementById('debrief-competitor').value || undefined,
+                executive_response: document.getElementById('debrief-response').value || undefined,
+                next_action_type: document.getElementById('debrief-next-action-type').value,
+                next_action_deadline: document.getElementById('debrief-next-action-deadline').value || undefined,
+                mark_completed: true
+            };
+
+            try {
+                const token = localStorage.getItem('crm_token');
+                const res = await fetch(`/api/leads/appointments/${apptId}/debrief`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) {
+                    const err = await res.json().catch(()=>({}));
+                    throw new Error(err.error || err.msg || "Failed to submit debrief");
+                }
+                if (window.showToast) window.showToast("Post-visit debrief recorded! Stage updated to VISIT_COMPLETED.", "success");
+                closeDebriefModal();
+                loadLeads();
+                if (currentLeadId) openDrawer(currentLeadId);
+            } catch (err) {
+                console.error(err);
+                if (window.showToast) window.showToast(err.message, "error");
+            }
+        });
+    }
+
+    // ── Log Objection Modal (M-08) ────────────────────────────────────────────
+    window.openObjectionModal = function(leadId) {
+        const id = leadId || currentLeadId || window.currentLeadId;
+        if (!id) return;
+        document.getElementById('obj-lead-id').value = id;
+        document.getElementById('objection-form').reset();
+        const modal = document.getElementById('objection-modal');
+        const content = document.getElementById('objection-modal-content');
+        modal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            modal.classList.remove('opacity-0');
+            content.classList.remove('scale-95');
+        });
+    };
+
+    window.closeObjectionModal = function() {
+        const modal = document.getElementById('objection-modal');
+        const content = document.getElementById('objection-modal-content');
+        modal.classList.add('opacity-0');
+        content.classList.add('scale-95');
+        setTimeout(() => modal.classList.add('hidden'), 200);
+    };
+
+    const objectionForm = document.getElementById('objection-form');
+    if (objectionForm) {
+        objectionForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const leadId = document.getElementById('obj-lead-id').value;
+            const payload = {
+                category: document.getElementById('obj-category').value,
+                specific_objection: document.getElementById('obj-specific').value,
+                intensity: parseInt(document.getElementById('obj-intensity').value, 10),
+                competitor_name: document.getElementById('obj-competitor').value || undefined,
+                executive_response: document.getElementById('obj-response').value || undefined,
+                is_principal: document.getElementById('obj-is-principal').checked,
+                reactivation_eligible: document.getElementById('obj-reactivation').checked
+            };
+
+            try {
+                const token = localStorage.getItem('crm_token');
+                const res = await fetch(`/api/leads/${leadId}/objections`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) {
+                    const err = await res.json().catch(()=>({}));
+                    throw new Error(err.error || err.msg || "Failed to log objection");
+                }
+                if (window.showToast) window.showToast("Objection captured into Intelligence bank!", "success");
+                closeObjectionModal();
+                loadDrawerObjections(leadId);
+            } catch (err) {
+                console.error(err);
+                if (window.showToast) window.showToast(err.message, "error");
+            }
+        });
+    }
+
+    // ── Manager Coaching Modal (M-05 & M-09) ──────────────────────────────────
+    window.openCoachingModal = async function(leadId) {
+        const id = leadId || currentLeadId || window.currentLeadId;
+        document.getElementById('coach-lead-id').value = id || '';
+        document.getElementById('coaching-form').reset();
+
+        // Populate executive dropdown
+        try {
+            const token = localStorage.getItem('crm_token');
+            const res = await fetch('/api/team/members', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const members = await res.json();
+                const sel = document.getElementById('coach-executive-select');
+                sel.innerHTML = members.map(m => `<option value="${m.id}">${m.full_name || m.username} (${m.role})</option>`).join('');
+                if (currentLeadData && currentLeadData.assigned_to_id) {
+                    sel.value = currentLeadData.assigned_to_id;
+                }
+            }
+        } catch (e) {
+            console.error(e);
+        }
+
+        const modal = document.getElementById('coaching-modal');
+        const content = document.getElementById('coaching-modal-content');
+        modal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            modal.classList.remove('opacity-0');
+            content.classList.remove('scale-95');
+        });
+    };
+
+    window.closeCoachingModal = function() {
+        const modal = document.getElementById('coaching-modal');
+        const content = document.getElementById('coaching-modal-content');
+        modal.classList.add('opacity-0');
+        content.classList.add('scale-95');
+        setTimeout(() => modal.classList.add('hidden'), 200);
+    };
+
+    const coachingForm = document.getElementById('coaching-form');
+    if (coachingForm) {
+        coachingForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const leadId = document.getElementById('coach-lead-id').value;
+            const payload = {
+                opportunity_id: leadId ? parseInt(leadId, 10) : undefined,
+                executive_id: parseInt(document.getElementById('coach-executive-select').value, 10),
+                score: parseInt(document.getElementById('coach-score').value, 10),
+                strengths: document.getElementById('coach-strengths').value,
+                areas_for_improvement: document.getElementById('coach-improvements').value,
+                action_items: document.getElementById('coach-action-items').value
+            };
+
+            try {
+                const token = localStorage.getItem('crm_token');
+                const res = await fetch('/api/leads/coaching', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) {
+                    const err = await res.json().catch(()=>({}));
+                    throw new Error(err.error || err.msg || "Failed to save coaching scorecard");
+                }
+                if (window.showToast) window.showToast("Manager Coaching scorecard saved!", "success");
+                closeCoachingModal();
+                if (leadId) loadDrawerCoaching(leadId);
+            } catch (err) {
+                console.error(err);
+                if (window.showToast) window.showToast(err.message, "error");
+            }
+        });
+    }
+
     // Initial Load
     loadLeads();
 });
+

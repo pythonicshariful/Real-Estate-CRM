@@ -9,7 +9,7 @@
   const USER_COLOR = localStorage.getItem('crm_color') || '#6366f1';
   const USER_NAME = localStorage.getItem('crm_name') || 'User';
   const USER_AVATAR = localStorage.getItem('crm_avatar') && localStorage.getItem('crm_avatar') !== 'null' ? localStorage.getItem('crm_avatar') : '/assets/img/default-avatar.png';
-  const IS_ADMIN = USER_ROLE === 'ADMIN';
+  const IS_ADMIN = ['ADMIN', 'CEO', 'GM', 'MANAGER'].includes(USER_ROLE);
 
   // Global fetch interceptor to catch 401 Unauthorized responses and log out
   const originalFetch = window.fetch;
@@ -53,7 +53,7 @@
     {
       section: 'Operations',
       items: [
-        { href: 'sales.html', label: 'Sales', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
+        { href: 'sales.html', label: 'Sales & Reservations', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
         { href: 'expenses.html', label: 'Expenses', icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z' },
         { href: 'tickets.html', label: 'Tickets', badgeColor: 'bg-rose-500', icon: 'M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z' },
         { href: 'messages.html', label: 'Messages', badgeColor: 'bg-indigo-500', icon: 'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z' },
@@ -91,6 +91,7 @@
     {
       section: 'Operations',
       items: [
+        { href: 'sales.html', label: 'Reservations & Sales', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
         { href: 'tickets.html', label: 'Tickets', badgeColor: 'bg-rose-500', icon: 'M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z' },
         { href: 'messages.html', label: 'Messages', badgeColor: 'bg-indigo-500', icon: 'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z' },
         { href: 'notes.html', label: 'Notes', icon: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z' },
@@ -109,7 +110,15 @@
 
   function buildSidebar() {
     const accentColor = IS_ADMIN ? '#6366f1' : USER_COLOR;
-    const roleLabel = IS_ADMIN ? 'Main Admin' : 'Lead Owner';
+    const roleDisplayMap = {
+      'ADMIN': 'Super Admin',
+      'CEO': 'CEO / Cockpit',
+      'GM': 'General Manager / HoS',
+      'MANAGER': 'Sales Manager',
+      'LEAD_OWNER': 'Sales Executive',
+      'EXECUTIVE': 'Sales Executive'
+    };
+    const roleLabel = roleDisplayMap[USER_ROLE] || (IS_ADMIN ? 'Main Admin' : 'Sales Executive');
     
     let html = `
       <aside class="sidebar glass-dark h-full flex flex-col border-r border-slate-800 relative z-20">

@@ -45,15 +45,25 @@ def get_leads():
     result = []
     for lead, contact in leads_and_contacts:
         data = lead.to_dict()
+        inquiry = lead.inquiry
+        campaign_source = (inquiry.utm_campaign or inquiry.campaign_id) if inquiry else (contact.source if contact else 'Direct')
+        data["campaign_source"] = campaign_source
         if contact:
             data["contact"] = {
                 "full_name": contact.full_name,
                 "email": contact.email,
                 "phone": contact.phone_raw,
                 "source": contact.source,
-                "profession": contact.profession,
+                "job_title": contact.job_title,
+                "profession": contact.profession or lead.questionnaire_answers.get('profession') if lead.questionnaire_answers else contact.profession,
                 "service_type": contact.service_type or lead.service_type,
             }
+        
+        # Field-level permission: hide private manager assessment from non-managers
+        if role not in ('MANAGER', 'GM', 'CEO', 'ADMIN'):
+            data.pop('manager_assessment', None)
+            data.pop('manager_label', None)
+            
         result.append(data)
         
     return jsonify(result)
@@ -552,6 +562,93 @@ def update_lead(id):
     
     db.session.commit()
     return jsonify(lead.to_dict())
+
+@leads_bp.route('/<int:id>/exit', methods=['POST'])
+@jwt_required()
+def exit_lead(id):
+    lead = Opportunity.query.get_or_404(id)
+    user_id = int(get_jwt_identity())
+    claims = get_jwt()
+    role = claims.get('role')
+    if not _check_lead_access(lead, role, user_id):
+        return jsonify({"error": "Access denied"}), 403
+
+    data = request.get_json() or {}
+    exit_stage_str = data.get('exit_stage')
+    if exit_stage_str not in ('NURTURE', 'CLOSED_LOST', 'INVALID', 'BOUGHT_ELSEWHERE', 'UNREACHABLE'):
+        return jsonify({"error": "Invalid exit stage"}), 400
+
+    target_stage = PipelineStage[exit_stage_str]
+    old_stage = lead.pipeline_stage.value if lead.pipeline_stage else 'NEW'
+
+    # Section A & M-06: CLOSED_LOST requirements
+    if target_stage == PipelineStage.CLOSED_LOST:
+        reason_code = data.get('reason_code')
+        if not reason_code:
+            return jsonify({"error": "Reason code is required for CLOSED_LOST"}), 400
+        lead.final_result = FinalResult.CLOSED_LOST
+        lead.closed_lost_date = datetime.now(timezone.utc)
+        note_text = f"❌ [CLOSED LOST Exit]\n• Reason: {reason_code}\n• Competitor: {data.get('competitor_name') or 'N/A'}\n• Approving Officer ID: {data.get('authorising_officer_id') or user_id}\n• Notes: {data.get('notes', 'No notes provided')}"
+
+    elif target_stage == PipelineStage.NURTURE:
+        follow_up_date = data.get('follow_up_date')
+        campaign_name = data.get('campaign_name', 'General Reactivation')
+        lead.final_result = FinalResult.NURTURE
+        if follow_up_date:
+            try:
+                lead.next_action_deadline = datetime.fromisoformat(follow_up_date)
+                lead.next_action_type = ActivityType.CALL
+            except ValueError:
+                pass
+        note_text = f"🌱 [NURTURE Exit]\n• Reactivation Campaign: {campaign_name}\n• Scheduled Follow-up: {follow_up_date or 'TBD'}\n• Notes: {data.get('notes', 'Moved to nurture')}"
+
+    elif target_stage == PipelineStage.BOUGHT_ELSEWHERE:
+        lead.final_result = FinalResult.BOUGHT_ELSEWHERE
+        note_text = f"⚠️ [BOUGHT ELSEWHERE Exit]\n• Competitor: {data.get('competitor_name') or 'Unknown'}\n• Notes: {data.get('notes', 'Bought elsewhere')}"
+
+    elif target_stage == PipelineStage.INVALID:
+        lead.final_result = FinalResult.INVALID
+        note_text = f"🚫 [INVALID Lead Exit]\n• Reason: {data.get('notes', 'Wrong number / spam')}"
+
+    else:
+        lead.final_result = FinalResult.UNREACHABLE
+        note_text = f"📵 [UNREACHABLE Exit]\n• Attempts logged: {data.get('attempts', 'Multiple attempts')}\n• Notes: {data.get('notes', 'No response')}"
+
+    lead.pipeline_stage = target_stage
+    lead.updated_at = datetime.now(timezone.utc)
+
+    note = Note(
+        opportunity_id=lead.id,
+        contact_id=lead.contact_id,
+        created_by_id=user_id,
+        content=note_text
+    )
+    db.session.add(note)
+
+    history = PipelineHistory(
+        opportunity_id=lead.id,
+        from_stage=PipelineStage[old_stage] if old_stage in PipelineStage.__members__ else None,
+        to_stage=target_stage,
+        changed_by_id=user_id,
+        changed_at=datetime.now(timezone.utc),
+        notes=note_text[:120]
+    )
+    db.session.add(history)
+
+    audit = AuditLog(
+        user_id=user_id,
+        table_name='opportunities',
+        record_id=lead.id,
+        action='EXIT_STAGE',
+        field_name='pipeline_stage',
+        old_value=old_stage,
+        new_value=exit_stage_str,
+        activity_label=f"Exit: {exit_stage_str}"
+    )
+    db.session.add(audit)
+    db.session.commit()
+
+    return jsonify({"msg": f"Lead successfully routed to {exit_stage_str}", "lead": lead.to_dict()}), 200
 
 @leads_bp.route('/<int:id>', methods=['DELETE'])
 @jwt_required()
@@ -1054,11 +1151,87 @@ def debrief_appointment(appt_id):
     if not notes:
         return jsonify({"error": "Debrief notes are required"}), 400
 
+    # Architecture Fix 4: Debrief only unlocks when appointment is COMPLETED
+    if appt.status != AppointmentStatus.COMPLETED:
+        if data.get('mark_completed', True):
+            appt.status = AppointmentStatus.COMPLETED
+            appt.completed_at = datetime.now(timezone.utc)
+        else:
+            return jsonify({"error": "Post-visit debrief only unlocks when appointment_status = COMPLETED"}), 400
+
     appt.debrief_submitted = True
     appt.debrief_notes = notes
 
+    # M-08: Principal objection logging during debrief
+    principal_obj = data.get('principal_objection')
+    if principal_obj:
+        try:
+            cat = ObjectionCategory[principal_obj] if principal_obj in ObjectionCategory.__members__ else ObjectionCategory.OTHER
+            intensity_val = 3
+            int_str = str(data.get('objection_intensity', 'Medium')).upper()
+            if int_str in ('1', 'LOW'): intensity_val = 1
+            elif int_str in ('2', 'MEDIUM'): intensity_val = 2
+            elif int_str in ('3', 'HIGH'): intensity_val = 3
+
+            objection = Objection(
+                opportunity_id=lead.id,
+                logged_by_id=user_id,
+                category=cat,
+                specific_objection=data.get('specific_objection', f"Debrief objection: {principal_obj}"),
+                competitor_name=data.get('competitor_name'),
+                intensity=intensity_val,
+                is_principal=True,
+                executive_response=data.get('executive_response'),
+                handling_notes=data.get('handling_notes', notes)
+            )
+            db.session.add(objection)
+        except Exception as obj_err:
+            current_app.logger.warning(f"Debrief objection logging note: {obj_err}")
+
+    # Mandatory next action update (M-06)
+    if data.get('next_action_type'):
+        try:
+            lead.next_action_type = ActivityType[data['next_action_type'].upper()]
+        except KeyError:
+            pass
+    if data.get('next_action_deadline'):
+        try:
+            lead.next_action_deadline = datetime.fromisoformat(data['next_action_deadline'])
+        except ValueError:
+            pass
+
+    # Update Lead status & activity (Fix 1)
+    lead.last_activity_type = ActivityType.VISIT
+    lead.last_activity_outcome = ActivityOutcome.CONNECTED
+    lead.last_activity_at = datetime.now(timezone.utc)
+    lead.appointment_status = AppointmentStatus.COMPLETED
+    
+    old_stage = lead.pipeline_stage.value if lead.pipeline_stage else 'NEW'
+    lead.pipeline_stage = PipelineStage.VISIT_COMPLETED
+    lead.visit_date = datetime.now(timezone.utc)
+
+    history = PipelineHistory(
+        opportunity_id=lead.id,
+        from_stage=PipelineStage[old_stage] if old_stage in PipelineStage.__members__ else None,
+        to_stage=PipelineStage.VISIT_COMPLETED,
+        changed_by_id=user_id,
+        changed_at=datetime.now(timezone.utc),
+        notes=f"Post-visit debrief completed for appointment #{appt.id}: {notes[:100]}"
+    )
+    db.session.add(history)
+
+    audit = AuditLog(
+        user_id=user_id,
+        table_name='appointments',
+        record_id=appt.id,
+        action='DEBRIEF',
+        activity_label='Post-Visit Debrief',
+        new_value=f"Debrief submitted for appt #{appt.id}"
+    )
+    db.session.add(audit)
     db.session.commit()
-    return jsonify({"msg": "Debrief submitted successfully"}), 200
+
+    return jsonify({"msg": "Post-visit debrief submitted successfully", "pipeline_stage": "VISIT_COMPLETED"}), 200
 
 @leads_bp.route('/<int:id>/notes', methods=['POST'])
 @jwt_required()
@@ -1144,9 +1317,33 @@ def bulk_assign_leads():
         
     db.session.commit()
     return jsonify({"msg": f"Successfully assigned {len(leads)} leads to {owner_name}."}), 200
+# ── Reservations (Module M-10) ───────────────────────────────────────────────
+@leads_bp.route('/reservations', methods=['GET'])
+@jwt_required()
+def get_all_reservations():
+    claims = get_jwt()
+    role = claims.get('role')
+    user_id = int(get_jwt_identity())
 
+    query = Reservation.query.filter_by(is_deleted=False)
+    if not is_admin(role):
+        query = query.join(Opportunity, Reservation.opportunity_id == Opportunity.id)\
+                     .filter(Opportunity.assigned_to_id == user_id)
 
-# ── Reservations ───────────────────────────────────────────────────────────────
+    reservations = query.order_by(Reservation.created_at.desc()).all()
+    results = []
+    for r in reservations:
+        d = r.to_dict()
+        contact = Contact.query.get(r.contact_id)
+        project = Project.query.get(r.project_id) if r.project_id else None
+        officer = User.query.get(r.approving_officer_id) if r.approving_officer_id else None
+        d['customer_name'] = contact.full_name if contact else f"Lead #{r.opportunity_id}"
+        d['customer_phone'] = contact.phone_raw if contact else ""
+        d['project_name'] = project.name if project else "N/A"
+        d['approving_officer_name'] = officer.full_name if officer else "Admin"
+        results.append(d)
+    return jsonify(results), 200
+
 @leads_bp.route('/<int:id>/reservations', methods=['GET'])
 @jwt_required()
 def get_lead_reservations(id):
@@ -1181,7 +1378,6 @@ def create_reservation(id):
     if existing_receipt:
         return jsonify({"error": "Receipt number must be unique"}), 400
 
-    # If plot_id provided, verify and mark plot as RESERVED
     if plot_id:
         plot = Plot.query.filter_by(id=plot_id, is_deleted=False).first()
         if plot:
@@ -1210,13 +1406,11 @@ def create_reservation(id):
     )
     db.session.add(reservation)
 
-    # Automatically advance opportunity stage to RESERVATION_RECEIVED
     old_stage = lead.pipeline_stage.value if lead.pipeline_stage else 'NEW'
     lead.pipeline_stage = PipelineStage.RESERVATION_RECEIVED
     if not lead.booking_date:
         lead.booking_date = datetime.now(timezone.utc)
 
-    # Record PipelineHistory
     history = PipelineHistory(
         opportunity_id=lead.id,
         from_stage=PipelineStage[old_stage] if old_stage in PipelineStage.__members__ else None,
@@ -1226,9 +1420,60 @@ def create_reservation(id):
         notes=f"Reservation created (Receipt: {receipt_number})"
     )
     db.session.add(history)
-
     db.session.commit()
     return jsonify(reservation.to_dict()), 201
+
+
+# ── M-08: Objection Tracking & Intelligence ────────────────────────────────
+@leads_bp.route('/<int:id>/objections', methods=['GET'])
+@jwt_required()
+def get_lead_objections(id):
+    lead = Opportunity.query.get_or_404(id)
+    claims = get_jwt()
+    if not _check_lead_access(lead, claims.get('role'), int(get_jwt_identity())):
+        return jsonify({"error": "Access denied"}), 403
+
+    objections = Objection.query.filter_by(opportunity_id=id).order_by(Objection.created_at.desc()).all()
+    return jsonify([o.to_dict() for o in objections]), 200
+
+
+@leads_bp.route('/<int:id>/objections', methods=['POST'])
+@jwt_required()
+def add_lead_objection(id):
+    lead = Opportunity.query.get_or_404(id)
+    user_id = int(get_jwt_identity())
+    claims = get_jwt()
+    if not _check_lead_access(lead, claims.get('role'), user_id):
+        return jsonify({"error": "Access denied"}), 403
+
+    data = request.get_json() or {}
+    category_str = data.get('category')
+    if not category_str:
+        return jsonify({"error": "Objection category is required"}), 400
+
+    try:
+        category = ObjectionCategory[category_str] if category_str in ObjectionCategory.__members__ else ObjectionCategory.OTHER
+    except KeyError:
+        category = ObjectionCategory.OTHER
+
+    intensity_val = int(data.get('intensity', 3))
+    is_principal = bool(data.get('is_principal', False))
+
+    obj = Objection(
+        opportunity_id=lead.id,
+        logged_by_id=user_id,
+        category=category,
+        specific_objection=data.get('specific_objection', category_str),
+        competitor_name=data.get('competitor_name'),
+        intensity=intensity_val,
+        is_principal=is_principal,
+        executive_response=data.get('executive_response'),
+        handling_notes=data.get('handling_notes')
+    )
+    db.session.add(obj)
+    db.session.commit()
+
+    return jsonify(obj.to_dict()), 201
 
 
 # ── Installments ───────────────────────────────────────────────────────────────

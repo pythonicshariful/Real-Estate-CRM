@@ -10,6 +10,22 @@ import io
 import csv
 from app.utils.rbac import is_admin
 
+_reports_cache = {}
+CACHE_TTL_SECONDS = 15
+
+def _get_cache(key):
+    entry = _reports_cache.get(key)
+    if entry:
+        data, ts = entry
+        if (datetime.now(timezone.utc) - ts).total_seconds() < CACHE_TTL_SECONDS:
+            return data
+    return None
+
+def _set_cache(key, data):
+    if len(_reports_cache) > 200:
+        _reports_cache.clear()
+    _reports_cache[key] = (data, datetime.now(timezone.utc))
+
 @reports_bp.route('/kpis', methods=['GET'])
 @jwt_required()
 def get_reports_kpis():
@@ -17,15 +33,22 @@ def get_reports_kpis():
     role = claims.get('role')
     user_id = int(get_jwt_identity())
 
+    # Date range filters
+    start_date_str = request.args.get('start_date')
+    end_date_str = request.args.get('end_date')
+
+    # In-memory fast cache lookup
+    cache_key = f"kpis:{user_id}:{role}:{start_date_str}:{end_date_str}"
+    cached = _get_cache(cache_key)
+    if cached is not None:
+        return jsonify(cached)
+
     # Filter base queries by role if not admin
     def filter_by_role(q, user_id_col):
         if not is_admin(role):
             return q.filter(user_id_col == user_id)
         return q
 
-    # Date range filters
-    start_date_str = request.args.get('start_date')
-    end_date_str = request.args.get('end_date')
     start_dt = datetime.fromisoformat(start_date_str) if start_date_str else None
     end_dt = datetime.fromisoformat(end_date_str) if end_date_str else None
 
@@ -149,34 +172,63 @@ def get_reports_kpis():
         total_val = sum_sales.scalar() or 0.0
         rev_per_100_leads = (float(total_val) / total_leads) * 100
 
-    # 8. Lead-to-Visit (% of leads that reached VISIT_COMPLETED stage or higher)
-    lead_to_visit = 0.0
-    visit_or_further = [
-        PipelineStage.VISIT_COMPLETED, PipelineStage.PROPOSAL_PRESENTED,
+    # Funnel counts for Section D 20-KPI Framework
+    connected_stages = [
+        PipelineStage.CONNECTED, PipelineStage.QUALIFIED, PipelineStage.APPOINTMENT_SCHEDULED,
+        PipelineStage.APPOINTMENT_CONFIRMED, PipelineStage.VISIT_COMPLETED, PipelineStage.PROPOSAL_PRESENTED,
+        PipelineStage.NEGOTIATION, PipelineStage.RESERVATION_RECEIVED, PipelineStage.DOCUMENTATION_IN_PROCESS,
+        PipelineStage.SOLD
+    ]
+    connected_leads = sum(stage_map.get(s, 0) for s in connected_stages)
+
+    qualified_stages = [
+        PipelineStage.QUALIFIED, PipelineStage.APPOINTMENT_SCHEDULED,
+        PipelineStage.APPOINTMENT_CONFIRMED, PipelineStage.VISIT_COMPLETED, PipelineStage.PROPOSAL_PRESENTED,
+        PipelineStage.NEGOTIATION, PipelineStage.RESERVATION_RECEIVED, PipelineStage.DOCUMENTATION_IN_PROCESS,
+        PipelineStage.SOLD
+    ]
+    qualified_leads = sum(stage_map.get(s, 0) for s in qualified_stages)
+
+    # 4. Qualification Rate (Qualified leads ÷ connected leads)
+    qualification_rate = round((qualified_leads / connected_leads) * 100, 1) if connected_leads > 0 else 0.0
+
+    # 5. Appointment Booking Rate (Appointments scheduled ÷ qualified leads)
+    appointment_booking_rate = round((total_appts / qualified_leads) * 100, 1) if qualified_leads > 0 else 0.0
+
+    # 6. Confirmation Rate (Confirmed appointments ÷ scheduled appointments)
+    confirmed_appts = appt_map.get(AppointmentStatus.CONFIRMED, 0) + completed_appts
+    confirmation_rate = round((confirmed_appts / total_appts) * 100, 1) if total_appts > 0 else 0.0
+
+    # 7. Show Rate (Completed visits or meetings ÷ confirmed appointments)
+    show_rate = round((completed_appts / confirmed_appts) * 100, 1) if confirmed_appts > 0 else 0.0
+
+    # 8. Visit-to-Negotiation Rate (Negotiations opened ÷ completed visits)
+    negotiation_or_further = [
         PipelineStage.NEGOTIATION, PipelineStage.RESERVATION_RECEIVED,
         PipelineStage.DOCUMENTATION_IN_PROCESS, PipelineStage.SOLD
     ]
-    visits_count = sum(stage_map.get(s, 0) for s in visit_or_further)
-    if total_leads > 0:
-        lead_to_visit = round((visits_count / total_leads) * 100, 1)
+    negotiations_count = sum(stage_map.get(s, 0) for s in negotiation_or_further)
+    visit_to_negotiation_rate = round((negotiations_count / completed_appts) * 100, 1) if completed_appts > 0 else 0.0
 
-    # 9. Visit-to-Proposal (% of visits that went to proposal stage or higher)
-    visit_to_proposal = 0.0
-    proposal_or_further = [
-        PipelineStage.PROPOSAL_PRESENTED, PipelineStage.NEGOTIATION,
-        PipelineStage.RESERVATION_RECEIVED, PipelineStage.DOCUMENTATION_IN_PROCESS,
-        PipelineStage.SOLD
+    # 9. Visit-to-Reservation Rate (Reservations received ÷ completed visits)
+    res_or_further = [
+        PipelineStage.RESERVATION_RECEIVED, PipelineStage.DOCUMENTATION_IN_PROCESS, PipelineStage.SOLD
     ]
-    proposal_count = sum(stage_map.get(s, 0) for s in proposal_or_further)
-    if visits_count > 0:
-        visit_to_proposal = round((proposal_count / visits_count) * 100, 1)
+    reservations_count = sum(stage_map.get(s, 0) for s in res_or_further)
+    visit_to_reservation_rate = round((reservations_count / completed_appts) * 100, 1) if completed_appts > 0 else 0.0
 
-    # 10. Proposal-to-Close (% of proposals that closed won)
-    proposal_to_close = 0.0
-    if proposal_count > 0:
-        proposal_to_close = round((closed_won / proposal_count) * 100, 1)
+    # 10. Reservation-to-Sale Rate (Sales verified ÷ total reservations received)
+    reservation_to_sale_rate = round((closed_won / reservations_count) * 100, 1) if reservations_count > 0 else 0.0
 
-    # 11. SLA Compliance (% of SLAEvents not escalated/alerted)
+    # 11. Follow-Up Compliance (Follow-ups completed on time ÷ follow-ups due in period)
+    overdue_count = opps_q.filter(Opportunity.next_action_deadline < datetime.now(timezone.utc)).count()
+    total_with_deadlines = opps_q.filter(Opportunity.next_action_deadline != None).count()
+    if total_with_deadlines > 0:
+        follow_up_compliance = round(((total_with_deadlines - overdue_count) / total_with_deadlines) * 100, 1)
+    else:
+        follow_up_compliance = 100.0
+
+    # 12. SLA Compliance %
     sla_compliance = 100
     sla_q = SLAEvent.query
     if not is_admin(role):
@@ -188,86 +240,98 @@ def get_reports_kpis():
         clean_sla = sla_q.filter(~SLAEvent.status.in_([SLAStatus.ESCALATED, SLAStatus.MANAGER_ALERTED])).count()
         sla_compliance = round((clean_sla / total_sla) * 100)
 
-    # 12. Avg Call Duration (Duration Band approximation)
-    avg_call_duration = 0.0
-    calls_list = filter_by_role(CallLog.query, CallLog.logged_by_id).all()
-    if calls_list:
-        band_mapping = {
-            "UNDER_1MIN": 0.5,
-            "ONE_TO_3MIN": 2.0,
-            "THREE_TO_10MIN": 6.5,
-            "OVER_10MIN": 12.0
-        }
-        vals = []
-        for call in calls_list:
-            if call.duration_band and call.duration_band.value in band_mapping:
-                vals.append(band_mapping[call.duration_band.value])
-        if vals:
-            avg_call_duration = round(sum(vals) / len(vals), 1)
+    # 12. Lead Aging Heatmap (Open leads grouped by age: 1 / 3 / 7 / 14 / 30 days untouched)
+    now_utc = datetime.now(timezone.utc)
+    terminal_stages = [PipelineStage.SOLD, PipelineStage.CLOSED_LOST, PipelineStage.INVALID, PipelineStage.UNREACHABLE, PipelineStage.BOUGHT_ELSEWHERE]
+    open_leads = opps_q.filter(~Opportunity.pipeline_stage.in_(terminal_stages))\
+        .with_entities(Opportunity.last_activity_at, Opportunity.created_at).all()
+    aging_1d = 0
+    aging_3d = 0
+    aging_7d = 0
+    aging_14d = 0
+    aging_30d = 0
+    for last_activity_at, created_at in open_leads:
+        last_t = last_activity_at or created_at
+        if last_t:
+            if last_t.tzinfo is None: last_t = last_t.replace(tzinfo=timezone.utc)
+            d_diff = (now_utc - last_t).total_seconds() / 86400.0
+            if d_diff >= 30: aging_30d += 1
+            elif d_diff >= 14: aging_14d += 1
+            elif d_diff >= 7: aging_7d += 1
+            elif d_diff >= 3: aging_3d += 1
+            else: aging_1d += 1
+    lead_aging_summary = f"{aging_1d}/{aging_3d}/{aging_7d}/{aging_14d}/{aging_30d}"
 
-    # 13. First Call Resolve
-    # Approximation: % of leads marked resolved or interested after exactly 1 call
-    first_call_resolve = 0
-    # Simplification: % of call logs with outcome INTERESTED
-    interested_calls = calls_q.filter(CallLog.outcome == ActivityOutcome.INTERESTED).count()
-    if total_calls > 0:
-        first_call_resolve = round((interested_calls / total_calls) * 100)
+    # 13. Reactivation Rate (Old leads moved to Qualified ÷ total reactivation attempts)
+    reactivated_count = opps_q.filter(Opportunity.pipeline_stage.in_(qualified_stages)).join(
+        PipelineHistory, PipelineHistory.opportunity_id == Opportunity.id
+    ).filter(PipelineHistory.from_stage == PipelineStage.NURTURE).distinct().count()
+    nurture_count = stage_map.get(PipelineStage.NURTURE, 0) + reactivated_count
+    reactivation_rate = round((reactivated_count / nurture_count) * 100, 1) if nurture_count > 0 else 0.0
 
-    # 14. Objections/Lead
-    objections_q = Objection.query
+    # 14. Closed-Lost Rate (Lost leads ÷ qualified leads with mandatory reason codes)
+    lost_count = stage_map.get(PipelineStage.CLOSED_LOST, 0)
+    closed_lost_rate = round((lost_count / qualified_leads) * 100, 1) if qualified_leads > 0 else 0.0
+
+    # 15. Average Sales Cycle (Days) (Mean days from inquiry creation to verified sale)
+    avg_sales_cycle_days = 0.0
+    sold_opps = opps_q.filter(Opportunity.pipeline_stage == PipelineStage.SOLD)\
+        .with_entities(Opportunity.sold_date, Opportunity.updated_at, Opportunity.created_at).all()
+    if sold_opps:
+        cycle_durations = []
+        for sold_date, updated_at, created_at in sold_opps:
+            end_d = sold_date or updated_at
+            start_d = created_at
+            if end_d and start_d:
+                if end_d.tzinfo is None: end_d = end_d.replace(tzinfo=timezone.utc)
+                if start_d.tzinfo is None: start_d = start_d.replace(tzinfo=timezone.utc)
+                d_days = (end_d - start_d).total_seconds() / 86400.0
+                if d_days >= 0:
+                    cycle_durations.append(d_days)
+        if cycle_durations:
+            avg_sales_cycle_days = round(sum(cycle_durations) / len(cycle_durations), 1)
+
+    # 16. Revenue per 100 Leads
+    rev_per_100_leads = 0.0
+    sum_sales = db.session.query(func.sum(Sale.total_sale_value))
     if not is_admin(role):
-        objections_q = objections_q.filter_by(logged_by_id=user_id)
-    total_objections = objections_q.count()
-    objections_per_lead = 0.0
-    if total_leads > 0:
-        objections_per_lead = round(total_objections / total_leads, 1)
-
-    # 15. Price Objection %
-    price_objection_percent = 0
-    if total_objections > 0:
-        price_objs = objections_q.filter(Objection.category == ObjectionCategory.PRICE).count()
-        price_objection_percent = round((price_objs / total_objections) * 100)
-
-    # 16. Appt. No-Show rate
-    appt_no_show = 0
-    if total_appts > 0:
-        appt_no_show = round((no_show_appts / total_appts) * 100)
-
-    # 17. Reassigned Leads %
-    reassigned_leads = 0
-    # Count opportunities with any pipeline stage change history
-    history_q = PipelineHistory.query
-    if not is_admin(role):
-        history_q = history_q.filter(PipelineHistory.opportunity_id.in_(
+        sum_sales = sum_sales.filter(Sale.opportunity_id.in_(
             db.session.query(Opportunity.id).filter(Opportunity.assigned_to_id == user_id)
         ))
-    changed_leads = db.session.query(func.count(func.distinct(PipelineHistory.opportunity_id))).filter(
-        PipelineHistory.id.in_(db.session.query(history_q.subquery().c.id))
-    ).scalar() or 0
+    total_val = sum_sales.scalar() or 0.0
     if total_leads > 0:
-        reassigned_leads = round((changed_leads / total_leads) * 100)
+        rev_per_100_leads = round((float(total_val) / total_leads) * 100, 2)
 
-    # 18. Collection Rate
-    collection_rate = 0
-    invoices_q = Invoice.query
+    # 17. Collection Rate (Amount collected ÷ amount contractually due per period)
+    collection_rate = 0.0
+    inv_totals_q = db.session.query(
+        func.sum(Invoice.amount),
+        func.sum(db.case((Invoice.status == InvoiceStatus.PAID, Invoice.amount), else_=0))
+    ).filter(Invoice.status.in_([InvoiceStatus.SENT, InvoiceStatus.PAID, InvoiceStatus.OVERDUE]))
     if not is_admin(role):
-        invoices_q = invoices_q.filter(Invoice.opportunity_id.in_(
+        inv_totals_q = inv_totals_q.filter(Invoice.opportunity_id.in_(
             db.session.query(Opportunity.id).filter(Opportunity.assigned_to_id == user_id)
         ))
-    total_invoiced = db.session.query(func.sum(Invoice.amount)).filter(
-        Invoice.id.in_(db.session.query(invoices_q.subquery().c.id)),
-        Invoice.status.in_([InvoiceStatus.SENT, InvoiceStatus.PAID, InvoiceStatus.OVERDUE])
-    ).scalar() or Decimal('0.00')
-    total_paid = db.session.query(func.sum(Invoice.amount)).filter(
-        Invoice.id.in_(db.session.query(invoices_q.subquery().c.id)),
-        Invoice.status == InvoiceStatus.PAID
-    ).scalar() or Decimal('0.00')
-
+    inv_res = inv_totals_q.first()
+    total_invoiced = float(inv_res[0] or 0.0) if inv_res else 0.0
+    total_paid = float(inv_res[1] or 0.0) if inv_res else 0.0
     if total_invoiced > 0:
-        collection_rate = round((total_paid / total_invoiced) * 100)
+        collection_rate = round((total_paid / total_invoiced) * 100, 1)
 
-    # 19. Active Pipeline (Value of non-won, non-lost opportunities)
-    active_pipeline_val = 0.0
+    # 18. Source Conversion Rate (Sales from Campaign X ÷ leads from Campaign X) - overall conversion
+    conversion_rate = round((closed_won / total_leads) * 100, 1) if total_leads > 0 else 0.0
+
+    # 19. Cost per Completed Visit (Total marketing spend ÷ number of completed site visits)
+    cost_per_completed_visit = 0.0
+    if completed_appts > 0 and total_marketing_cost > 0:
+        cost_per_completed_visit = round(float(total_marketing_cost) / completed_appts, 2)
+
+    # 20. Customer Acquisition Cost (Total sales + marketing cost ÷ verified customers acquired)
+    cac = 0.0
+    if closed_won > 0 and total_marketing_cost > 0:
+        cac = round(float(total_marketing_cost) / closed_won, 2)
+
+    # Additional secondary operational helpers
     active_stages = [
         PipelineStage.NEW, PipelineStage.ASSIGNED, PipelineStage.FIRST_CONTACT_PENDING,
         PipelineStage.CONTACT_ATTEMPTED, PipelineStage.CONNECTED, PipelineStage.QUALIFIED,
@@ -275,49 +339,51 @@ def get_reports_kpis():
         PipelineStage.VISIT_COMPLETED, PipelineStage.PROPOSAL_PRESENTED, PipelineStage.NEGOTIATION,
         PipelineStage.RESERVATION_RECEIVED, PipelineStage.DOCUMENTATION_IN_PROCESS, PipelineStage.NURTURE
     ]
-    
     active_leads_count = sum(stage_map.get(s, 0) for s in active_stages)
     active_pipeline_val = active_leads_count * (avg_deal_size or 8600000.0)
 
-    # 20. MoM Growth (dummy 0 for real database if no past month data)
-    mom_growth = 0
-    # Count leads created this month vs last month
-    start_of_this_month = date.today().replace(day=1)
-    start_of_last_month = (start_of_this_month - timedelta(days=1)).replace(day=1)
-    
-    leads_this_month = opps_q.filter(Opportunity.created_at >= start_of_this_month).count()
-    leads_last_month = opps_q.filter(
-        Opportunity.created_at >= start_of_last_month,
-        Opportunity.created_at < start_of_this_month
-    ).count()
-
-    if leads_last_month > 0:
-        mom_growth = round(((leads_this_month - leads_last_month) / leads_last_month) * 100)
-    elif leads_this_month > 0:
-        mom_growth = 100
-
-    return jsonify({
+    result_payload = {
+        # 20 Architecture v2.0 Section D Metrics
         "speed_to_lead": speed_to_lead_min,
+        "sla_compliance": sla_compliance,
         "contact_rate": contact_rate,
+        "qualification_rate": qualification_rate,
+        "appointment_booking_rate": appointment_booking_rate,
+        "confirmation_rate": confirmation_rate,
         "show_rate": show_rate,
+        "visit_to_negotiation_rate": visit_to_negotiation_rate,
+        "visit_to_reservation_rate": visit_to_reservation_rate,
+        "reservation_to_sale_rate": reservation_to_sale_rate,
+        "follow_up_compliance": follow_up_compliance,
+        "lead_aging_summary": lead_aging_summary,
+        "lead_aging_heatmap": {
+            "1d": aging_1d,
+            "3d": aging_3d,
+            "7d": aging_7d,
+            "14d": aging_14d,
+            "30d_plus": aging_30d
+        },
+        "reactivation_rate": reactivation_rate,
+        "closed_lost_rate": closed_lost_rate,
+        "average_sales_cycle_days": avg_sales_cycle_days,
+        "revenue_per_100_leads": rev_per_100_leads,
+        "collection_rate": collection_rate,
+        "source_conversion_rate": conversion_rate,
+        "cost_per_completed_visit": cost_per_completed_visit,
+        "customer_acquisition_cost": cac,
         "conversion_rate": conversion_rate,
+
+        # Backwards compatible aliases
         "avg_deal_size": avg_deal_size,
         "cac": cac,
         "rev_per_100_leads": rev_per_100_leads,
-        "lead_to_visit": lead_to_visit,
-        "visit_to_proposal": visit_to_proposal,
-        "proposal_to_close": proposal_to_close,
-        "sla_compliance": sla_compliance,
-        "avg_call_duration": avg_call_duration,
-        "first_call_resolve": first_call_resolve,
-        "objections_per_lead": objections_per_lead,
-        "price_objection_percent": price_objection_percent,
-        "appt_no_show": appt_no_show,
-        "reassigned_leads": reassigned_leads,
-        "collection_rate": collection_rate,
         "active_pipeline_val": active_pipeline_val,
-        "mom_growth": mom_growth
-    })
+        "total_leads": total_leads,
+        "completed_appts": completed_appts,
+        "closed_won": closed_won
+    }
+    _set_cache(cache_key, result_payload)
+    return jsonify(result_payload)
 
 @reports_bp.route('/charts', methods=['GET'])
 @jwt_required()
@@ -329,10 +395,17 @@ def get_reports_charts():
     # Date range filters
     start_date_str = request.args.get('start_date')
     end_date_str = request.args.get('end_date')
+
+    # Fast in-memory cache lookup
+    cache_key = f"charts:{user_id}:{role}:{start_date_str}:{end_date_str}"
+    cached = _get_cache(cache_key)
+    if cached is not None:
+        return jsonify(cached)
+
     start_dt = datetime.fromisoformat(start_date_str) if start_date_str else None
     end_dt = datetime.fromisoformat(end_date_str) if end_date_str else None
 
-    # Filters
+    # Base Opportunity query
     opps_q = Opportunity.query.filter_by(is_deleted=False)
     if not is_admin(role):
         opps_q = opps_q.filter_by(assigned_to_id=user_id)
@@ -341,52 +414,57 @@ def get_reports_charts():
     if end_dt:
         opps_q = opps_q.filter(Opportunity.created_at <= end_dt)
 
-    # 1. Lead Outcome Distribution
+    # 1. Lead Outcome Distribution (1 single GROUP BY query instead of 21 loops)
     outcome_counts = {}
-    for stage in PipelineStage:
-        cnt = opps_q.filter_by(pipeline_stage=stage).count()
-        if cnt > 0:
-            outcome_counts[stage.value] = cnt
-
-    # 2. Objection Intelligence (Objections by Category)
-    objections_q = Objection.query
+    stage_counts_res = db.session.query(Opportunity.pipeline_stage, func.count(Opportunity.id))\
+        .filter(Opportunity.is_deleted == False)
     if not is_admin(role):
-        objections_q = objections_q.filter_by(logged_by_id=user_id)
-    
+        stage_counts_res = stage_counts_res.filter(Opportunity.assigned_to_id == user_id)
+    if start_dt:
+        stage_counts_res = stage_counts_res.filter(Opportunity.created_at >= start_dt)
+    if end_dt:
+        stage_counts_res = stage_counts_res.filter(Opportunity.created_at <= end_dt)
+    for stage_val, cnt in stage_counts_res.group_by(Opportunity.pipeline_stage).all():
+        if stage_val and cnt > 0:
+            key = stage_val.value if hasattr(stage_val, 'value') else str(stage_val)
+            outcome_counts[key] = cnt
+
+    # 2. Objection Intelligence (1 single GROUP BY query instead of looping)
     obj_counts = {}
-    for cat in ObjectionCategory:
-        cnt = objections_q.filter_by(category=cat).count()
-        if cnt > 0:
-            obj_counts[cat.value] = cnt
+    obj_res = db.session.query(Objection.category, func.count(Objection.id))
+    if not is_admin(role):
+        obj_res = obj_res.filter(Objection.logged_by_id == user_id)
+    for cat_val, cnt in obj_res.group_by(Objection.category).all():
+        if cat_val and cnt > 0:
+            key = cat_val.value if hasattr(cat_val, 'value') else str(cat_val)
+            obj_counts[key] = cnt
 
     # 3. Monthly Revenue (Full Year) - Bookings and Collections
     bookings_monthly = [0]*12
     collections_monthly = [0]*12
 
-    sales_q = Sale.query
+    sales_q = db.session.query(Sale.created_at, Sale.total_sale_value)
     if not is_admin(role):
         sales_q = sales_q.filter(Sale.opportunity_id.in_(
             db.session.query(Opportunity.id).filter(Opportunity.assigned_to_id == user_id)
         ))
-    sales = sales_q.all()
-    for s in sales:
-        if s.created_at:
-            m = s.created_at.month - 1
-            bookings_monthly[m] += float(s.total_sale_value)
+    for created_at, val in sales_q.all():
+        if created_at and val:
+            m = created_at.month - 1
+            if 0 <= m < 12:
+                bookings_monthly[m] += float(val)
 
-    invoices_q = Invoice.query.filter_by(status=InvoiceStatus.PAID)
+    invoices_q = db.session.query(Invoice.paid_date, Invoice.created_at, Invoice.amount).filter(Invoice.status == InvoiceStatus.PAID)
     if not is_admin(role):
         invoices_q = invoices_q.filter(Invoice.opportunity_id.in_(
             db.session.query(Opportunity.id).filter(Opportunity.assigned_to_id == user_id)
         ))
-    paid_invoices = invoices_q.all()
-    for inv in paid_invoices:
-        if inv.paid_date:
-            m = inv.paid_date.month - 1
-            collections_monthly[m] += float(inv.amount)
-        elif inv.created_at:
-            m = inv.created_at.month - 1
-            collections_monthly[m] += float(inv.amount)
+    for paid_date, created_at, amt in invoices_q.all():
+        t = paid_date or created_at
+        if t and amt:
+            m = t.month - 1
+            if 0 <= m < 12:
+                collections_monthly[m] += float(amt)
 
     # 4. CAC Trend (Last 6 Months Marketing Expense / Won Leads count)
     cac_trend_months = []
@@ -395,7 +473,6 @@ def get_reports_charts():
     for i in range(5, -1, -1):
         target_date = today - timedelta(days=i*30)
         m_start = target_date.replace(day=1)
-        # Next month start
         if m_start.month == 12:
             m_end = m_start.replace(year=m_start.year+1, month=1)
         else:
@@ -404,25 +481,21 @@ def get_reports_charts():
         m_name = m_start.strftime("%b")
         cac_trend_months.append(m_name)
 
-        # Won leads in month
         won_cnt = opps_q.filter(
             Opportunity.pipeline_stage == PipelineStage.SOLD,
             Opportunity.created_at >= datetime.combine(m_start, datetime.min.time()),
             Opportunity.created_at < datetime.combine(m_end, datetime.min.time())
         ).count()
 
-        # Marketing expenses in month
-        marketing_exp = Expense.query.filter(
+        exp_q = db.session.query(func.sum(Expense.amount)).filter(
             Expense.category == ExpenseCategory.MARKETING,
             Expense.status == ExpenseStatus.APPROVED,
             Expense.created_at >= datetime.combine(m_start, datetime.min.time()),
             Expense.created_at < datetime.combine(m_end, datetime.min.time())
         )
         if not is_admin(role):
-            marketing_exp = marketing_exp.filter_by(submitted_by_id=user_id)
-        total_cost = db.session.query(func.sum(Expense.amount)).filter(
-            Expense.id.in_(db.session.query(marketing_exp.subquery().c.id))
-        ).scalar() or 0.0
+            exp_q = exp_q.filter(Expense.submitted_by_id == user_id)
+        total_cost = exp_q.scalar() or 0.0
 
         val = 0.0
         if won_cnt > 0:
@@ -431,24 +504,27 @@ def get_reports_charts():
             val = float(total_cost)
         cac_trend_values.append(round(val))
 
-    # 5. Show Rate by Source
-    # Group appointments by opportunity -> lead_source
+    # 5. Show Rate by Source (Single SQL JOIN - fixes N+1 query issue)
     show_rate_by_source = {}
-    appts_q = Appointment.query
+    appt_sources = db.session.query(
+        Contact.source,
+        Contact.utm_source,
+        Appointment.status,
+        func.count(Appointment.id)
+    ).join(Opportunity, Appointment.opportunity_id == Opportunity.id)\
+     .outerjoin(Contact, Opportunity.contact_id == Contact.id)
     if not is_admin(role):
-        appts_q = appts_q.filter_by(scheduled_by_id=user_id)
-    
-    appts = appts_q.all()
+        appt_sources = appt_sources.filter(Appointment.scheduled_by_id == user_id)
+    appt_sources = appt_sources.group_by(Contact.source, Contact.utm_source, Appointment.status).all()
+
     source_appts = {}
-    for a in appts:
-        opp = Opportunity.query.get(a.opportunity_id)
-        if opp:
-            src = (opp.contact.source or opp.contact.utm_source) if opp.contact else "Other"
-            if src not in source_appts:
-                source_appts[src] = {"total": 0, "shows": 0}
-            source_appts[src]["total"] += 1
-            if a.status == AppointmentStatus.COMPLETED:
-                source_appts[src]["shows"] += 1
+    for src_name, utm_src, status, cnt in appt_sources:
+        src = src_name or utm_src or "Other"
+        if src not in source_appts:
+            source_appts[src] = {"total": 0, "shows": 0}
+        source_appts[src]["total"] += cnt
+        if status == AppointmentStatus.COMPLETED:
+            source_appts[src]["shows"] += cnt
 
     for src, vals in source_appts.items():
         if vals["total"] > 0:
@@ -469,17 +545,15 @@ def get_reports_charts():
             Opportunity.created_at < datetime.combine(m_end, datetime.min.time())
         ).count()
 
-        sales_in_month = Sale.query.filter(
+        sales_sum_q = db.session.query(func.sum(Sale.total_sale_value)).filter(
             Sale.created_at >= datetime.combine(m_start, datetime.min.time()),
             Sale.created_at < datetime.combine(m_end, datetime.min.time())
         )
         if not is_admin(role):
-            sales_in_month = sales_in_month.filter(Sale.opportunity_id.in_(
+            sales_sum_q = sales_sum_q.filter(Sale.opportunity_id.in_(
                 db.session.query(Opportunity.id).filter(Opportunity.assigned_to_id == user_id)
             ))
-        total_val = db.session.query(func.sum(Sale.total_sale_value)).filter(
-            Sale.id.in_(db.session.query(sales_in_month.subquery().c.id))
-        ).scalar() or 0.0
+        total_val = sales_sum_q.scalar() or 0.0
 
         val = 0.0
         if leads_cnt > 0:
@@ -495,7 +569,6 @@ def get_reports_charts():
         w_end = w_start + timedelta(days=7)
         weekly_labels.append(f"Wk -{i}" if i > 0 else "This Wk")
 
-        # Avg Speed to lead in week
         wk_calls = db.session.query(
             Opportunity.id,
             Opportunity.created_at,
@@ -517,7 +590,6 @@ def get_reports_charts():
                 avg_s = round(sum(durations) / len(durations), 1)
         weekly_speed.append(avg_s)
 
-        # SLA Compliance in week
         sla_wk_q = SLAEvent.query.filter(
             SLAEvent.assigned_at >= datetime.combine(w_start, datetime.min.time()),
             SLAEvent.assigned_at < datetime.combine(w_end, datetime.min.time())
@@ -533,7 +605,7 @@ def get_reports_charts():
             comp_rate = round((clean_cnt / total_sla) * 100)
         weekly_sla.append(comp_rate)
 
-    return jsonify({
+    charts_payload = {
         "lead_outcome": outcome_counts,
         "objection_intelligence": obj_counts,
         "revenue_monthly": {
@@ -551,7 +623,9 @@ def get_reports_charts():
             "speed": weekly_speed,
             "sla": weekly_sla
         }
-    })
+    }
+    _set_cache(cache_key, charts_payload)
+    return jsonify(charts_payload)
 
 
 @reports_bp.route('/export/leads', methods=['GET'])

@@ -97,24 +97,33 @@ class SLAStatus(PyEnum):
     RESOLVED = "RESOLVED"
 
 class ObjectionCategory(PyEnum):
-    PRICE_TOO_HIGH = "PRICE_TOO_HIGH"
-    LOCATION_DISTANCE = "LOCATION_DISTANCE"
-    CONNECTIVITY_ROADS = "CONNECTIVITY_ROADS"
-    DEVELOPMENT_TIMELINE = "DEVELOPMENT_TIMELINE"
-    TITLE_LEGAL_CLARITY = "TITLE_LEGAL_CLARITY"
-    COMPETITOR_PREFERENCE = "COMPETITOR_PREFERENCE"
-    PAYMENT_TERMS_UNSUITABLE = "PAYMENT_TERMS_UNSUITABLE"
-    SPOUSE_FAMILY_DISAPPROVAL = "SPOUSE_FAMILY_DISAPPROVAL"
-    NOT_READY_FINANCIALLY = "NOT_READY_FINANCIALLY"
-    NO_LONGER_INTERESTED = "NO_LONGER_INTERESTED"
+    # 11 Architecture v2.0 (M-08) Standard Objection Codes
+    DEVELOPMENT_VISIBILITY = "DEVELOPMENT_VISIBILITY"
+    SHAH_ALI_BRIDGE_DOUBT = "SHAH_ALI_BRIDGE_DOUBT"
+    DISTANCE = "DISTANCE"
+    PRICE = "PRICE"
+    PAYMENT_TERMS = "PAYMENT_TERMS"
+    TRUST_DOCUMENTATION = "TRUST_DOCUMENTATION"
+    FAMILY_APPROVAL = "FAMILY_APPROVAL"
+    TIMING = "TIMING"
+    CASH_FLOW = "CASH_FLOW"
+    COMPETITOR = "COMPETITOR"
+    NO_RESPONSE_POST_VISIT = "NO_RESPONSE_POST_VISIT"
+
+    # Backwards-compatible aliases
+    PRICE_TOO_HIGH = "PRICE"
+    LOCATION_DISTANCE = "DISTANCE"
+    CONNECTIVITY_ROADS = "DEVELOPMENT_VISIBILITY"
+    DEVELOPMENT_TIMELINE = "TIMING"
+    TITLE_LEGAL_CLARITY = "TRUST_DOCUMENTATION"
+    COMPETITOR_PREFERENCE = "COMPETITOR"
+    PAYMENT_TERMS_UNSUITABLE = "PAYMENT_TERMS"
+    SPOUSE_FAMILY_DISAPPROVAL = "FAMILY_APPROVAL"
+    NOT_READY_FINANCIALLY = "CASH_FLOW"
+    NO_LONGER_INTERESTED = "NO_RESPONSE_POST_VISIT"
     OTHER = "OTHER"
-    # Legacy aliases
-    PRICE = "PRICE_TOO_HIGH"
-    DISTANCE = "LOCATION_DISTANCE"
-    INFRASTRUCTURE = "CONNECTIVITY_ROADS"
-    COMPETITOR = "COMPETITOR_PREFERENCE"
-    TIMING = "DEVELOPMENT_TIMELINE"
-    FINANCING = "PAYMENT_TERMS_UNSUITABLE"
+    INFRASTRUCTURE = "DEVELOPMENT_VISIBILITY"
+    FINANCING = "PAYMENT_TERMS"
 
 class PaymentMethod(PyEnum):
     CASH = "CASH"
@@ -496,12 +505,21 @@ class Opportunity(db.Model, SoftDeleteMixin):
             "assigned_to_id": self.assigned_to_id,
             "assigned_to_name": owner.full_name if owner else None,
             "assigned_to_color": owner.calendar_color if owner else "#6366f1",
+            "project_id": self.project_id,
             "project_name": self.project.name if self.project else None,
             "pipeline_stage": self.pipeline_stage.value if self.pipeline_stage else None,
+            "last_activity_type": self.last_activity_type.value if self.last_activity_type else None,
+            "last_activity_outcome": self.last_activity_outcome.value if self.last_activity_outcome else None,
+            "last_activity_at": self.last_activity_at.isoformat() if self.last_activity_at else None,
+            "appointment_status": self.appointment_status.value if self.appointment_status else None,
             "lead_temperature": self.lead_temperature.value if self.lead_temperature else None,
             "priority": self.priority.value if self.priority else "MEDIUM",
             "next_action_type": self.next_action_type.value if self.next_action_type else None,
             "next_action_deadline": self.next_action_deadline.isoformat() if self.next_action_deadline else None,
+            "manager_assessment": self.manager_assessment,
+            "manager_label": self.manager_label,
+            "final_result": self.final_result.value if self.final_result else None,
+            "total_deal_value": float(self.total_deal_value) if self.total_deal_value else 0.0,
             "lead_age_days": self.lead_age_days,
             "is_starred": self.is_starred,
             "service_type": self.service_type,
