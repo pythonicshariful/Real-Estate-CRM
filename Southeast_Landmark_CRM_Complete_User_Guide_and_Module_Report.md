@@ -1,21 +1,18 @@
 # 📘 Southeast Landmark CRM v2.0 — Architecture Compliance Audit, Module URL Directory & Operational Manual
 
-**Client:** Southeast Landmark Ltd.  
-**System Version:** v2.0 (High-Performance Production Release)  
-**Architecture Specification:** `Southeast_Landmark_CRM_v1_Architecture.pdf`  
-**Live Production Host:** [https://southeastlandmark.pythonicshariful.tech/](https://southeastlandmark.pythonicshariful.tech/)  
-**Local Development Host:** `http://localhost:5000/`  
-**Printable Browser Manual (1-Click PDF):** [https://southeastlandmark.pythonicshariful.tech/manual.html](https://southeastlandmark.pythonicshariful.tech/manual.html)  
-**Audit Status:** **100% Fully Implemented, Verified & Live**
+**System:** Southeast Landmark CRM v2.0  
+**Specification:** Architecture Reference v2.0 (`Southeast_Landmark_CRM_v1_Architecture.pdf`)  
+**Portal Access:** [https://southeastlandmark.pythonicshariful.tech/](https://southeastlandmark.pythonicshariful.tech/)  
+**System Manual:** [https://southeastlandmark.pythonicshariful.tech/manual.html](https://southeastlandmark.pythonicshariful.tech/manual.html)
 
 ---
 
 ## 📑 সূচিপত্র (Table of Contents)
 
-1. [মূল স্থাপত্য নীতি ও অডিট ওভারভিউ](#1-মূল-স্থাপত্য-নীতি-ও-অডিট-ওভারভিউ)
+1. [মূল স্থাপত্য নীতি ও ওভারভিউ](#1-মূল-স্থাপত্য-নীতি-ও-ওভারভিউ)
 2. [মাস্টার URL ও পেজ অ্যাক্সেস ডিরেক্টরি](#2-মাস্টার-url-ও-পেজ-অ্যাক্সেস-ডিরেক্টরি)
-3. [Section A: ১৫টি সেলস স্টেজ ও ৫টি এক্সিট গেট (আইটেমভিত্তিক ডাটাবেস ও ইউআই অডিট)](#3-section-a-১৫টি-সেলস-স্টেজ-ও-৫টি-এক্সিট-গেট)
-4. [Section B: ১২টি কোর আর্কিটেকচার মডিউল (M-01 থেকে M-12) — প্রতিটি সাব-আইটেমের পুঙ্খানুপুঙ্খ অডিট](#4-section-b-১২টি-কোর-আর্কিটেকচার-মডিউল-m-01-থেকে-m-12)
+3. [Section A: ১৫টি সেলস স্টেজ ও ৫টি এক্সিট গেট](#3-section-a-১৫টি-সেলস-স্টেজ-ও-৫টি-এক্সিট-গেট)
+4. [Section B: ১২টি কোর আর্কিটেকচার মডিউল (M-01 থেকে M-12)](#4-section-b-১২টি-কোর-আর্কিটেকচার-মডিউল-m-01-থেকে-m-12)
    - [M-01: Multi-Channel Lead Intake & Instant Capture](#m-01-multi-channel-lead-intake--instant-capture)
    - [M-02: Contact Identity, De-duplication & Client Pool](#m-02-contact-identity-de-duplication--client-pool)
    - [M-03: Dynamic Lead Scoring & Qualification Matrix (BANT)](#m-03-dynamic-lead-scoring--qualification-matrix-bant)
@@ -28,16 +25,16 @@
    - [M-10: Sales Transaction, Invoicing & Collections](#m-10-sales-transaction-invoicing--collections)
    - [M-11: Reports & Analytics (Core 20-KPI Framework)](#m-11-reports--analytics-core-20-kpi-framework)
    - [M-12: Post-Handover CRM, Customer Service & Tickets](#m-12-post-handover-crm-customer-service--tickets)
-5. [Section C: আর্কিটেকচারের ৫টি ক্রিটিক্যাল ডিজাইন ফিক্স অডিট (Fix 1 to Fix 5)](#5-section-c-আর্কিটেকচারের-৫টি-ক্রিটিক্যাল-ডিজাইন-ফিক্স-অডিট)
-6. [Section D: ২০টি কোর কেপিআই অ্যানালিটিক্স ম্যাট্রিক্স (Section D 20-KPI Audit)](#6-section-d-২০টি-কোর-কেপিআই-অ্যানালিটিক্স-ম্যাট্রিক্স)
-7. [Section E: ১৭টি সিকিউরিটি ও আরবিএসি কন্ট্রোল (Section E RBAC Controls)](#7-section-e-১৭টি-সিকিউরিটি-ও-আরবিএসি-কন্ট্রোল)
-8. [সার্ভার ডিপ্লয়মেন্ট ও ভেরিফিকেশন প্রোটোকল](#8-সার্ভার-ডিপ্লয়মেন্ট-ও-ভেরিফিকেশন-প্রোটোকল)
+5. [Section C: আর্কিটেকচারের ৫টি ক্রিটিক্যাল ডিজাইন ফিক্স](#5-section-c-আর্কিটেকচারের-৫টি-ক্রিটিক্যাল-ডিজাইন-ফিক্স)
+6. [Section D: ২০টি কোর কেপিআই অ্যানালিটিক্স ম্যাট্রিক্স](#6-section-d-২০টি-কোর-কেপিআই-অ্যানালিটিক্স-ম্যাট্রিক্স)
+7. [Section E: ১৭টি সিকিউরিটি ও আরবিএসি কন্ট্রোল](#7-section-e-১৭টি-সিকিউরিটি-ও-আরবিএসি-কন্ট্রোল)
+8. [সার্ভার ডিপ্লয়মেন্ট প্রোটোকল](#8-সার্ভার-ডিপ্লয়মেন্ট-প্রোটোকল)
 
 ---
 
-## 1. মূল স্থাপত্য নীতি ও অডিট ওভারভিউ
+## 1. মূল স্থাপত্য নীতি ও ওভারভিউ
 
-`Southeast Landmark CRM v2.0` সিস্টেমটি `Southeast_Landmark_CRM_v1_Architecture.pdf`-এর প্রতিটি বাণিজ্যিক ও প্রযুক্তিগত শর্তাবলীর সাথে ১০০% সঙ্গতিপূর্ণ রেখে নির্মাণ করা হয়েছে:
+`Southeast Landmark CRM v2.0` সিস্টেমটি `Southeast_Landmark_CRM_v1_Architecture.pdf`-এর বাণিজ্যিক ও প্রযুক্তিগত শর্তাবলীর সাথে পুরোপুরি সঙ্গতিপূর্ণ রেখে প্রস্তুত করা হয়েছে:
 
 1. **১টি কন্টাক্ট ➔ একাধিক অপরচুনিটি মডেল (1:N Architecture):**  
    একই গ্রাহকের স্থায়ী প্রোফাইল একবারই সংরক্ষিত থাকে (`Contact`), কিন্তু তার প্রতিটি পৃথক প্রজেক্ট বা প্লটের আগ্রহ আলাদা ডিল (`Opportunity`) হিসেবে ট্র্যাকিং হয়।
@@ -54,32 +51,32 @@
 
 ## 2. মাস্টার URL ও পেজ অ্যাক্সেস ডিরেক্টরি
 
-| মডিউল কোড | মডিউল ও পেজের নাম | সরাসরি লাইভ লিঙ্ক (Production Host) | লোকাল লিঙ্ক (Localhost) | ব্যবহারের মূল ভূমিকা |
-| :--- | :--- | :--- | :--- | :--- |
-| **AUTH** | **ইউজার সাইন-ইন পোর্টাল** | [/index.html](https://southeastlandmark.pythonicshariful.tech/index.html) | `http://localhost:5000/index.html` | JWT সিকিউর লগইন |
-| **M-00** | **এডমিন কমান্ড সেন্টার** | [/admin-dashboard.html](https://southeastlandmark.pythonicshariful.tech/admin-dashboard.html) | `http://localhost:5000/admin-dashboard.html` | টপ-লেভেল ওভারভিউ |
-| **M-00** | **সেলস এক্সিকিউটিভ ড্যাশবোর্ড**| [/dashboard.html](https://southeastlandmark.pythonicshariful.tech/dashboard.html) | `http://localhost:5000/dashboard.html` | প্রতিদিনের অ্যাকশন লিস্ট |
-| **SEC-A**| **১৫-স্টেজ কানবান পাইপলাইন** | [/pipeline.html](https://southeastlandmark.pythonicshariful.tech/pipeline.html) | `http://localhost:5000/pipeline.html` | ড্র্যাগ-এন্ড-ড্রপ ফানেল |
-| **M-01** | **লিডস হাব (সক্রিয় ফানেল)** | [/leads.html](https://southeastlandmark.pythonicshariful.tech/leads.html) | `http://localhost:5000/leads.html` | লিড ম্যানেজমেন্ট ও কলিং |
-| **SEC-A**| **লিড প্রোফাইল ও টাইমলাইন** | [/lead-details.html](https://southeastlandmark.pythonicshariful.tech/lead-details.html) | `http://localhost:5000/lead-details.html` | পূর্ণাঙ্গ অডিট হিস্ট্রি |
-| **M-02** | **ভেরিফাইড ক্লায়েন্টস ডিরেক্টরি**| [/contacts.html](https://southeastlandmark.pythonicshariful.tech/contacts.html) | `http://localhost:5000/contacts.html` | ১:N গ্রাহক ডাটাবেস |
-| **M-02** | **প্রস্পেক্টস ডাটাবেস পুল** | [/prospects.html](https://southeastlandmark.pythonicshariful.tech/prospects.html) | `http://localhost:5000/prospects.html` | প্রাথমিক আগ্রহীদের পুল |
-| **M-04** | **টিম ও ক্যাপাসিটি ব্যালেন্সিং**| [/team.html](https://southeastlandmark.pythonicshariful.tech/team.html) | `http://localhost:5000/team.html` | রাউন্ড-রবিন ও ডিউটি কন্ট্রোল |
-| **M-04** | **লিড ওনার্স ও বণ্টন কন্ট্রোল** | [/lead-owners.html](https://southeastlandmark.pythonicshariful.tech/lead-owners.html) | `http://localhost:5000/lead-owners.html` | লিড রি-অ্যাসাইন ও ফিল্টারিং |
-| **M-05** | **মেসেজ ও ওমনিচ্যানেল ইনবক্স** | [/messages.html](https://southeastlandmark.pythonicshariful.tech/messages.html) | `http://localhost:5000/messages.html` | হোয়াটসঅ্যাপ ও এসএমএস |
-| **M-05** | **কল হিস্ট্রি ও অ্যাক্টিভিটি লগ**| [/activities.html](https://southeastlandmark.pythonicshariful.tech/activities.html) | `http://localhost:5000/activities.html` | কল রেকর্ডিং প্লেব্যাক |
-| **M-06** | **টাস্ক ও ফলো-আপ ইঞ্জিন** | [/tasks.html](https://southeastlandmark.pythonicshariful.tech/tasks.html) | `http://localhost:5000/tasks.html` | নেক্সট অ্যাকশন ডেডলাইন |
-| **M-07** | **সাইট ভিজিট ও ইভেন্টস ক্যালেন্ডার**| [/events.html](https://southeastlandmark.pythonicshariful.tech/events.html) | `http://localhost:5000/events.html` | ভিজিট বুকিং ও ট্রান্সপোর্ট |
-| **M-08** | **অবজেকশন ও সেলস নোটস** | [/notes.html](https://southeastlandmark.pythonicshariful.tech/notes.html) | `http://localhost:5000/notes.html` | ৮টি ক্যাটাগরির টক-ট্র্যাক |
-| **M-09** | **প্রজেক্ট ও প্লট ইনভেন্টরি** | [/projects.html](https://southeastlandmark.pythonicshariful.tech/projects.html) | `http://localhost:5000/projects.html` | প্লট সাইজ ও রিজার্ভেশন |
-| **M-10** | **সেলস বুকিং ও ট্রানজাকশন** | [/sales.html](https://southeastlandmark.pythonicshariful.tech/sales.html) | `http://localhost:5000/sales.html` | কিস্তি শিডিউল ও ইনভয়েস |
-| **M-10** | **মার্কেটিং খরচ ও সিএসি** | [/expenses.html](https://southeastlandmark.pythonicshariful.tech/expenses.html) | `http://localhost:5000/expenses.html` | বিজ্ঞাপন খরচ ও CAC ট্র্যাকিং |
-| **M-11** | **রিপোর্ট ও ২০-কেপিআই ড্যাশবোর্ড**| [/reports.html](https://southeastlandmark.pythonicshariful.tech/reports.html) | `http://localhost:5000/reports.html` | Section D ২০টি কেপিআই |
-| **M-12** | **কাস্টমার সাপোর্ট টিকেট** | [/tickets.html](https://southeastlandmark.pythonicshariful.tech/tickets.html) | `http://localhost:5000/tickets.html` | মিউটেশন ও হ্যান্ডওভার ডেস্ক |
-| **CONF** | **সিস্টেম সেটিংস ও ইন্টিগ্রেশন** | [/settings.html](https://southeastlandmark.pythonicshariful.tech/settings.html) | `http://localhost:5000/settings.html` | SLA কনফিগ ও ওয়েবহুক |
-| **GUIDE**| **মেটা ফেসবুক লিড এডস গাইড** | [/meta_guide.html](https://southeastlandmark.pythonicshariful.tech/meta_guide.html) | `http://localhost:5000/meta_guide.html` | ফেসবুক লাইভ সেটআপ গাইড |
-| **GUIDE**| **ক্লাউড কল অডিও স্টোরেজ গাইড**| [/b2_guide.html](https://southeastlandmark.pythonicshariful.tech/b2_guide.html) | `http://localhost:5000/b2_guide.html` | Backblaze B2 অডিও সেটআপ |
-| **PRINT**| **প্রিন্ট উপযোগী ইউজার ম্যানুয়াল** | [/manual.html](https://southeastlandmark.pythonicshariful.tech/manual.html) | `http://localhost:5000/manual.html` | ১-ক্লিক PDF জেনারেটর |
+| মডিউল কোড | মডিউল ও পেজের নাম | সরাসরি অ্যাক্সেস লিংক | ব্যবহারের মূল ভূমিকা |
+| :--- | :--- | :--- | :--- |
+| **AUTH** | **ইউজার সাইন-ইন পোর্টাল** | [/index.html](https://southeastlandmark.pythonicshariful.tech/index.html) | JWT সিকিউর লগইন |
+| **M-00** | **এডমিন কমান্ড সেন্টার** | [/admin-dashboard.html](https://southeastlandmark.pythonicshariful.tech/admin-dashboard.html) | টপ-লেভেল ওভারভিউ |
+| **M-00** | **সেলস এক্সিকিউটিভ ড্যাশবোর্ড**| [/dashboard.html](https://southeastlandmark.pythonicshariful.tech/dashboard.html) | প্রতিদিনের অ্যাকশন লিস্ট |
+| **SEC-A**| **১৫-স্টেজ কানবান পাইপলাইন** | [/pipeline.html](https://southeastlandmark.pythonicshariful.tech/pipeline.html) | ড্র্যাগ-এন্ড-ড্রপ ফানেল |
+| **M-01** | **লিডস হাব (সক্রিয় ফানেল)** | [/leads.html](https://southeastlandmark.pythonicshariful.tech/leads.html) | লিড ম্যানেজমেন্ট ও কলিং |
+| **SEC-A**| **লিড প্রোফাইল ও টাইমলাইন** | [/lead-details.html](https://southeastlandmark.pythonicshariful.tech/lead-details.html) | পূর্ণাঙ্গ অডিট হিস্ট্রি |
+| **M-02** | **ভেরিফাইড ক্লায়েন্টস ডিরেক্টরি**| [/contacts.html](https://southeastlandmark.pythonicshariful.tech/contacts.html) | ১:N গ্রাহক ডাটাবেস |
+| **M-02** | **প্রস্পেক্টস ডাটাবেস পুল** | [/prospects.html](https://southeastlandmark.pythonicshariful.tech/prospects.html) | প্রাথমিক আগ্রহীদের পুল |
+| **M-04** | **টিম ও ক্যাপাসিটি ব্যালেন্সিং**| [/team.html](https://southeastlandmark.pythonicshariful.tech/team.html) | রাউন্ড-রবিন ও ডিউটি কন্ট্রোল |
+| **M-04** | **লিড ওনার্স ও বণ্টন কন্ট্রোল** | [/lead-owners.html](https://southeastlandmark.pythonicshariful.tech/lead-owners.html) | লিড রি-অ্যাসাইন ও ফিল্টারিং |
+| **M-05** | **মেসেজ ও ওমনিচ্যানেল ইনবক্স** | [/messages.html](https://southeastlandmark.pythonicshariful.tech/messages.html) | হোয়াটসঅ্যাপ ও এসএমএস |
+| **M-05** | **কল হিস্ট্রি ও অ্যাক্টিভিটি লগ**| [/activities.html](https://southeastlandmark.pythonicshariful.tech/activities.html) | কল রেকর্ডিং প্লেব্যাক |
+| **M-06** | **টাস্ক ও ফলো-আপ ইঞ্জিন** | [/tasks.html](https://southeastlandmark.pythonicshariful.tech/tasks.html) | নেক্সট অ্যাকশন ডেডলাইন |
+| **M-07** | **সাইট ভিজিট ও ইভেন্টস ক্যালেন্ডার**| [/events.html](https://southeastlandmark.pythonicshariful.tech/events.html) | ভিজিট বুকিং ও ট্রান্সপোর্ট |
+| **M-08** | **অবজেকশন ও সেলস নোটস** | [/notes.html](https://southeastlandmark.pythonicshariful.tech/notes.html) | ৮টি ক্যাটাগরির টক-ট্র্যাক |
+| **M-09** | **প্রজেক্ট ও প্লট ইনভেন্টরি** | [/projects.html](https://southeastlandmark.pythonicshariful.tech/projects.html) | প্লট সাইজ ও রিজার্ভেশন |
+| **M-10** | **সেলস বুকিং ও ট্রানজাকশন** | [/sales.html](https://southeastlandmark.pythonicshariful.tech/sales.html) | কিস্তি শিডিউল ও ইনভয়েস |
+| **M-10** | **মার্কেটিং খরচ ও সিএসি** | [/expenses.html](https://southeastlandmark.pythonicshariful.tech/expenses.html) | বিজ্ঞাপন খরচ ও CAC ট্র্যাকিং |
+| **M-11** | **রিপোর্ট ও ২০-কেপিআই ড্যাশবোর্ড**| [/reports.html](https://southeastlandmark.pythonicshariful.tech/reports.html) | Section D ২০টি কেপিআই |
+| **M-12** | **কাস্টমার সাপোর্ট টিকেট** | [/tickets.html](https://southeastlandmark.pythonicshariful.tech/tickets.html) | মিউটেশন ও হ্যান্ডওভার ডেস্ক |
+| **CONF** | **সিস্টেম সেটিংস ও ইন্টিগ্রেশন** | [/settings.html](https://southeastlandmark.pythonicshariful.tech/settings.html) | SLA কনফিগ ও ওয়েবহুক |
+| **GUIDE**| **মেটা ফেসবুক লিড এডস গাইড** | [/meta_guide.html](https://southeastlandmark.pythonicshariful.tech/meta_guide.html) | ফেসবুক লাইভ সেটআপ গাইড |
+| **GUIDE**| **ক্লাউড কল অডিও স্টোরেজ গাইড**| [/b2_guide.html](https://southeastlandmark.pythonicshariful.tech/b2_guide.html) | Backblaze B2 অডিও সেটআপ |
+| **PRINT**| **প্রিন্ট উপযোগী ইউজার ম্যানুয়াল** | [/manual.html](https://southeastlandmark.pythonicshariful.tech/manual.html) | ১-ক্লিক PDF জেনারেটর |
 
 ---
 

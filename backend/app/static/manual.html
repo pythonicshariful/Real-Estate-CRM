@@ -54,7 +54,7 @@
     <header class="border-b border-slate-800 pb-8 text-center sm:text-left flex flex-col sm:flex-row justify-between items-center gap-6">
       <div>
         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold uppercase tracking-wider mb-3">
-          Official System Architecture & User Guide
+          Architecture Compliance & Operational Manual
         </div>
         <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
           Southeast Landmark CRM v2.0
@@ -62,12 +62,6 @@
         <p class="text-slate-400 text-sm mt-2 max-w-2xl">
           আর্কিটেকচার স্পেসিফিকেশন (<code class="text-indigo-300 font-mono">Southeast_Landmark_CRM_v1_Architecture.pdf</code>)-এর বিপরীতে সমস্ত মডিউল, ইউআরএল ডিরেক্টরি, ফিচার ও ব্যবহারের নিয়মাবলী।
         </p>
-      </div>
-      <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl text-left text-xs space-y-1.5 w-full sm:w-auto">
-        <div><span class="text-slate-500">ক্লায়েন্ট:</span> <strong class="text-slate-200">Southeast Landmark Ltd.</strong></div>
-        <div><span class="text-slate-500">হোস্টেড লিংক:</span> <a href="https://southeastlandmark.pythonicshariful.tech/" target="_blank" class="text-indigo-400 font-mono hover:underline">southeastlandmark.pythonicshariful.tech</a></div>
-        <div><span class="text-slate-500">লোকাল ডেভেলপমেন্ট:</span> <span class="text-emerald-400 font-mono">http://localhost:5000/</span></div>
-        <div><span class="text-slate-500">স্ট্যাটাস:</span> <span class="text-emerald-400 font-bold">100% Production Ready</span></div>
       </div>
     </header>
 
@@ -109,8 +103,7 @@
             <tr class="border-b border-slate-800 bg-slate-950/80 text-slate-400 font-semibold uppercase tracking-wider">
               <th class="p-3.5">মডিউল ও পেজ</th>
               <th class="p-3.5">উদ্দেশ্য / ভূমিকা</th>
-              <th class="p-3.5">সরাসরি হোস্টেড URL</th>
-              <th class="p-3.5">লোকাল URL</th>
+              <th class="p-3.5">সরাসরি অ্যাক্সেস লিংক</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-800/60 text-slate-300">
@@ -118,127 +111,106 @@
               <td class="p-3.5 font-bold text-white">ইউজার সাইন-ইন</td>
               <td class="p-3.5">JWT সিকিউর রোল-বেসড লগইন</td>
               <td class="p-3.5"><a href="https://southeastlandmark.pythonicshariful.tech/index.html" target="_blank" class="text-indigo-400 hover:underline">/index.html</a></td>
-              <td class="p-3.5 font-mono text-[11px] text-slate-500">/index.html</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="p-3.5 font-bold text-white">এডমিন কমান্ড সেন্টার</td>
               <td class="p-3.5">ম্যাক্রো পারফরম্যান্স ও টিম ওভারভিউ</td>
               <td class="p-3.5"><a href="https://southeastlandmark.pythonicshariful.tech/admin-dashboard.html" target="_blank" class="text-indigo-400 hover:underline">/admin-dashboard.html</a></td>
-              <td class="p-3.5 font-mono text-[11px] text-slate-500">/admin-dashboard.html</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="p-3.5 font-bold text-white">সেলস এক্সিকিউটিভ ড্যাশবোর্ড</td>
               <td class="p-3.5">ব্যক্তিগত লিড ও আজকের করণীয় কাজ</td>
               <td class="p-3.5"><a href="https://southeastlandmark.pythonicshariful.tech/dashboard.html" target="_blank" class="text-indigo-400 hover:underline">/dashboard.html</a></td>
-              <td class="p-3.5 font-mono text-[11px] text-slate-500">/dashboard.html</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="p-3.5 font-bold text-white">১৫-স্টেজ কানবান পাইপলাইন</td>
               <td class="p-3.5">ভিজ্যুয়াল ড্র্যাগ-এন্ড-ড্রপ পাইপলাইন</td>
               <td class="p-3.5"><a href="https://southeastlandmark.pythonicshariful.tech/pipeline.html" target="_blank" class="text-indigo-400 hover:underline">/pipeline.html</a></td>
-              <td class="p-3.5 font-mono text-[11px] text-slate-500">/pipeline.html</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="p-3.5 font-bold text-white">লিডস হাব (সক্রিয় ফানেল)</td>
               <td class="p-3.5">লিড ম্যানেজমেন্ট, কলিং, কোয়ালিফাই ও এক্সিট</td>
               <td class="p-3.5"><a href="https://southeastlandmark.pythonicshariful.tech/leads.html" target="_blank" class="text-indigo-400 hover:underline">/leads.html</a></td>
-              <td class="p-3.5 font-mono text-[11px] text-slate-500">/leads.html</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="p-3.5 font-bold text-white">লিড প্রোফাইল ও টাইমলাইন</td>
               <td class="p-3.5">একক লিডের সম্পূর্ণ অডিট হিস্ট্রি ও ডিব্রিফ</td>
               <td class="p-3.5"><a href="https://southeastlandmark.pythonicshariful.tech/lead-details.html" target="_blank" class="text-indigo-400 hover:underline">/lead-details.html</a></td>
-              <td class="p-3.5 font-mono text-[11px] text-slate-500">/lead-details.html</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="p-3.5 font-bold text-white">ভেরিফাইড ক্লায়েন্টস ডিরেক্টরি</td>
               <td class="p-3.5">স্থায়ী গ্রাহক তথ্য ও অতীত ট্রানজাকশন</td>
               <td class="p-3.5"><a href="https://southeastlandmark.pythonicshariful.tech/contacts.html" target="_blank" class="text-indigo-400 hover:underline">/contacts.html</a></td>
-              <td class="p-3.5 font-mono text-[11px] text-slate-500">/contacts.html</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="p-3.5 font-bold text-white">প্রস্পেক্টস ডাটাবেস</td>
               <td class="p-3.5">প্রাথমিক পর্যায়ের সম্ভাব্য ক্রেতা পুল</td>
               <td class="p-3.5"><a href="https://southeastlandmark.pythonicshariful.tech/prospects.html" target="_blank" class="text-indigo-400 hover:underline">/prospects.html</a></td>
-              <td class="p-3.5 font-mono text-[11px] text-slate-500">/prospects.html</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="p-3.5 font-bold text-white">টিম ও ক্যাপাসিটি ম্যানেজমেন্ট</td>
               <td class="p-3.5">সেলস এজেন্ট ডিউটি ও রাউন্ড-রবিন কন্ট্রোল</td>
               <td class="p-3.5"><a href="https://southeastlandmark.pythonicshariful.tech/team.html" target="_blank" class="text-indigo-400 hover:underline">/team.html</a></td>
-              <td class="p-3.5 font-mono text-[11px] text-slate-500">/team.html</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="p-3.5 font-bold text-white">লিড ওনার্স ও অ্যাসাইনমেন্ট</td>
               <td class="p-3.5">ম্যানেজার লেভেলে লিড পুনর্বণ্টন</td>
               <td class="p-3.5"><a href="https://southeastlandmark.pythonicshariful.tech/lead-owners.html" target="_blank" class="text-indigo-400 hover:underline">/lead-owners.html</a></td>
-              <td class="p-3.5 font-mono text-[11px] text-slate-500">/lead-owners.html</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="p-3.5 font-bold text-white">মেসেজ ও ওমনিচ্যানেল ইনবক্স</td>
               <td class="p-3.5">হোয়াটসঅ্যাপ, এসএমএস ও কুইক ব্রডকাস্ট</td>
               <td class="p-3.5"><a href="https://southeastlandmark.pythonicshariful.tech/messages.html" target="_blank" class="text-indigo-400 hover:underline">/messages.html</a></td>
-              <td class="p-3.5 font-mono text-[11px] text-slate-500">/messages.html</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="p-3.5 font-bold text-white">কল ও অ্যাক্টিভিটি হিস্ট্রি</td>
               <td class="p-3.5">রেকর্ডিং প্লেব্যাক ও অডিট কল ট্র্যাকিং</td>
               <td class="p-3.5"><a href="https://southeastlandmark.pythonicshariful.tech/activities.html" target="_blank" class="text-indigo-400 hover:underline">/activities.html</a></td>
-              <td class="p-3.5 font-mono text-[11px] text-slate-500">/activities.html</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="p-3.5 font-bold text-white">টাস্ক ও ফলো-আপ ইঞ্জিন</td>
               <td class="p-3.5">নেক্সট একশন ডেডলাইন ও ওভারডিউ এলার্ট</td>
               <td class="p-3.5"><a href="https://southeastlandmark.pythonicshariful.tech/tasks.html" target="_blank" class="text-indigo-400 hover:underline">/tasks.html</a></td>
-              <td class="p-3.5 font-mono text-[11px] text-slate-500">/tasks.html</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="p-3.5 font-bold text-white">সাইট ভিজিট ও ইভেন্টস</td>
               <td class="p-3.5">লজিস্টিকস, ট্রান্সপোর্ট ও প্রজেক্ট ভিজিট</td>
               <td class="p-3.5"><a href="https://southeastlandmark.pythonicshariful.tech/events.html" target="_blank" class="text-indigo-400 hover:underline">/events.html</a></td>
-              <td class="p-3.5 font-mono text-[11px] text-slate-500">/events.html</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="p-3.5 font-bold text-white">অবজেকশন ও সেলস নোটস</td>
               <td class="p-3.5">৮টি ক্যাটাগরির সেলস টক-ট্র্যাক ও নোটস</td>
               <td class="p-3.5"><a href="https://southeastlandmark.pythonicshariful.tech/notes.html" target="_blank" class="text-indigo-400 hover:underline">/notes.html</a></td>
-              <td class="p-3.5 font-mono text-[11px] text-slate-500">/notes.html</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="p-3.5 font-bold text-white">প্রজেক্ট ও প্লট ইনভেন্টরি</td>
               <td class="p-3.5">প্লট সাইজ, বুকিং স্ট্যাটাস ও ব্লক কন্ট্রোল</td>
               <td class="p-3.5"><a href="https://southeastlandmark.pythonicshariful.tech/projects.html" target="_blank" class="text-indigo-400 hover:underline">/projects.html</a></td>
-              <td class="p-3.5 font-mono text-[11px] text-slate-500">/projects.html</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="p-3.5 font-bold text-white">সেলস বুকিং ও ট্রানজাকশন</td>
               <td class="p-3.5">পেমেন্ট শিডিউল, ইনভয়েস ও কালেকশন</td>
               <td class="p-3.5"><a href="https://southeastlandmark.pythonicshariful.tech/sales.html" target="_blank" class="text-indigo-400 hover:underline">/sales.html</a></td>
-              <td class="p-3.5 font-mono text-[11px] text-slate-500">/sales.html</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="p-3.5 font-bold text-white">মার্কেটিং ও খরচ খাতা</td>
               <td class="p-3.5">বিজ্ঞাপন খরচ অনুমোদন ও CAC হিসাব</td>
               <td class="p-3.5"><a href="https://southeastlandmark.pythonicshariful.tech/expenses.html" target="_blank" class="text-indigo-400 hover:underline">/expenses.html</a></td>
-              <td class="p-3.5 font-mono text-[11px] text-slate-500">/expenses.html</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="p-3.5 font-bold text-white">রিপোর্ট ও ২০-কেপিআই অ্যানালিটিক্স</td>
               <td class="p-3.5">Section D আর্কিটেকচার মেট্রিক্স ও চার্ট</td>
               <td class="p-3.5"><a href="https://southeastlandmark.pythonicshariful.tech/reports.html" target="_blank" class="text-indigo-400 hover:underline">/reports.html</a></td>
-              <td class="p-3.5 font-mono text-[11px] text-slate-500">/reports.html</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="p-3.5 font-bold text-white">কাস্টমার সাপোর্ট টিকেট</td>
               <td class="p-3.5">দলিল হস্তান্তর ও বিক্রয়োত্তর গ্রাহক সেবা</td>
               <td class="p-3.5"><a href="https://southeastlandmark.pythonicshariful.tech/tickets.html" target="_blank" class="text-indigo-400 hover:underline">/tickets.html</a></td>
-              <td class="p-3.5 font-mono text-[11px] text-slate-500">/tickets.html</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="p-3.5 font-bold text-white">সিস্টেম কনফিগারেশন</td>
               <td class="p-3.5">SLA থ্রেশহোল্ড, ওয়েবহুক ও কোম্পানি প্রোফাইল</td>
               <td class="p-3.5"><a href="https://southeastlandmark.pythonicshariful.tech/settings.html" target="_blank" class="text-indigo-400 hover:underline">/settings.html</a></td>
-              <td class="p-3.5 font-mono text-[11px] text-slate-500">/settings.html</td>
             </tr>
           </tbody>
         </table>
