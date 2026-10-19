@@ -231,10 +231,11 @@ def _auto_migrate_db(app):
 
             # Seed defaults
             try:
-                from app.models import ActivityLabel, LeadQuestionnaireQuestion, Contact
+                from app.models import ActivityLabel, LeadQuestionnaireQuestion, Contact, SystemSetting
                 from app.utils.phone import normalize_phone
                 ActivityLabel.seed_defaults()
                 LeadQuestionnaireQuestion.seed_defaults()
+                SystemSetting.set('otp_enabled', 'false')
 
                 # Auto-heal any contacts with unnormalized or raw phone numbers
                 unnorm_contacts = Contact.query.filter(

@@ -34,13 +34,12 @@ def create_admin_command(email, password, name):
         full_name=name,
         role="ADMIN",
         is_active=True,
-        is_mfa_enabled=True,
+        is_mfa_enabled=False,
     )
     admin.set_password(password)
     db.session.add(admin)
     db.session.commit()
     click.echo(f"✅ Admin user '{email}' created successfully (Role: ADMIN)")
-    click.echo("⚠️  Please set up MFA on first login.")
 
 
 @click.command("create-sample-data")
@@ -86,7 +85,7 @@ def create_sample_data_command():
             role="MANAGER",
             phone="+8801812345678",
             is_active=True,
-            is_mfa_enabled=True,
+            is_mfa_enabled=False,
             max_lead_capacity=50,
         )
         manager.set_password("Manager@123!")
@@ -98,6 +97,27 @@ def create_sample_data_command():
     click.echo("   Executive: exec@southeast.com / Executive@123")
     click.echo("   Manager: manager@southeast.com / Manager@123!")
     click.echo("⚠️  Change all passwords before production use!")
+
+
+@click.command("disable-otp")
+@with_appcontext
+def disable_otp_command():
+    """Turn off all email OTP and MFA globally."""
+    from app.models import SystemSetting, User
+    try:
+        SystemSetting.set('otp_enabled', 'false')
+    except Exception as e:
+        click.echo(f"Warning setting system setting: {e}")
+    
+    users = User.query.all()
+    count = 0
+    for u in users:
+        u.is_mfa_enabled = False
+        u.email_otp = None
+        u.email_otp_expires_at = None
+        count += 1
+    db.session.commit()
+    click.echo(f"✅ OTP & MFA disabled for {count} users and set otp_enabled=false in SystemSetting.")
 
 
 @click.command("reset-db")
@@ -124,4 +144,6 @@ def register_commands(app):
     """Register all CLI commands with the Flask app."""
     app.cli.add_command(create_admin_command)
     app.cli.add_command(create_sample_data_command)
+    app.cli.add_command(disable_otp_command)
     app.cli.add_command(reset_db_command)
+

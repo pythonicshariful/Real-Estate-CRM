@@ -62,34 +62,20 @@ def login():
     
     redirect_to = 'admin-dashboard.html' if user.role == UserRole.ADMIN else 'dashboard.html'
     
-    mfa_required = user.is_mfa_enabled
-    mfa_type = 'totp'
-    
-    from app.models import SystemSetting
-    smtp_host = SystemSetting.get('smtp_host', '').strip()
-    smtp_username = SystemSetting.get('smtp_username', '').strip()
-    otp_enabled = SystemSetting.get('otp_enabled', 'false').strip().lower() in ('true', '1', 'yes')
-    
-    # Only enforce email OTP if explicitly enabled and SMTP credentials are provided
-    if otp_enabled and smtp_host and smtp_username:
-        mfa_required = True
-        mfa_type = 'email'
-        import random
-        otp = f"{random.randint(0, 999999):06d}"
-        user.email_otp = otp
-        user.email_otp_expires_at = datetime.now(timezone.utc) + timedelta(minutes=5)
+    # Email OTP is completely turned off per system policy
+    mfa_required = False
+    mfa_type = 'none'
+
+    # Clear any residual email OTP on the user
+    if user.email_otp or user.email_otp_expires_at:
+        user.email_otp = None
+        user.email_otp_expires_at = None
         db.session.commit()
-        
-        from app.tasks import _send_email_notification
-        try:
-            _send_email_notification(
-                current_app._get_current_object(),
-                user.email,
-                "Your Login OTP",
-                f"Your one-time password for login is: {otp}\n\nIt is valid for 5 minutes."
-            )
-        except Exception:
-            pass
+
+    # Only require TOTP if the user has explicitly configured and saved an authenticator secret
+    if getattr(user, 'is_mfa_enabled', False) and getattr(user, 'mfa_secret', None):
+        mfa_required = True
+        mfa_type = 'totp'
     
     # Role-based token expiration (shorter for high-privilege roles)
     role_expiry_map = {
