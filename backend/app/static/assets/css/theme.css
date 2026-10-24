@@ -1,0 +1,571 @@
+/* ==========================================================================
+   Southeast Landmark CRM — Design System
+   Generated with UI UX Pro Max (nextlevelbuilder/ui-ux-pro-max-skill)
+   Style: Glassmorphism · Palette: Trust Teal + Professional Blue
+   Typography: Cinzel (display) / Plus Jakarta Sans (UI) / Fira Code (data)
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap');
+
+/* --------------------------------------------------------------------------
+   1. DESIGN TOKENS — DARK (default)
+   -------------------------------------------------------------------------- */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-primary:        #14B8A6;
+  --color-primary-strong: #0F766E;
+  --color-on-primary:     #04211E;
+  --color-secondary:      #0F766E;
+  --color-accent:         #38BDF8;
+  --color-on-accent:      #062A3B;
+
+  --color-success:  #10B981;
+  --color-warning:  #F59E0B;
+  --color-danger:   #F87171;
+
+  --color-bg:            #080E16;
+  --color-bg-soft:       #0C1520;
+  --color-surface:       #101B28;
+  --color-surface-2:     #16232F;
+  --color-card:          rgba(20, 34, 46, 0.72);
+  --color-card-solid:    #101B28;
+
+  --color-text:          #EAF2F6;
+  --color-text-secondary:#9FB3C2;
+  --color-text-muted:    #6F8697;
+
+  --color-border:        rgba(148, 190, 200, 0.14);
+  --color-border-strong: rgba(148, 190, 200, 0.26);
+
+  --color-glass-bg:      rgba(16, 27, 40, 0.66);
+  --color-glass-border:  rgba(148, 190, 200, 0.14);
+
+  --shadow-card: 0 1px 2px rgba(0,0,0,.24), 0 8px 28px rgba(0,0,0,.32);
+  --shadow-pop:  0 24px 60px rgba(0,0,0,.55);
+
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 26px;
+
+  --gradient-hero: linear-gradient(135deg, #14B8A6 0%, #0F766E 45%, #0369A1 100%);
+  --gradient-soft: linear-gradient(135deg, rgba(20,184,166,.14), rgba(56,189,248,.08));
+
+  --sidebar-bg: rgba(8, 14, 22, 0.92);
+}
+
+/* --------------------------------------------------------------------------
+   2. DESIGN TOKENS — LIGHT  (Trust Teal + professional blue)
+   -------------------------------------------------------------------------- */
+[data-theme="light"] {
+  color-scheme: light;
+
+  --color-primary:        #0F766E;
+  --color-primary-strong: #0B5C56;
+  --color-on-primary:     #FFFFFF;
+  --color-secondary:      #14B8A6;
+  --color-accent:         #0369A1;
+  --color-on-accent:      #FFFFFF;
+
+  --color-success:  #059669;
+  --color-warning:  #B45309;
+  --color-danger:   #DC2626;
+
+  --color-bg:            #F0FDFA;
+  --color-bg-soft:       #F7FEFC;
+  --color-surface:       #FFFFFF;
+  --color-surface-2:     #E8F4F3;
+  --color-card:          #FFFFFF;
+  --color-card-solid:    #FFFFFF;
+
+  --color-text:          #0B3B38;
+  --color-text-secondary:#475569;
+  --color-text-muted:    #64748B;
+
+  --color-border:        #CDEAE6;
+  --color-border-strong: #99F6E4;
+
+  --color-glass-bg:      rgba(255, 255, 255, 0.86);
+  --color-glass-border:  rgba(15, 118, 110, 0.14);
+
+  --shadow-card: 0 1px 2px rgba(13,68,64,.06), 0 8px 24px rgba(13,68,64,.08);
+  --shadow-pop:  0 24px 64px rgba(13,68,64,.18);
+
+  --gradient-hero: linear-gradient(135deg, #0F766E 0%, #14B8A6 55%, #0369A1 100%);
+  --gradient-soft: linear-gradient(135deg, rgba(15,118,110,.10), rgba(3,105,161,.06));
+
+  --sidebar-bg: rgba(255, 255, 255, 0.94);
+}
+
+/* --------------------------------------------------------------------------
+   3. BASE
+   -------------------------------------------------------------------------- */
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+  background: var(--color-bg) !important;
+  color: var(--color-text) !important;
+  transition: background-color .25s ease, color .25s ease;
+}
+
+h1, h2, .font-display {
+  font-family: 'Cinzel', Georgia, serif !important;
+  letter-spacing: .01em;
+}
+
+/* Numeric / identifier data */
+.tabular, .data-mono, [data-mono] {
+  font-family: 'Fira Code', ui-monospace, monospace !important;
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 99px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--color-primary); background-clip: content-box; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   4. CORE COMPONENT CLASSES
+   -------------------------------------------------------------------------- */
+.btn-gradient {
+  background: var(--gradient-hero) !important;
+  color: #fff !important;
+  border: 0;
+  font-weight: 600;
+  box-shadow: 0 6px 18px rgba(15, 118, 110, .28);
+  transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+}
+.btn-gradient:hover { transform: translateY(-1px); box-shadow: 0 10px 26px rgba(15,118,110,.36); filter: brightness(1.04); }
+.btn-gradient:active { transform: translateY(0); }
+
+.btn-ghost {
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  transition: all .18s ease;
+}
+.btn-ghost:hover {
+  color: var(--color-text);
+  border-color: var(--color-primary);
+  background: var(--gradient-soft);
+}
+
+.chart-card, .card-surface {
+  background: var(--color-card-solid);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.glass, .glass-dark {
+  background: var(--color-glass-bg) !important;
+  border: 1px solid var(--color-glass-border) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.sidebar { background: var(--sidebar-bg) !important; border-right: 1px solid var(--color-border); }
+
+.input-glass {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  color: var(--color-text) !important;
+  border-radius: var(--radius-md);
+  transition: border-color .16s ease, box-shadow .16s ease;
+}
+.input-glass:focus {
+  outline: none;
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px rgba(20,184,166,.18);
+}
+.input-glass::placeholder { color: var(--color-text-muted) !important; }
+
+/* Brand colour chip used for owners */
+.owner-chip {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .18rem .55rem; border-radius: 999px;
+  font-size: .68rem; font-weight: 700; letter-spacing: .02em;
+  border: 1px solid var(--chip-color, var(--color-border));
+  color: var(--chip-color, var(--color-text-secondary));
+  background: color-mix(in srgb, var(--chip-color, #14b8a6) 14%, transparent);
+}
+.owner-dot { width: .5rem; height: .5rem; border-radius: 99px; background: var(--chip-color, var(--color-primary)); }
+
+/* --------------------------------------------------------------------------
+   5. THEME TOGGLE
+   -------------------------------------------------------------------------- */
+.theme-toggle {
+  display: inline-flex; align-items: center; gap: .15rem;
+  padding: 3px; border-radius: 999px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+}
+.theme-toggle button {
+  display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 999px;
+  color: var(--color-text-muted); transition: all .18s ease;
+  border: 0; background: transparent; cursor: pointer;
+}
+.theme-toggle button:hover { color: var(--color-text); }
+.theme-toggle button[aria-pressed="true"] {
+  background: var(--gradient-hero); color: #fff;
+  box-shadow: 0 2px 8px rgba(15,118,110,.35);
+}
+.theme-toggle svg { width: 15px; height: 15px; }
+
+/* --------------------------------------------------------------------------
+   6. LIGHT-MODE COMPATIBILITY LAYER
+   The dashboard pages were written with hard-coded dark Tailwind utilities.
+   Rather than rewrite 28 files, remap those specific utilities when the light
+   theme is active.
+   -------------------------------------------------------------------------- */
+[data-theme="light"] [class*="bg-[#0a0a14]"],
+[data-theme="light"] [class*="bg-[#08080f]"],
+[data-theme="light"] [class*="bg-[#07070a]"],
+[data-theme="light"] [class*="bg-[#0a0b14]"],
+[data-theme="light"] [class*="bg-[#0a0c18]"],
+[data-theme="light"] [class*="bg-[#0b0c1b]"],
+[data-theme="light"] [class*="bg-[#0b0f1d]"] {
+  background-color: var(--color-bg) !important;
+}
+
+[data-theme="light"] [class*="bg-[#161825]"],
+[data-theme="light"] [class*="bg-[#0f1019]"],
+[data-theme="light"] [class*="bg-[#0f1122]"],
+[data-theme="light"] [class*="bg-[#0f0f1a]"],
+[data-theme="light"] [class*="bg-[#121422]"],
+[data-theme="light"] [class*="bg-[#0f111a]"],
+[data-theme="light"] [class*="bg-[#181b2e]"],
+[data-theme="light"] [class*="bg-[#0d1a14]"] {
+  background-color: var(--color-surface) !important;
+}
+
+/* Slate surface utilities used for panels */
+[data-theme="light"] [class*="bg-slate-900"],
+[data-theme="light"] [class*="bg-slate-950"] { background-color: var(--color-surface) !important; }
+[data-theme="light"] [class*="bg-slate-800"] { background-color: var(--color-surface-2) !important; }
+[data-theme="light"] [class*="bg-slate-700"] { background-color: #DCEBEA !important; }
+
+/* Borders */
+[data-theme="light"] [class*="border-slate-800"],
+[data-theme="light"] [class*="border-slate-700"],
+[data-theme="light"] [class*="border-slate-900"] { border-color: var(--color-border) !important; }
+[data-theme="light"] [class*="border-white/"] { border-color: var(--color-border) !important; }
+[data-theme="light"] [class*="divide-slate-800"] > * + * { border-color: var(--color-border) !important; }
+
+/* Text — but keep white text on vivid coloured fills */
+[data-theme="light"] .text-white { color: var(--color-text) !important; }
+[data-theme="light"] .text-slate-100,
+[data-theme="light"] .text-slate-200,
+[data-theme="light"] .text-slate-300 { color: var(--color-text-secondary) !important; }
+[data-theme="light"] .text-slate-400,
+[data-theme="light"] .text-slate-500,
+[data-theme="light"] .text-slate-600 { color: var(--color-text-muted) !important; }
+
+[data-theme="light"] .btn-gradient,
+[data-theme="light"] .btn-gradient *,
+[data-theme="light"] [class*="bg-indigo-5"] .text-white,
+[data-theme="light"] [class*="bg-indigo-6"] .text-white,
+[data-theme="light"] [class*="bg-emerald-6"] .text-white,
+[data-theme="light"] [class*="bg-emerald-5"] .text-white,
+[data-theme="light"] [class*="bg-rose-5"] .text-white,
+[data-theme="light"] [class*="bg-rose-6"] .text-white,
+[data-theme="light"] [class*="bg-amber-5"] .text-white,
+[data-theme="light"] [class*="bg-teal-6"] .text-white,
+[data-theme="light"] [class*="bg-cyan-6"] .text-white,
+[data-theme="light"] [class*="bg-blue-6"] .text-white,
+[data-theme="light"] [class*="bg-violet-6"] .text-white,
+[data-theme="light"] [class*="bg-purple-6"] .text-white,
+[data-theme="light"] [class*="bg-fuchsia-6"] .text-white { color: #fff !important; }
+
+[data-theme="light"] .text-white[class*="bg-indigo-5"],
+[data-theme="light"] .text-white[class*="bg-emerald-6"],
+[data-theme="light"] .text-white[class*="bg-rose-5"],
+[data-theme="light"] .text-white[class*="bg-teal-6"] { color: #fff !important; }
+
+/* Icons inheriting white inside vivid buttons */
+[data-theme="light"] .btn-gradient svg,
+[data-theme="light"] [class*="bg-indigo-5"] svg,
+[data-theme="light"] [class*="bg-emerald-6"] svg { color: #fff; }
+
+/* Modal / drawer backdrops stay dark but softer */
+[data-theme="light"] [class*="bg-black/60"],
+[data-theme="light"] [class*="bg-black/70"],
+[data-theme="light"] [class*="bg-black/80"] { background-color: rgba(11, 59, 56, .45) !important; }
+
+/* Inputs written as bg-black/40 */
+[data-theme="light"] [class*="bg-black/"] {
+  background-color: var(--color-surface) !important;
+}
+[data-theme="light"] [class*="bg-black/"]::placeholder { color: var(--color-text-muted) !important; }
+
+/* Table headers */
+[data-theme="light"] thead { background-color: var(--color-surface-2) !important; }
+
+/* Keep hover-fill utilities readable */
+[data-theme="light"] [class*="hover:bg-slate-800"]:hover { background-color: var(--color-surface-2) !important; }
+[data-theme="light"] [class*="hover:bg-white/5"]:hover { background-color: rgba(15,118,110,.06) !important; }
+
+/* Softer ambient glows in light mode */
+[data-theme="light"] [class*="radial-gradient"] { opacity: .25; }
+
+/* --------------------------------------------------------------------------
+   7. UTILITIES
+   -------------------------------------------------------------------------- */
+.text-secondary { color: var(--color-text-secondary) !important; }
+.text-muted-2   { color: var(--color-text-muted) !important; }
+.surface        { background: var(--color-surface); border: 1px solid var(--color-border); }
+.divider        { border-color: var(--color-border) !important; }
+
+.fade-in { animation: fadeIn .35s ease both; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* ==========================================================================
+   8. FULLCALENDAR THEMING
+   ========================================================================== */
+#calendar, .fc {
+  --fc-border-color: var(--color-border);
+  --fc-page-bg-color: transparent;
+  --fc-neutral-bg-color: var(--color-surface-2);
+  --fc-today-bg-color: color-mix(in srgb, var(--color-primary) 9%, transparent);
+  --fc-now-indicator-color: var(--color-danger);
+  --fc-event-border-color: transparent;
+  --fc-list-event-hover-bg-color: var(--color-surface-2);
+  color: var(--color-text);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.fc .fc-toolbar-title {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  color: var(--color-text);
+  text-transform: capitalize;
+}
+
+.fc .fc-button {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  color: var(--color-text-secondary) !important;
+  font-size: .72rem;
+  font-weight: 600;
+  padding: .4rem .7rem;
+  border-radius: 10px !important;
+  text-transform: capitalize;
+  box-shadow: none !important;
+  transition: all .16s ease;
+}
+.fc .fc-button:hover { color: var(--color-text) !important; border-color: var(--color-primary) !important; }
+.fc .fc-button-primary:not(:disabled).fc-button-active,
+.fc .fc-button-primary:not(:disabled):active {
+  background: var(--gradient-hero) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+}
+.fc .fc-button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
+/* Day-of-week header row */
+.fc .fc-col-header-cell {
+  background: var(--color-surface-2);
+  padding: .55rem 0;
+}
+.fc .fc-col-header-cell-cushion {
+  color: var(--color-text-muted) !important;
+  font-size: .66rem;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  text-decoration: none !important;
+}
+
+/* Day numbers */
+.fc .fc-daygrid-day-number,
+.fc .fc-daygrid-day-top a {
+  color: var(--color-text-secondary) !important;
+  font-size: .74rem;
+  font-weight: 600;
+  text-decoration: none !important;
+  padding: 4px 7px;
+}
+.fc .fc-day-today .fc-daygrid-day-number { color: var(--color-primary) !important; font-weight: 800; }
+
+/* Other-month days */
+.fc .fc-day-other .fc-daygrid-day-number { color: var(--color-text-muted) !important; opacity: .5; }
+.fc .fc-day-other { background: color-mix(in srgb, var(--color-surface-2) 40%, transparent); }
+
+/* Time grid */
+.fc .fc-timegrid-slot-label-cushion,
+.fc .fc-timegrid-axis-cushion { color: var(--color-text-muted) !important; font-size: .66rem; }
+
+/* Event chips */
+.fc .fc-event {
+  border: none !important;
+  background: transparent;
+  cursor: pointer;
+  transition: filter .15s ease, transform .15s ease;
+}
+.fc .fc-event:hover { filter: brightness(1.14); transform: translateX(1px); }
+.fc .fc-event-title, .fc .fc-event-title-container { font-weight: 700; }
+.fc .fc-event-title-text { color: inherit; }
+
+/* List view */
+.fc .fc-list-day-cushion { background: var(--color-surface-2) !important; }
+.fc .fc-list-event:hover td { background: var(--color-surface-2) !important; }
+.fc .fc-list-event-title a, .fc .fc-list-event-time { color: var(--color-text) !important; }
+.fc .fc-list-table td, .fc .fc-list-table th { border-color: var(--color-border) !important; }
+
+/* Popover ("+2 more") */
+.fc .fc-popover {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-pop);
+}
+.fc .fc-popover-header {
+  background: var(--color-surface-2) !important;
+  color: var(--color-text) !important;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+.fc .fc-more-link { color: var(--color-primary) !important; font-weight: 700; font-size: .68rem; }
+.fc .fc-daygrid-more-link:hover { text-decoration: underline; }
+
+/* Grid lines */
+.fc-theme-standard td, .fc-theme-standard th,
+.fc-theme-standard .fc-scrollgrid { border-color: var(--color-border) !important; }
+.fc .fc-scrollgrid { border-radius: var(--radius-md); overflow: hidden; }
+
+/* Light-mode tweaks */
+[data-theme="light"] .fc { --fc-today-bg-color: #D9F5F1; }
+[data-theme="light"] .fc .fc-col-header-cell { background: #E8F4F3; }
+[data-theme="light"] .fc .fc-day-today { background: #E4FAF7 !important; }
+[data-theme="light"] .fc .fc-button { background: #fff !important; }
+[data-theme="light"] .fc .fc-button-primary:not(:disabled).fc-button-active { background: var(--gradient-hero) !important; }
+
+/* Calendar toolbar title — theme aware (overrides page-level gradients) */
+.fc .fc-toolbar-title {
+  background: none !important;
+  -webkit-text-fill-color: currentColor !important;
+  color: var(--color-text) !important;
+  font-size: 1.35rem !important;
+  font-weight: 600;
+}
+[data-theme="light"] .fc .fc-toolbar-title { color: #0B3B38 !important; }
+.fc-header-toolbar {
+  background: var(--color-surface) !important;
+  border-bottom: 1px solid var(--color-border) !important;
+}
+
+/* ==========================================================================
+   9. LIGHT-MODE OVERRIDES FOR main.css COMPONENT CLASSES
+   These carry hard-coded dark-theme hex values.
+   ========================================================================== */
+[data-theme="light"] .chart-title,
+[data-theme="light"] .kpi-value,
+[data-theme="light"] .card-title {
+  color: var(--color-text) !important;
+}
+
+[data-theme="light"] .chart-subtitle,
+[data-theme="light"] .kpi-label,
+[data-theme="light"] .stat-label {
+  color: var(--color-text-muted) !important;
+}
+
+[data-theme="light"] .chart-card,
+[data-theme="light"] .kpi-card {
+  background: var(--color-card-solid) !important;
+  border-color: var(--color-border) !important;
+}
+
+[data-theme="light"] .crm-table th {
+  color: var(--color-text-muted) !important;
+  background: var(--color-surface-2) !important;
+}
+[data-theme="light"] .crm-table td { color: var(--color-text-secondary) !important; }
+[data-theme="light"] .crm-table tbody tr { border-color: var(--color-border) !important; }
+[data-theme="light"] .crm-table tbody tr:hover { background: rgba(15,118,110,.05) !important; }
+
+/* soft badges need darker ink on a light background */
+[data-theme="light"] .badge-new       { background: #E0E7FF; color: #3730A3; }
+[data-theme="light"] .badge-active    { background: #CFFAFE; color: #155E75; }
+[data-theme="light"] .badge-won       { background: #D1FAE5; color: #065F46; }
+[data-theme="light"] .badge-lost      { background: #FEE2E2; color: #991B1B; }
+[data-theme="light"] .badge-pending   { background: #FEF3C7; color: #92400E; }
+[data-theme="light"] .badge-confirmed { background: #E0E7FF; color: #3730A3; }
+[data-theme="light"] .badge-completed { background: #D1FAE5; color: #065F46; }
+[data-theme="light"] .badge-overdue   { background: #FEE2E2; color: #B91C1C; }
+[data-theme="light"] .badge-info      { background: #CFFAFE; color: #155E75; }
+[data-theme="light"] .badge-sla       { background: #FEF3C7; color: #92400E; }
+[data-theme="light"] .badge           { border-color: rgba(0,0,0,.06); }
+
+/* trend + SLA colours need more weight on white */
+[data-theme="light"] .trend-up   { color: #047857; }
+[data-theme="light"] .trend-down { color: #B91C1C; }
+[data-theme="light"] .trend-flat { color: #64748B; }
+[data-theme="light"] .sla-green  { color: #047857; }
+[data-theme="light"] .sla-yellow { color: #B45309; }
+[data-theme="light"] .sla-red    { color: #B91C1C; }
+
+/* buttons */
+[data-theme="light"] .btn-ghost {
+  background: #FFFFFF !important;
+  border-color: var(--color-border) !important;
+  color: var(--color-text-secondary) !important;
+}
+[data-theme="light"] .btn-ghost:hover {
+  background: #E8F4F3 !important;
+  color: var(--color-text) !important;
+  border-color: var(--color-primary) !important;
+}
+[data-theme="light"] .btn-danger { background: #FEE2E2; color: #B91C1C; }
+
+/* toasts */
+[data-theme="light"] .toast-success { background: #D1FAE5; border-color: #6EE7B7; color: #065F46; }
+[data-theme="light"] .toast-error   { background: #FEE2E2; border-color: #FCA5A5; color: #991B1B; }
+[data-theme="light"] .toast-info    { background: #E0E7FF; border-color: #A5B4FC; color: #3730A3; }
+
+/* placeholders */
+[data-theme="light"] .input-glass::placeholder { color: #94A3B8 !important; }
+
+/* Section headings that use text-white/x opacity utilities */
+[data-theme="light"] [class*="text-white/"] { color: var(--color-text-secondary) !important; }
+[data-theme="light"] [class*="text-white/9"],
+[data-theme="light"] [class*="text-white/8"] { color: var(--color-text) !important; }
+
+/* Chart.js legends/labels are drawn on canvas — recolour via CSS filter fallback
+   is unreliable, so the charts keep their palette and simply sit on white. */
+
+/* Generic guard: any page-level .glass-card should follow the theme */
+.glass-card {
+  background: var(--color-card-solid);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+/* Keep Cinzel for true display headings, not every h2 inside cards */
+.chart-card h2, .glass-card h2, .card-surface h2 {
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  letter-spacing: 0;
+}

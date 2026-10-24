@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script src="/assets/js/crm-store.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard — Southeast CRM</title>
   <meta name="description" content="CRM dashboard for Southeast Landmark — live lead, pipeline, and activity data.">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/assets/css/tailwind.css">
   <link rel="stylesheet" href="/assets/css/main.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="/assets/css/theme.css">
+  <script src="/assets/vendor/chart.umd.min.js" defer></script>
+  <script src="/assets/js/theme.js"></script>
 </head>
 <body class="flex h-screen overflow-hidden text-slate-100 bg-[#0a0a14]">
 
@@ -180,10 +183,14 @@
     document.getElementById('dashboard-date').textContent =
       new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-    Chart.defaults.color = '#64748b';
-    Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
-    Chart.defaults.font.family = 'Inter, sans-serif';
-    Chart.defaults.font.size = 11;
+    // Chart.js is loaded with `defer` so it never blocks first paint.
+    // Deferred scripts run before DOMContentLoaded, so this hook always sees Chart.
+    document.addEventListener('DOMContentLoaded', () => {
+      Chart.defaults.color = '#64748b';
+      Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+      Chart.defaults.font.family = 'Inter, sans-serif';
+      Chart.defaults.font.size = 11;
+    });
 
     const token = () => localStorage.getItem('crm_token');
     const api = async (url) => {

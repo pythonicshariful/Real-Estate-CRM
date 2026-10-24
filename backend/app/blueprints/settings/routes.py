@@ -211,9 +211,42 @@ def simulate_meta_lead():
 
     data = request.get_json() or {}
 
+    import random
+    from app.models import Contact
+    from app.utils.phone import normalize_phone
+
+    def _random_bd_mobile():
+        """A fresh, valid-looking BD mobile number (01[3-9] + 8 digits)."""
+        return random.choice(['017', '018', '019', '016', '015']) + ''.join(
+            random.choice('0123456789') for _ in range(8)
+        )
+
+    def _phone_taken(num):
+        norm = normalize_phone(num)
+        return Contact.query.filter(
+            db.or_(Contact.phone_normalized == norm, Contact.phone_raw == num)
+        ).first() is not None
+
     full_name = data.get('full_name', 'Test Lead (Simulated)')
-    phone = data.get('phone', '01712345678')
-    email = data.get('email', 'testlead@simulate.com')
+    phone = str(data.get('phone') or '').strip()
+    email = str(data.get('email') or '').strip()
+
+    if not phone:
+        phone = _random_bd_mobile()
+
+    # If the number already exists, process_meta_webhook() MERGES the new
+    # inquiry into the existing lead instead of creating a new one. Clicking
+    # "Simulate Lead Now" repeatedly with the prefilled number therefore looked
+    # like nothing happened. Roll a fresh number unless a duplicate is
+    # explicitly requested (pass allow_duplicate: true).
+    if not data.get('allow_duplicate'):
+        attempts = 0
+        while _phone_taken(phone) and attempts < 25:
+            phone = _random_bd_mobile()
+            attempts += 1
+
+    if not email:
+        email = f"sim+{uuid.uuid4().hex[:8]}@example.com"
     profession = data.get('profession', 'Businessman')
     service_type = data.get('service_type', 'Residential Plot')
     budget = data.get('budget', '50-80 Lakhs')

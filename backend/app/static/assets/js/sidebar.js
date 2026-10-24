@@ -11,19 +11,71 @@
   const USER_AVATAR = localStorage.getItem('crm_avatar') && localStorage.getItem('crm_avatar') !== 'null' ? localStorage.getItem('crm_avatar') : '/assets/img/default-avatar.png';
   const IS_ADMIN = ['ADMIN', 'CEO', 'GM', 'MANAGER'].includes(USER_ROLE);
 
-  // Global fetch interceptor to catch 401 Unauthorized responses and log out
+  // ---------------------------------------------------------------------
+  // Global 401 handler.
+  //
+  // The previous version logged the user out on *any* 401 response. That is
+  // far too aggressive: a single 401 from one background request (a stale
+  // token probe, a role-mismatched endpoint, a mistyped login attempt) threw
+  // the whole session away mid-work and looked like an instant logout.
+  //
+  // Now we only destroy the session when a genuinely authenticated API call
+  // comes back 401, we confirm it against /api/auth/me first, and we do it
+  // at most once.
+  // ---------------------------------------------------------------------
+  let sessionKillInFlight = false;
+
+  async function confirmAndLogout() {
+    if (sessionKillInFlight) return;
+    sessionKillInFlight = true;
+    try {
+      const token = localStorage.getItem('crm_token');
+      if (!token) { hardRedirectToLogin(); return; }
+      // Second opinion before nuking the session
+      const probe = await originalFetch('/api/auth/me', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (probe.status === 401) {
+        hardRedirectToLogin();
+      }
+    } catch (e) {
+      // network hiccup — do NOT log the user out
+      console.warn('[auth] could not verify session, keeping it:', e);
+    } finally {
+      sessionKillInFlight = false;
+    }
+  }
+
+  function hardRedirectToLogin() {
+    if (typeof window.doLogout === 'function') {
+      window.doLogout();
+    } else {
+      localStorage.removeItem('crm_token');
+      localStorage.removeItem('crm_role');
+      localStorage.removeItem('crm_color');
+      localStorage.removeItem('crm_name');
+      window.location.href = '/index.html';
+    }
+  }
+
   const originalFetch = window.fetch;
-  window.fetch = async function(...args) {
+  window.fetch = async function (...args) {
     const response = await originalFetch.apply(this, args);
+
     if (response.status === 401) {
-      if (typeof window.doLogout === 'function') {
-        window.doLogout();
-      } else {
-        localStorage.removeItem('crm_token');
-        localStorage.removeItem('crm_role');
-        localStorage.removeItem('crm_color');
-        localStorage.removeItem('crm_name');
-        window.location.href = '/index.html';
+      const req = args[0];
+      const url = typeof req === 'string' ? req : (req && req.url) || '';
+      const init = args[1] || (typeof req === 'object' ? req : {});
+      const headers = init.headers || {};
+      const hasAuth = typeof headers.get === 'function'
+        ? !!headers.get('Authorization')
+        : Object.keys(headers).some(k => k.toLowerCase() === 'authorization');
+
+      const isAuthEndpoint = /\/api\/auth\/(login|verify-mfa|refresh)/.test(url);
+
+      // Only a real, authenticated API call may end the session.
+      if (hasAuth && !isAuthEndpoint && url.indexOf('/api/') !== -1) {
+        confirmAndLogout();
       }
     }
     return response;

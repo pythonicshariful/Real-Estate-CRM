@@ -32,11 +32,28 @@ def create_app(config_name=None):
     migrate.init_app(app, db)
     jwt.init_app(app)
     mail.init_app(app)
-    cors.init_app(app, resources={r"/api/*": {"origins": app.config.get('CORS_ORIGINS', '*')}})
+    # /api/* carries credentials, so it keeps the configured origin list.
+    # /assets/* is public static code (no cookies, no tokens) and is fetched by
+    # <script type="module">, which always sends CORS-mode requests. When the
+    # CRM is embedded in a sandboxed iframe the document origin is "null", and
+    # without a permissive header every ES module is rejected before it runs —
+    # the symptom is a page that renders but never boots (and a login form that
+    # "does nothing"). Allow it explicitly.
+    cors.init_app(app, resources={
+        r"/api/*": {"origins": app.config.get('CORS_ORIGINS', '*')},
+        r"/assets/*": {"origins": "*"},
+    })
     
-    # Configure rate limiter to use the database
-    from app.utils import limiter_storage # Registers the sqlalchemy storage schemes
-    app.config.setdefault('RATELIMIT_STORAGE_URI', app.config.get('SQLALCHEMY_DATABASE_URI'))
+    # Configure rate limiter storage.
+    #
+    # The database-backed storage used to hit SQLite on *every* request
+    # (a read + a write, on a second engine), which serialised the dev server
+    # and added latency to each page load. In-process memory storage is the
+    # Flask-Limiter recommended default for a single-process deployment like
+    # cPanel / PythonAnywhere; set RATELIMIT_STORAGE_URI explicitly to opt
+    # back into the shared database store for a multi-worker setup.
+    from app.utils import limiter_storage  # noqa: F401  (registers sqlalchemy:// scheme)
+    app.config.setdefault('RATELIMIT_STORAGE_URI', os.environ.get('RATELIMIT_STORAGE_URI', 'memory://'))
     limiter.init_app(app)
 
     # ------------------------------------------------------------------
@@ -127,8 +144,14 @@ def create_app(config_name=None):
             duration = (time.time() - g.start_time) * 1000
             sql_time = getattr(g, 'sql_time', 0.0)
             sql_queries = getattr(g, 'sql_queries', 0)
-            app.logger.info(f'[PERF] {request.method} {request.path} | DB: {sql_time:.2f}ms ({sql_queries}q) | Total Request: {duration:.2f}ms')
+            app.logger.debug(f'[PERF] {request.method} {request.path} | DB: {sql_time:.2f}ms ({sql_queries}q) | Total Request: {duration:.2f}ms')
         return response
+
+    # ------------------------------------------------------------------
+    # Transport optimisations: gzip + cache headers
+    # ------------------------------------------------------------------
+    from app.utils.compression import init_performance
+    init_performance(app)
 
     # ------------------------------------------------------------------
     # Register all 17 module blueprints

@@ -344,10 +344,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         leads.forEach(lead => {
-            // Determine border color based on temperature or stage
-            let borderClass = 'border-l-indigo-500';
-            if (lead.lead_temperature === 'HOT') borderClass = 'border-l-rose-500';
-            else if (lead.lead_temperature === 'WARM') borderClass = 'border-l-amber-500';
+            // Colour-code every lead by the Lead Owner it belongs to
+            const ownerColor = lead.assigned_to_color || '#14B8A6';
+            const ownerName = lead.assigned_to_name || 'Unassigned';
             
             // Name initials
             const contactName = lead.contact?.full_name || `Lead #${lead.id}`;
@@ -370,12 +369,14 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (prio === 'LOW') prioClass = 'bg-slate-800 text-slate-400 border-slate-700';
 
             const card = document.createElement('div');
-            card.className = `chart-card border-l-4 ${borderClass} hover:bg-white/[0.03] cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 transition-colors`;
+            card.className = 'chart-card hover:bg-white/[0.03] cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 transition-colors';
+            card.style.borderLeft = `4px solid ${ownerColor}`;
             
             card.innerHTML = `
                 <div class="flex items-center gap-4">
                   ${IS_ADMIN ? `<input type="checkbox" class="lead-checkbox w-4 h-4 rounded bg-slate-800 border-slate-700 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-slate-900 cursor-pointer" value="${lead.id}" onclick="event.stopPropagation()">` : ''}
-                  <div class="w-12 h-12 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 font-bold text-sm shrink-0">
+                  <div class="w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm shrink-0"
+                       style="background:${ownerColor}1f;border:2px solid ${ownerColor}66;color:${ownerColor}">
                     ${initials}
                   </div>
                   <div>
@@ -420,9 +421,9 @@ document.addEventListener('DOMContentLoaded', () => {
                   </div>
                 </div>
                 <div class="flex flex-col sm:flex-row gap-2 sm:items-center flex-wrap">
-                  ${IS_ADMIN && lead.assigned_to_name ? `
-                    <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold" style="background: ${lead.assigned_to_color || '#6366f1'}22; color: ${lead.assigned_to_color || '#6366f1'}; border: 1px solid ${lead.assigned_to_color || '#6366f1'}44">
-                      <span class="w-2 h-2 rounded-full" style="background: ${lead.assigned_to_color || '#6366f1'}"></span>
+                  ${lead.assigned_to_name ? `
+                    <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold" style="background: ${ownerColor}22; color: ${ownerColor}; border: 1px solid ${ownerColor}44">
+                      <span class="w-2 h-2 rounded-full" style="background: ${ownerColor}"></span>
                       ${lead.assigned_to_name}
                     </div>
                   ` : ''}
@@ -1083,6 +1084,11 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const formData = new FormData(addLeadForm);
             const data = Object.fromEntries(formData.entries());
+            // Drop blank optional inputs — sending "" made the API reject the
+            // request ("Not a valid email address") whenever email was left empty.
+            Object.keys(data).forEach(k => {
+                if (typeof data[k] === 'string' && data[k].trim() === '') delete data[k];
+            });
             if (!data.project_id) delete data.project_id;
 
             const customAnswers = collectCustomFieldValues(document.getElementById('add-lead-custom-fields-container'));
@@ -2103,9 +2109,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    const importForm = document.getElementById('import-leads-form');
-    if (importForm) {
-        importForm.addEventListener('submit', async (e) => {
+    // NOTE: must NOT be named `importForm` — that identifier is already
+    // declared above for #import-lead-form. Redeclaring it with `const` in the
+    // same scope is a SyntaxError that kills this entire file, so the Add Lead
+    // button and the leads table both silently stopped working.
+    const csvImportForm = document.getElementById('import-leads-form');
+    if (csvImportForm) {
+        csvImportForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const fileInput = document.getElementById('import-csv-file');
             if (!fileInput.files || fileInput.files.length === 0) {

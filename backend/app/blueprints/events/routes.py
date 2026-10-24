@@ -12,19 +12,51 @@ from ...extensions import db
 from ...models import Event, User, Appointment, Task, Contact, Opportunity
 from ...utils.rbac import get_current_user_role, require_min_role
 
+def _can_view_event(event, user_id, user_role):
+    """
+    Visibility rules for a single calendar event.
+
+    • ADMIN sees everything (colour-coded per owner in the UI)
+    • Everyone else sees events they created, events owned by them, and
+      events linked to a lead assigned to them.
+    """
+    if user_role == "ADMIN":
+        return True
+    if event.created_by_id == user_id:
+        return True
+    if event.owner_id == user_id:
+        return True
+    if event.lead is not None and event.lead.assigned_to_id == user_id:
+        return True
+    return False
+
+
 @events_bp.route("/", methods=["GET"])
 @jwt_required()
 def list_events():
-    """List all events, optionally filtered by date range."""
+    """
+    List calendar items, optionally filtered by date range.
+
+    Events carry an `color` (the owning Lead Owner's calendar colour) plus
+    lead linkage info so the UI can colour-code and deep-link them.
+    Pass `?lead_id=N` to fetch the events of a single lead.
+    """
     start_str = request.args.get("start")
     end_str = request.args.get("end")
     event_type = request.args.get("type")
+    lead_filter = request.args.get("lead_id")
 
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     user_role = get_current_user_role()
 
     # 1. Base query for Events
     query_evt = Event.query
+
+    if lead_filter:
+        try:
+            query_evt = query_evt.filter(Event.lead_id == int(lead_filter))
+        except ValueError:
+            return jsonify({"error": "Invalid lead_id"}), 400
     if start_str:
         try:
             start_dt = datetime.fromisoformat(start_str)
@@ -42,7 +74,16 @@ def list_events():
         query_evt = query_evt.filter(Event.event_type == event_type)
 
     if user_role != "ADMIN":
-        query_evt = query_evt.filter(Event.created_by_id == user_id)
+        # Own events + events on leads assigned to me
+        query_evt = query_evt.filter(
+            db.or_(
+                Event.created_by_id == user_id,
+                Event.owner_id == user_id,
+                Event.lead_id.in_(
+                    db.session.query(Opportunity.id).filter(Opportunity.assigned_to_id == user_id)
+                ),
+            )
+        )
 
     events = query_evt.order_by(Event.start_datetime.asc()).all()
     out_list = [e.to_dict() for e in events]
@@ -143,14 +184,20 @@ def list_events():
 @events_bp.route("/", methods=["POST"])
 @jwt_required()
 def create_event():
-    """Create a new corporate event."""
-    user_id = get_jwt_identity()
-    data = request.get_json()
+    """
+    Create a corporate event.
 
-    required_fields = ["title", "start_datetime"]
-    for field in required_fields:
-        if not data.get(field):
-            return jsonify({"error": f"'{field}' is required"}), 400
+    Optionally pass `lead_id` to link the event to a lead. Linked events:
+      • borrow the lead owner's calendar colour
+      • become visible to that lead owner even if someone else created them
+    """
+    user_id = int(get_jwt_identity())
+    data = request.get_json() or {}
+
+    if not data.get("title"):
+        return jsonify({"error": "'title' is required"}), 400
+    if not data.get("start_datetime"):
+        return jsonify({"error": "'start_datetime' is required"}), 400
 
     try:
         start_dt = datetime.fromisoformat(data["start_datetime"])
@@ -163,18 +210,33 @@ def create_event():
             end_dt = datetime.fromisoformat(data["end_datetime"])
         except ValueError:
             return jsonify({"error": "Invalid end_datetime (ISO 8601 required)"}), 400
-    
     if not end_dt:
         end_dt = start_dt + timedelta(hours=1)
+
+    # ── Optional lead linkage ────────────────────────────────────────────
+    lead_id = data.get("lead_id") or data.get("opportunity_id")
+    lead = None
+    if lead_id:
+        lead = Opportunity.query.filter_by(id=int(lead_id), is_deleted=False).first()
+        if not lead:
+            return jsonify({"error": f"Lead {lead_id} not found"}), 404
+
+        user_role = get_current_user_role()
+        if user_role != "ADMIN" and lead.assigned_to_id != user_id:
+            return jsonify({"error": "Access denied: you can only add events to your own leads"}), 403
+
+    owner_id = (lead.assigned_to_id if lead and lead.assigned_to_id else user_id)
 
     event = Event(
         title=data["title"],
         description=data.get("description"),
-        event_type=data.get("event_type", "GENERAL"),
+        event_type=data.get("event_type") or ("LEAD_EVENT" if lead else "GENERAL"),
         start_datetime=start_dt,
         end_datetime=end_dt,
         is_all_day=data.get("is_all_day", False),
         created_by_id=user_id,
+        lead_id=lead.id if lead else None,
+        owner_id=owner_id,
     )
     db.session.add(event)
     db.session.commit()
@@ -187,6 +249,8 @@ def create_event():
 def get_event(event_id):
     """Get a single event by ID."""
     event = Event.query.get_or_404(event_id)
+    if not _can_view_event(event, int(get_jwt_identity()), get_current_user_role()):
+        return jsonify({"error": "Access denied"}), 403
     return jsonify(event.to_dict()), 200
 
 
@@ -194,15 +258,18 @@ def get_event(event_id):
 @jwt_required()
 def update_event(event_id):
     """Update an existing event."""
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     event = Event.query.get_or_404(event_id)
     user_role = get_current_user_role()
 
-    # Only creator or admin can edit
-    if event.created_by_id != user_id and user_role != "ADMIN":
+    # Only creator, the linked lead's owner, or an Admin can edit
+    allowed = event.created_by_id == user_id or user_role == "ADMIN"
+    if not allowed and event.lead is not None and event.lead.assigned_to_id == user_id:
+        allowed = True
+    if not allowed:
         return jsonify({"error": "Access denied: only the creator or an Admin can edit this event"}), 403
 
-    data = request.get_json()
+    data = request.get_json() or {}
 
     if "title" in data:
         event.title = data["title"]
@@ -217,6 +284,20 @@ def update_event(event_id):
     if "end_datetime" in data:
         event.end_datetime = datetime.fromisoformat(data["end_datetime"]) if data["end_datetime"] else (event.start_datetime + timedelta(hours=1))
 
+    # Re-link / un-link the event
+    if "lead_id" in data:
+        new_lead_id = data["lead_id"]
+        if new_lead_id:
+            new_lead = Opportunity.query.filter_by(id=int(new_lead_id), is_deleted=False).first()
+            if not new_lead:
+                return jsonify({"error": f"Lead {new_lead_id} not found"}), 404
+            if user_role != "ADMIN" and new_lead.assigned_to_id != user_id:
+                return jsonify({"error": "Access denied: you can only link events to your own leads"}), 403
+            event.lead_id = new_lead.id
+            event.owner_id = new_lead.assigned_to_id or user_id
+        else:
+            event.lead_id = None
+
     db.session.commit()
     return jsonify(event.to_dict()), 200
 
@@ -224,14 +305,51 @@ def update_event(event_id):
 @events_bp.route("/<int:event_id>", methods=["DELETE"])
 @jwt_required()
 def delete_event(event_id):
-    """Delete an event (creator or Admin only)."""
-    user_id = get_jwt_identity()
+    """Delete an event (creator, linked lead owner, or Admin only)."""
+    user_id = int(get_jwt_identity())
     user_role = get_current_user_role()
     event = Event.query.get_or_404(event_id)
-    
-    if event.created_by_id != user_id and user_role != "ADMIN":
+
+    allowed = event.created_by_id == user_id or user_role == "ADMIN"
+    if not allowed and event.lead is not None and event.lead.assigned_to_id == user_id:
+        allowed = True
+    if not allowed:
         return jsonify({"error": "Access denied"}), 403
-    
+
     db.session.delete(event)
     db.session.commit()
     return jsonify({"message": "Event deleted"}), 200
+
+
+# ---------------------------------------------------------------------------
+# Lead-scoped convenience endpoints
+# ---------------------------------------------------------------------------
+
+@events_bp.route("/lead/<int:lead_id>", methods=["GET"])
+@jwt_required()
+def list_lead_events(lead_id):
+    """All events linked to one lead (used by the Lead Details page)."""
+    user_id = int(get_jwt_identity())
+    user_role = get_current_user_role()
+
+    lead = Opportunity.query.filter_by(id=lead_id, is_deleted=False).first()
+    if not lead:
+        return jsonify({"error": "Lead not found"}), 404
+    if user_role != "ADMIN" and lead.assigned_to_id != user_id:
+        return jsonify({"error": "Access denied"}), 403
+
+    events = (Event.query
+              .filter(Event.lead_id == lead_id)
+              .order_by(Event.start_datetime.asc())
+              .all())
+    return jsonify([e.to_dict() for e in events]), 200
+
+
+@events_bp.route("/lead/<int:lead_id>", methods=["POST"])
+@jwt_required()
+def create_lead_event(lead_id):
+    """Shortcut to create an event straight from a lead."""
+    body = request.get_json() or {}
+    body["lead_id"] = lead_id
+    # delegate to create_event() so validation lives in one place
+    return create_event()

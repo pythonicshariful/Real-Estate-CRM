@@ -1,21 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script src="/assets/js/crm-store.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lead Profile & Questionnaire — Southeast Landmark CRM</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/assets/css/tailwind.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="stylesheet" href="/assets/css/theme.css">
   <style>
     body { font-family: 'Plus Jakarta Sans', sans-serif; }
     .glass-dark { background: rgba(15, 16, 25, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.06); }
-    .glass-card { background: #0f1019; border: 1px solid rgba(255,255,255,0.08); }
-    .btn-gradient { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: #fff; }
-    .btn-gradient:hover { filter: brightness(1.1); }
+    /* theme-token driven so light mode works (was a hard-coded dark hex) */
+    .glass-card {
+      background: var(--color-card-solid) !important;
+      border: 1px solid var(--color-border) !important;
+      color: var(--color-text) !important;
+    }
+    .btn-gradient { background: var(--gradient-hero) !important; color: #fff !important; }
+    .btn-gradient:hover { filter: brightness(1.06); }
+    /* Cinzel only for the big page/lead titles, not every heading */
+    h2 { font-family: 'Plus Jakarta Sans', sans-serif !important; letter-spacing: 0; }
+    #detail-full-name { color: var(--color-text) !important; }
   </style>
+  <script src="/assets/js/theme.js"></script>
 </head>
 <body class="flex h-screen overflow-hidden text-slate-100 bg-[#0a0a14]">
 
@@ -140,6 +151,64 @@
             </button>
           </div>
         </form>
+      </div>
+
+      <!-- ══════════ LEAD EVENTS (linked calendar events) ══════════ -->
+      <div class="glass-card rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
+        <div class="px-6 py-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/40">
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <svg class="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              Lead Events &amp; Meetings
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">Site visits, calls and follow-ups scheduled for this lead — colour-coded to its owner.</p>
+          </div>
+          <button type="button" onclick="toggleLeadEventForm()" id="add-lead-event-btn"
+                  class="btn-gradient px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            <span>Add Event</span>
+          </button>
+        </div>
+
+        <!-- inline create form -->
+        <form id="lead-event-form" onsubmit="createLeadEvent(event)"
+              class="hidden px-6 py-5 border-b border-slate-800 bg-[#161825]/60">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="md:col-span-2">
+              <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Event Title *</label>
+              <input type="text" id="le-title" required placeholder="e.g. Site visit — Block C"
+                     class="w-full bg-[#0a0a14] border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500">
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Date &amp; Time *</label>
+              <input type="datetime-local" id="le-start" required
+                     class="w-full bg-[#0a0a14] border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500 [color-scheme:dark]">
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Type</label>
+              <select id="le-type" class="w-full bg-[#0a0a14] border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500">
+                <option value="SITE_VISIT">Site Visit</option>
+                <option value="CALL">Call</option>
+                <option value="MEETING">Meeting</option>
+                <option value="FOLLOW_UP">Follow-up</option>
+                <option value="LEAD_EVENT">Other</option>
+              </select>
+            </div>
+            <div class="md:col-span-3">
+              <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Notes</label>
+              <input type="text" id="le-desc" placeholder="Agenda, location, who is attending…"
+                     class="w-full bg-[#0a0a14] border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500">
+            </div>
+            <div class="flex items-end gap-2">
+              <button type="submit" id="le-save" class="btn-gradient flex-1 px-4 py-2.5 rounded-xl text-sm font-bold">Save</button>
+              <button type="button" onclick="toggleLeadEventForm()" class="btn-ghost px-4 py-2.5 rounded-xl text-sm font-semibold border border-slate-700 text-slate-300">Cancel</button>
+            </div>
+          </div>
+        </form>
+
+        <div id="lead-events-list" class="p-6 space-y-3">
+          <div class="text-xs text-slate-500">Loading events…</div>
+        </div>
       </div>
 
       <!-- Additional Details: Timeline & Notes -->
@@ -672,10 +741,152 @@
       }
     };
 
+/* ══════════════════════════════════════════════════════════════════
+       LEAD EVENTS — create + list events linked to this lead
+       ══════════════════════════════════════════════════════════════════ */
+    function toggleLeadEventForm() {
+      const f = document.getElementById('lead-event-form');
+      if (!f) return;
+      const opening = f.classList.contains('hidden');
+      f.classList.toggle('hidden');
+      if (opening) {
+        const dt = document.getElementById('le-start');
+        if (dt && !dt.value) {
+          const d = new Date(Date.now() + 3600 * 1000);
+          d.setMinutes(0, 0, 0);
+          const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+            .toISOString().slice(0, 16);
+          dt.value = local;
+        }
+        document.getElementById('le-title')?.focus();
+      }
+    }
+
+    const _evEsc = (v) => String(v == null ? '' : v)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+    async function loadLeadEvents() {
+      const token = localStorage.getItem('crm_token');
+      const box = document.getElementById('lead-events-list');
+      if (!box || !token) return;
+      try {
+        const res = await fetch(`/api/events/lead/${leadId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('failed');
+        const events = await res.json();
+
+        if (!events.length) {
+          box.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-8 text-center">
+              <div class="w-11 h-11 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3">
+                <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              </div>
+              <p class="text-sm text-slate-400 font-medium">No events yet for this lead</p>
+              <p class="text-xs text-slate-500 mt-1">Click <span class="font-semibold text-teal-400">Add Event</span> to schedule a site visit or follow-up.</p>
+            </div>`;
+          return;
+        }
+
+        const now = new Date();
+        box.innerHTML = events.map(ev => {
+          const start = new Date(ev.start);
+          const end = ev.end ? new Date(ev.end) : null;
+          const past = end ? end < now : start < now;
+          const color = ev.color || '#14B8A6';
+          const dt = start.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+          const typeLabel = (ev.event_type || 'GENERAL').replace(/_/g, ' ');
+          return `
+            <div class="flex items-start gap-3 p-3.5 rounded-xl border transition-colors ${past ? 'opacity-60' : ''}"
+                 style="background:${color}0f;border-color:${color}33">
+              <div class="w-1 self-stretch rounded-full flex-shrink-0" style="background:${color}"></div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-sm font-bold text-white">${_evEsc(ev.title)}</span>
+                  <span class="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider"
+                        style="background:${color}22;color:${color}">${_evEsc(typeLabel)}</span>
+                  ${past ? '<span class="text-[9px] px-1.5 py-0.5 rounded bg-slate-700/60 text-slate-400 font-bold uppercase tracking-wider">Past</span>' : ''}
+                </div>
+                <div class="text-xs text-slate-400 mt-1 data-mono">${_evEsc(dt)}</div>
+                ${ev.description ? `<div class="text-xs text-slate-500 mt-1">${_evEsc(ev.description)}</div>` : ''}
+              </div>
+              <button onclick="deleteLeadEvent(${ev.id})" title="Delete event"
+                      class="text-slate-500 hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-500/10 transition-colors flex-shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+            </div>`;
+        }).join('');
+      } catch (e) {
+        box.innerHTML = '<div class="text-xs text-rose-400">Could not load events.</div>';
+      }
+    }
+
+    async function createLeadEvent(e) {
+      e.preventDefault();
+      const token = localStorage.getItem('crm_token');
+      const btn = document.getElementById('le-save');
+      const title = document.getElementById('le-title').value.trim();
+      const start = document.getElementById('le-start').value;
+      const type = document.getElementById('le-type').value;
+      const desc = document.getElementById('le-desc').value.trim();
+      if (!title || !start) return;
+
+      const original = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = 'Saving…';
+
+      try {
+        const res = await fetch(`/api/events/lead/${leadId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            title: title,
+            description: desc || null,
+            event_type: type,
+            start_datetime: new Date(start).toISOString()
+          })
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || 'Could not create event');
+        }
+        document.getElementById('lead-event-form').reset();
+        toggleLeadEventForm();
+        await loadLeadEvents();
+        if (window.showToast) window.showToast('Event added to this lead', 'success');
+      } catch (err) {
+        if (window.showToast) window.showToast(err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = original;
+      }
+    }
+
+    async function deleteLeadEvent(id) {
+      if (!confirm('Delete this event?')) return;
+      const token = localStorage.getItem('crm_token');
+      try {
+        const res = await fetch(`/api/events/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Delete failed');
+        await loadLeadEvents();
+        if (window.showToast) window.showToast('Event deleted', 'success');
+      } catch (err) {
+        if (window.showToast) window.showToast(err.message, 'error');
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       loadLeadDetails();
       loadObjections();
       loadCoaching();
+      loadLeadEvents();
     });
   </script>
 </body>

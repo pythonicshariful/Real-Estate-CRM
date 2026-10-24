@@ -888,7 +888,24 @@ class Event(db.Model):
     created_by = db.relationship('User', foreign_keys=[created_by_id])
     is_all_day = db.Column(db.Boolean, default=False)
 
+    # ── Link to a lead (optional: general events like team meetings have none)
+    lead_id = db.Column(db.Integer, db.ForeignKey('opportunities.id'), nullable=True, index=True)
+    lead = db.relationship('Opportunity', foreign_keys=[lead_id])
+
+    # Owner used for colour-coding and visibility. For lead-linked events this is
+    # the lead's assigned owner; for general events it is the creator.
+    owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True, index=True)
+    owner = db.relationship('User', foreign_keys=[owner_id])
+
+    def resolved_owner(self):
+        """The user whose calendar colour this event should use."""
+        if self.lead is not None and self.lead.assigned_to is not None:
+            return self.lead.assigned_to
+        return self.owner or self.created_by
+
     def to_dict(self):
+        owner = self.resolved_owner()
+        lead_contact = self.lead.contact if self.lead is not None else None
         return {
             "id": self.id,
             "title": self.title,
@@ -897,8 +914,17 @@ class Event(db.Model):
             "start": self.start_datetime.isoformat(),
             "end": self.end_datetime.isoformat() if self.end_datetime else None,
             "created_by_id": self.created_by_id,
+            "created_by_name": self.created_by.full_name if self.created_by else None,
             "is_all_day": self.is_all_day,
-            "color": self.created_by.calendar_color if self.created_by else "#6366f1"
+            "color": owner.calendar_color if owner else "#6366f1",
+            "owner_id": owner.id if owner else None,
+            "owner_name": owner.full_name if owner else None,
+            # lead linkage
+            "lead_id": self.lead_id,
+            "lead_name": lead_contact.full_name if lead_contact else None,
+            "lead_phone": (lead_contact.phone_raw or lead_contact.phone_normalized) if lead_contact else None,
+            "lead_stage": (self.lead.pipeline_stage.value
+                           if self.lead is not None and self.lead.pipeline_stage else None),
         }
 
 

@@ -1,8 +1,26 @@
-from marshmallow import Schema, fields, validate, EXCLUDE
+from marshmallow import Schema, fields, validate, EXCLUDE, pre_load
 
 class LeadCreateSchema(Schema):
     class Meta:
         unknown = EXCLUDE
+
+    @pre_load
+    def blank_strings_to_none(self, data, **kwargs):
+        """
+        HTML forms submit "" for every optional input the user left untouched
+        (email, profession, service_type, ...). fields.Email() rejects "" as
+        invalid, so creating a lead without an email address used to fail with
+        HTTP 400 "Not a valid email address". Treat blank optional values as
+        missing instead.
+        """
+        if isinstance(data, dict):
+            required = {'full_name', 'phone'}
+            for key, value in list(data.items()):
+                if key in required:
+                    continue
+                if isinstance(value, str) and value.strip() == '':
+                    data[key] = None
+        return data
 
     full_name = fields.Str(required=True, validate=validate.Length(min=1, max=150))
     phone = fields.Str(required=True, validate=validate.Length(min=5, max=50))

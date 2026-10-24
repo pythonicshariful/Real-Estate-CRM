@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script src="/assets/js/crm-store.js"></script>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Settings — Southeast CRM v2.0</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/assets/css/tailwind.css">
   <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="stylesheet" href="/assets/css/theme.css">
   <style>
     .tab-btn.active {
       background: rgba(99, 102, 241, 0.15);
@@ -13,6 +15,7 @@
       font-weight: 600;
     }
   </style>
+  <script src="/assets/js/theme.js"></script>
 </head>
 <body class="flex h-screen overflow-hidden text-slate-100 bg-[#0a0a14]">
   <div id="sidebar-container"></div>
@@ -95,6 +98,88 @@
         <!-- 1. META WEBHOOK TAB -->
         <div id="tab-meta" class="tab-content hidden">
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- ══════════ CONNECT WITH FACEBOOK (OAuth) ══════════ -->
+            <div class="lg:col-span-12">
+              <div class="chart-card border border-teal-500/25 p-5 space-y-4" style="background:linear-gradient(135deg,rgba(20,184,166,.07),rgba(3,105,161,.04))">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#1877F2">
+                      <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.68.24 2.68.24v2.96h-1.51c-1.49 0-1.96.93-1.96 1.89v2.26h3.33l-.53 3.49h-2.8V24C19.61 23.1 24 18.1 24 12.07Z"/></svg>
+                    </div>
+                    <div>
+                      <div class="text-base font-bold text-white flex items-center gap-2 flex-wrap">
+                        Connect with Facebook
+                        <span id="fb-mode-badge" class="text-[10px] px-2 py-0.5 rounded-full font-bold border hidden"></span>
+                      </div>
+                      <div id="fb-status-line" class="text-xs text-slate-400 mt-0.5">Checking connection…</div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <button type="button" id="fb-connect-btn" onclick="fbConnect()"
+                            class="px-4 py-2.5 rounded-xl text-xs font-bold text-white flex items-center gap-2 transition-all hover:brightness-110"
+                            style="background:#1877F2">
+                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.68.24 2.68.24v2.96h-1.51c-1.49 0-1.96.93-1.96 1.89v2.26h3.33l-.53 3.49h-2.8V24C19.61 23.1 24 18.1 24 12.07Z"/></svg>
+                      <span id="fb-connect-label">Connect with Facebook</span>
+                    </button>
+                    <button type="button" id="fb-demo-btn" onclick="fbDemoConnect()"
+                            class="btn-ghost px-4 py-2.5 rounded-xl text-xs font-semibold border border-teal-500/40 text-teal-300 hover:bg-teal-500/10">
+                      Try Demo Mode
+                    </button>
+                    <button type="button" id="fb-disconnect-btn" onclick="fbDisconnect()"
+                            class="hidden px-4 py-2.5 rounded-xl text-xs font-semibold border border-rose-500/40 text-rose-300 hover:bg-rose-500/10">
+                      Disconnect
+                    </button>
+                  </div>
+                </div>
+
+                <!-- credentials (only needed for the real OAuth flow) -->
+                <details class="rounded-xl border border-slate-800 bg-black/20">
+                  <summary class="px-4 py-3 text-xs font-bold text-slate-300 cursor-pointer select-none flex items-center gap-2">
+                    <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+                    Facebook App credentials <span class="font-normal text-slate-500">(for the real connection)</span>
+                  </summary>
+                  <div class="px-4 pb-4 pt-1 grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">App ID</label>
+                      <input type="text" id="fb-app-id" placeholder="1234567890123456" class="w-full input-glass px-3 py-2 rounded-lg text-xs">
+                    </div>
+                    <div>
+                      <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">App Secret</label>
+                      <input type="password" id="fb-app-secret" placeholder="••••••••••••••••" class="w-full input-glass px-3 py-2 rounded-lg text-xs">
+                    </div>
+                    <div>
+                      <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Redirect URI</label>
+                      <input type="text" id="fb-redirect-uri" class="w-full input-glass px-3 py-2 rounded-lg text-xs data-mono" readonly>
+                    </div>
+                    <div class="md:col-span-3 flex items-center justify-between gap-3">
+                      <p class="text-[11px] text-slate-500">
+                        Create an app at
+                        <a href="https://developers.facebook.com/apps/" target="_blank" class="text-teal-400 underline">developers.facebook.com</a>,
+                        add the <em>Facebook Login</em> + <em>Webhooks</em> products, and paste the redirect URI above into
+                        <em>Valid OAuth Redirect URIs</em>.
+                      </p>
+                      <button type="button" onclick="fbSaveCredentials()" class="btn-gradient px-4 py-2 rounded-lg text-xs font-bold flex-shrink-0">Save</button>
+                    </div>
+                  </div>
+                </details>
+
+                <!-- lead forms discovered on the page -->
+                <div id="fb-forms-wrap" class="hidden space-y-3">
+                  <div class="flex items-center justify-between">
+                    <div class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                      <svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                      Lead Forms &amp; Questions
+                    </div>
+                    <button type="button" onclick="fbSyncForms()" class="text-[11px] font-semibold text-teal-400 hover:text-teal-300 flex items-center gap-1">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                      Re-sync
+                    </button>
+                  </div>
+                  <div id="fb-forms-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+                </div>
+              </div>
+            </div>
             
             <!-- Config Form Column -->
             <div class="lg:col-span-6 space-y-5">
@@ -709,6 +794,207 @@
       }
     }
 
+    /* ══════════════════════════════════════════════════════════════
+       FACEBOOK CONNECT (OAuth + demo mode + form question import)
+       ══════════════════════════════════════════════════════════════ */
+    const _fbTok = () => localStorage.getItem('crm_token');
+    const _fbEsc = (v) => String(v == null ? '' : v)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+    async function fbRefreshStatus() {
+      try {
+        const res = await fetch('/api/webhooks/facebook/status', {
+          headers: { 'Authorization': `Bearer ${_fbTok()}` }
+        });
+        if (!res.ok) return;
+        const st = await res.json();
+
+        const badge   = document.getElementById('fb-mode-badge');
+        const line    = document.getElementById('fb-status-line');
+        const connect = document.getElementById('fb-connect-btn');
+        const demo    = document.getElementById('fb-demo-btn');
+        const disc    = document.getElementById('fb-disconnect-btn');
+        const redir   = document.getElementById('fb-redirect-uri');
+        const appId   = document.getElementById('fb-app-id');
+
+        if (redir && st.redirect_uri) redir.value = st.redirect_uri;
+        if (appId && st.app_id && !appId.value) appId.value = st.app_id;
+
+        if (st.connected) {
+          connect.classList.add('hidden');
+          demo.classList.add('hidden');
+          disc.classList.remove('hidden');
+          badge.classList.remove('hidden');
+          if (st.mode === 'demo') {
+            badge.className = 'text-[10px] px-2 py-0.5 rounded-full font-bold border bg-amber-500/15 text-amber-300 border-amber-500/30';
+            badge.textContent = 'DEMO';
+            line.textContent = `Demo connection · ${st.page_name || 'Demo Page'}`;
+          } else {
+            badge.className = 'text-[10px] px-2 py-0.5 rounded-full font-bold border bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
+            badge.textContent = 'LIVE';
+            line.textContent = `Connected to “${st.page_name || st.page_id}” · ${st.form_count} lead form(s)`;
+          }
+        } else {
+          connect.classList.remove('hidden');
+          demo.classList.remove('hidden');
+          disc.classList.add('hidden');
+          badge.classList.add('hidden');
+          line.textContent = st.has_credentials
+            ? 'App credentials saved — click Connect with Facebook.'
+            : 'Not connected. Add App credentials, or use Demo Mode to explore.';
+        }
+
+        fbRenderForms(st.forms || []);
+      } catch (e) {
+        console.error('facebook status', e);
+      }
+    }
+
+    function fbRenderForms(forms) {
+      const wrap = document.getElementById('fb-forms-wrap');
+      const list = document.getElementById('fb-forms-list');
+      if (!wrap || !list) return;
+      if (!forms.length) { wrap.classList.add('hidden'); list.innerHTML = ''; return; }
+      wrap.classList.remove('hidden');
+
+      list.innerHTML = forms.map(f => {
+        const qs = f.questions || [];
+        const preview = qs.slice(0, 6).map(q => `
+          <li class="flex items-start gap-1.5">
+            <span class="text-teal-500/70 mt-0.5">•</span>
+            <span class="text-slate-400">${_fbEsc(q.label)}</span>
+          </li>`).join('');
+        const more = qs.length > 6 ? `<li class="text-slate-600 italic">+${qs.length - 6} more…</li>` : '';
+        return `
+          <div class="rounded-xl border border-slate-800 bg-black/25 p-4 space-y-3">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="text-xs font-bold text-white truncate">${_fbEsc(f.name)}</div>
+                <div class="text-[10px] text-slate-500 mt-0.5 data-mono">${_fbEsc(f.id)}</div>
+              </div>
+              <span class="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase flex-shrink-0 ${
+                f.demo ? 'bg-amber-500/15 text-amber-300' : 'bg-emerald-500/15 text-emerald-300'
+              }">${_fbEsc(f.status || 'FORM')}</span>
+            </div>
+            <ul class="space-y-1 text-[11px] max-h-32 overflow-y-auto pr-1">${preview}${more}</ul>
+            <button type="button" onclick="fbImportForm('${_fbEsc(f.id)}')"
+                    class="w-full py-2 rounded-lg text-[11px] font-bold text-teal-300 border border-teal-500/40 hover:bg-teal-500/10 transition-colors flex items-center justify-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Import questions to CRM
+            </button>
+          </div>`;
+      }).join('');
+    }
+
+    async function fbSaveCredentials() {
+      const appId = document.getElementById('fb-app-id').value.trim();
+      const secret = document.getElementById('fb-app-secret').value.trim();
+      const redirect = document.getElementById('fb-redirect-uri').value.trim();
+      try {
+        const res = await fetch('/api/webhooks/facebook/credentials', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${_fbTok()}` },
+          body: JSON.stringify({ app_id: appId, app_secret: secret, redirect_uri: redirect })
+        });
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.message || d.error || 'Save failed');
+        if (window.showToast) window.showToast(d.message || 'Saved', 'success');
+        fbRefreshStatus();
+      } catch (e) {
+        if (window.showToast) window.showToast(e.message, 'error');
+      }
+    }
+
+    async function fbConnect() {
+      try {
+        const res = await fetch('/api/webhooks/facebook/oauth/start', {
+          headers: { 'Authorization': `Bearer ${_fbTok()}` }
+        });
+        const d = await res.json();
+        if (!res.ok) {
+          if (d.needs_credentials) {
+            document.querySelector('#tab-meta details')?.setAttribute('open', '');
+            if (window.showToast) window.showToast(d.message, 'error');
+            return;
+          }
+          throw new Error(d.message || 'Could not start Facebook login');
+        }
+        const w = 720, h = 780;
+        const y = window.top.outerHeight / 2 + window.top.screenY - h / 2;
+        const x = window.top.outerWidth / 2 + window.top.screenX - w / 2;
+        window.open(d.auth_url, 'fbconnect', `width=${w},height=${h},top=${y},left=${x}`);
+      } catch (e) {
+        if (window.showToast) window.showToast(e.message, 'error');
+      }
+    }
+
+    async function fbDemoConnect() {
+      try {
+        const res = await fetch('/api/webhooks/facebook/demo-connect', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${_fbTok()}` }
+        });
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.message || 'Demo connect failed');
+        if (window.showToast) window.showToast(d.message, 'success');
+        fbRefreshStatus();
+      } catch (e) {
+        if (window.showToast) window.showToast(e.message, 'error');
+      }
+    }
+
+    async function fbDisconnect() {
+      if (!confirm('Disconnect Facebook from this CRM?')) return;
+      try {
+        const res = await fetch('/api/webhooks/facebook/disconnect', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${_fbTok()}` }
+        });
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.message || 'Disconnect failed');
+        if (window.showToast) window.showToast('Facebook disconnected', 'success');
+        fbRefreshStatus();
+      } catch (e) {
+        if (window.showToast) window.showToast(e.message, 'error');
+      }
+    }
+
+    async function fbSyncForms() {
+      try {
+        const res = await fetch('/api/webhooks/facebook/sync-forms', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${_fbTok()}` }
+        });
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.message || 'Sync failed');
+        if (window.showToast) window.showToast(d.message, 'success');
+        fbRenderForms(d.forms || []);
+      } catch (e) {
+        if (window.showToast) window.showToast(e.message, 'error');
+      }
+    }
+
+    async function fbImportForm(formId) {
+      try {
+        const res = await fetch(`/api/webhooks/facebook/import-form/${encodeURIComponent(formId)}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${_fbTok()}` }
+        });
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.message || 'Import failed');
+        if (window.showToast) window.showToast(d.message, 'success');
+      } catch (e) {
+        if (window.showToast) window.showToast(e.message, 'error');
+      }
+    }
+
+    // refresh when the Meta tab is opened, and after the OAuth popup reports back
+    window.addEventListener('message', (ev) => {
+      if (ev.data && ev.data.type === 'facebook-connected') setTimeout(fbRefreshStatus, 600);
+    });
+    document.addEventListener('DOMContentLoaded', () => { setTimeout(fbRefreshStatus, 700); });
+
     async function simulateMetaLead() {
       const btn = document.getElementById('sim-btn');
       const resultBox = document.getElementById('sim-result');
@@ -743,7 +1029,12 @@
               ${res.message}
             </div>
             <div class="text-[11px] text-slate-300 mt-1">
-              Lead: <strong>${payload.full_name}</strong> | Phone: <strong>${payload.phone}</strong> | Profession: <strong>${payload.profession}</strong>
+              Lead: <strong>${(res.simulated_data && res.simulated_data.name) || payload.full_name}</strong>
+              | Phone: <strong>${(res.simulated_data && res.simulated_data.phone) || payload.phone}</strong>
+              | Profession: <strong>${(res.simulated_data && res.simulated_data.profession) || payload.profession}</strong>
+            </div>
+            <div class="text-[10px] text-amber-300/90 mt-1">
+              ℹ️ A fresh phone number is used automatically, otherwise Facebook re-submissions get merged into the existing lead instead of creating a new one.
             </div>
             <div class="text-[10px] text-emerald-400/80 mt-1">
               👉 Check the <a href="/leads.html" class="underline font-bold hover:text-white" target="_blank">Leads page</a> to see this lead auto-assigned with questionnaire answers!

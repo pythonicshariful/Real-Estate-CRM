@@ -3,6 +3,7 @@ from app.blueprints.leads import leads_bp
 from app.models import Opportunity, Contact, CallLog, Appointment, PipelineStage, AppointmentStatus, Objection, ObjectionCategory, Reservation, Note, PipelineHistory, db, UserRole, LeadTemperature, AuditLog, User, DurationBand, ActivityOutcome, ActivityType, Inquiry, Plot, PlotStatus, Installment, CancellationRequest, PaymentMethod, InstallmentStatus, CancellationStatus, CoachingLog
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from datetime import datetime, timezone
+from decimal import Decimal
 import os
 from app.utils.rbac import is_admin
 
@@ -146,11 +147,36 @@ def create_lead():
         
     project_id = validated_data.get('project_id')
 
+    # Assignment: a Lead Owner creating a lead keeps it; an Admin/Manager
+    # creating one on behalf of the team should not own it. Route those to a
+    # Lead Owner using the schedule-aware auto-assignment (falling back to
+    # round-robin across active owners when nobody is inside their window).
+    assigned_to_id = user_id
+    if is_admin(get_jwt().get('role')):
+        try:
+            from app.tasks import assign_lead_owner_auto
+            auto_owner = assign_lead_owner_auto()
+            if auto_owner:
+                assigned_to_id = auto_owner.id
+        except Exception as assign_err:
+            current_app.logger.warning(f'Auto-assign on manual lead create failed: {assign_err}')
+
+    # raw_payload is a JSON column — Decimal (from budget_min/budget_max)
+    # and datetime values are not JSON-serializable, so coerce them here.
+    # Without this, any lead created with a budget raises a 500.
+    raw_payload = {
+        k: (float(v) if isinstance(v, Decimal) else v)
+        for k, v in validated_data.items()
+    }
+
     inquiry = Inquiry(
         contact_id=contact.id,
         utm_source=source if source else 'MANUAL',
         project_interest=validated_data.get('project_interest'),
-        raw_payload=validated_data,
+        original_phone_raw=phone,
+        budget_min=validated_data.get('budget_min'),
+        budget_max=validated_data.get('budget_max'),
+        raw_payload=raw_payload,
         submitted_at=datetime.now(timezone.utc),
     )
     db.session.add(inquiry)
@@ -159,7 +185,7 @@ def create_lead():
     opp = Opportunity(
         contact_id=contact.id,
         inquiry_id=inquiry.id,
-        assigned_to_id=user_id,
+        assigned_to_id=assigned_to_id,
         project_id=project_id,
         pipeline_stage=PipelineStage.NEW,
         service_type=service_type,
@@ -922,6 +948,11 @@ def log_call(id):
             resp_data["upload_error"] = upload_error
             
         return jsonify(resp_data), 201
+
+    # No recording file attached (the common case) — still return a valid
+    # response. Previously this path fell through and returned None, which
+    # made Flask raise "view function did not return a valid response" (500).
+    return jsonify({"id": log.id, "msg": "Call logged", "recording_url": None}), 201
 
 @leads_bp.route('/calls/<int:log_id>/status', methods=['GET'])
 @jwt_required()

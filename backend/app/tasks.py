@@ -703,7 +703,10 @@ def assign_lead_owner_auto(exclude_user_id: int | None = None, app=None):
     1. If a Lead Owner is within their configured date & time schedule, assign to them.
     2. Otherwise, divide leads equally among all active Lead Owners (round-robin / lowest lead count).
     """
-    from app.models import User, UserRole, Opportunity
+    # PipelineStage was missing from this import, so the very next use of it
+    # (building the terminal-stage filter below) raised NameError and the whole
+    # auto-assignment silently failed. Every lead stayed unassigned.
+    from app.models import User, UserRole, Opportunity, PipelineStage
     from app.extensions import db
     from sqlalchemy import func
     from datetime import datetime
@@ -757,8 +760,13 @@ def assign_lead_owner_auto(exclude_user_id: int | None = None, app=None):
         if len(matching_scheduled_owners) > 0:
             candidate_pool = matching_scheduled_owners
         else:
-            logger.info("No active scheduled Lead Owners found. Leaving lead unassigned (Pending).")
-            return None
+            # No owner currently falls inside their configured date/time window
+            # (or nobody has a schedule set up at all). Falling back to the full
+            # pool of active Lead Owners — this is what the docstring above
+            # promises (even distribution by lowest active lead count).
+            # Returning None here left every inbound Meta lead unassigned.
+            logger.info("No Lead Owner within schedule window — falling back to all active Lead Owners.")
+            candidate_pool = active_owners
             
         candidate_ids = [u.id for u in candidate_pool]
 

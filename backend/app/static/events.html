@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script src="/assets/js/crm-store.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Events & Calendar — Southeast CRM v2.0</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/tailwind.css">
+  <link media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/css/main.css">
-  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+  <link rel="stylesheet" href="/assets/css/theme.css">
+  <script src="/assets/vendor/fullcalendar.global.min.js" defer></script>
   <style>
     body { font-family: 'Inter', sans-serif; }
     
@@ -42,7 +44,7 @@
     .fc-daygrid-day:hover { background-color: rgba(255,255,255,0.015); }
     
     /* Toolbars */
-    .fc .fc-toolbar-title { font-size: 1.5rem; font-weight: 800; background: linear-gradient(to right, #fff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    /* title styling lives in theme.css so it adapts to light/dark */
     .fc-header-toolbar { padding: 1.5rem; background: rgba(255,255,255,0.01); border-bottom: 1px solid var(--fc-border-color); margin-bottom: 0 !important; }
     .fc-toolbar-chunk { display: flex; gap: 0.5rem; }
     
@@ -85,6 +87,7 @@
       position: absolute; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(168,85,247,0.1) 0%, rgba(0,0,0,0) 70%); bottom: -20vh; left: -20vw; z-index: 0; pointer-events: none;
     }
   </style>
+  <script src="/assets/js/theme.js"></script>
 </head>
 <body class="flex h-screen overflow-hidden text-slate-100 bg-[#07070a]">
   <div id="sidebar-container" class="z-20"></div>
@@ -94,8 +97,8 @@
     <div class="ambient-glow-2"></div>
     
     <!-- Premium Header -->
-    <header class="glass-dark border-b border-white/5 min-h-16 py-2 md:py-0 flex items-center justify-between px-4 md:px-8 flex-shrink-0 z-20 backdrop-blur-md bg-black/40 flex-wrap gap-2">
-      <div class="flex items-center gap-4">
+    <header class="glass-dark border-b border-white/5 min-h-16 py-2 md:py-0 flex items-center justify-between px-4 md:px-8 flex-shrink-0 z-20 backdrop-blur-md bg-black/40 gap-3">
+      <div class="flex items-center gap-4 min-w-0 flex-1">
         <div class="p-2 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-lg border border-indigo-500/30 text-indigo-400">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
         </div>
@@ -104,16 +107,27 @@
           <div class="text-xs text-slate-400 font-medium mt-0.5">Manage site visits, appointments, and reminders</div>
         </div>
       </div>
-      <button onclick="document.getElementById('addEventModal').classList.remove('hidden'); document.querySelector('#addEventModal > div').classList.add('animate-in')" class="group relative px-4 md:px-5 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-semibold flex items-center gap-2 overflow-hidden shadow-lg shadow-indigo-900/20 hover:shadow-indigo-500/30 transition-all duration-300">
-        <div class="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 group-hover:scale-105 transition-transform duration-300"></div>
-        <div class="absolute inset-0 opacity-0 group-hover:opacity-100 bg-white/20 transition-opacity duration-300"></div>
-        <svg class="w-4 h-4 relative z-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-        <span class="relative z-10 text-white">Add Event</span>
-      </button>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <button onclick="document.getElementById('addEventModal').classList.remove('hidden')"
+                class="btn-gradient px-4 md:px-5 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-semibold flex items-center gap-2 whitespace-nowrap">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          <span>Add Event</span>
+        </button>
+      </div>
     </header>
     
     <!-- Calendar Container -->
     <div class="flex-1 overflow-y-auto p-6 md:p-8 z-10 relative">
+      <!-- Owner colour legend + lead filter -->
+      <div class="mb-4 flex flex-wrap items-center gap-3">
+        <div id="owner-legend" class="flex flex-wrap items-center gap-2"></div>
+        <div class="ml-auto flex items-center gap-2">
+          <label for="leadFilter" class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Lead</label>
+          <select id="leadFilter" class="bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-teal-500 transition-all max-w-[240px]">
+            <option value="">All leads &amp; general events</option>
+          </select>
+        </div>
+      </div>
       <div class="glass-dark border border-white/5 rounded-2xl h-full min-h-[700px] flex flex-col shadow-2xl backdrop-blur-xl bg-black/40 overflow-hidden">
         <div id="calendar" class="flex-1 w-full h-full"></div>
       </div>
@@ -147,8 +161,20 @@
           <textarea id="eventDescription" rows="2" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-600" placeholder="Add any specific details here..."></textarea>
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-2 tracking-wide uppercase">Start Date & Time</label>
+          <label class="block text-xs font-semibold text-slate-400 mb-2 tracking-wide uppercase">Start Date &amp; Time</label>
           <input type="datetime-local" id="eventStart" required class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all [color-scheme:dark]">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-2 tracking-wide uppercase flex items-center justify-between">
+            <span>Link to Lead <span class="text-slate-600 normal-case font-normal">(optional)</span></span>
+          </label>
+          <select id="eventLead" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+            <option value="">— No lead (general event) —</option>
+          </select>
+          <p class="mt-1.5 text-[11px] text-slate-500 flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+            Linked events inherit the lead owner's colour and appear on that lead.
+          </p>
         </div>
         <div class="pt-4 flex justify-end gap-3">
           <button type="button" onclick="document.getElementById('addEventModal').classList.add('hidden')" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:text-white hover:bg-white/5 transition-all">Cancel</button>
@@ -200,13 +226,17 @@
         <div id="detailLeadContainer" class="hidden">
           <span class="block text-xs font-semibold text-slate-400 mb-1 tracking-wide uppercase">Linked Lead</span>
           <div class="flex items-center justify-between bg-white/5 rounded-xl px-4 py-3 border border-white/5">
-            <span id="detailLeadName" class="text-indigo-400 font-bold"></span>
-            <a id="detailLeadLink" href="#" class="text-xs font-bold text-indigo-400 hover:text-indigo-300 underline flex items-center gap-1">
+            <div class="flex items-center gap-2 min-w-0">
+              <span id="detailLeadName" class="text-teal-400 font-bold truncate"></span>
+              <span id="detailLeadStage" class="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-slate-400 font-semibold uppercase tracking-wide"></span>
+            </div>
+            <a id="detailLeadLink" href="#" class="text-xs font-bold text-teal-400 hover:text-teal-300 underline flex items-center gap-1 flex-shrink-0">
               View Profile
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
             </a>
           </div>
         </div>
+        <span id="detailOwnerBadge" class="owner-chip" style="display:none"></span>
         <div class="pt-4 flex justify-end">
           <button onclick="document.getElementById('eventDetailsModal').classList.add('hidden')" class="btn-gradient px-6 py-2.5 rounded-xl text-sm font-semibold text-white">Close</button>
         </div>
@@ -220,7 +250,73 @@
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       const token = localStorage.getItem('crm_token');
+      const IS_ADMIN = (localStorage.getItem('crm_role') || '') === 'ADMIN';
+      const authHeaders = { 'Authorization': `Bearer ${token}` };
 
+      const esc = (v) => String(v == null ? '' : v)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+      /* ------------------------------------------------------------------
+         Load leads once — used by the lead picker, the filter and legends
+      ------------------------------------------------------------------ */
+      let LEADS = [];
+      async function loadLeads() {
+        try {
+          const res = await fetch('/api/leads/', { headers: authHeaders });
+          if (!res.ok) return;
+          LEADS = await res.json();
+        } catch (e) { console.warn('lead load failed', e); }
+      }
+
+      function leadLabel(l) {
+        const c = l.contact || {};
+        return `${c.full_name || 'Lead #' + l.id}${c.phone ? ' · ' + c.phone : ''}`;
+      }
+
+      function populateLeadPickers() {
+        // add-event modal
+        const sel = document.getElementById('eventLead');
+        if (sel) {
+          sel.innerHTML = '<option value="">— No lead (general event) —</option>' +
+            LEADS.map(l => `<option value="${l.id}">${esc(leadLabel(l))}</option>`).join('');
+        }
+        // filter
+        const fl = document.getElementById('leadFilter');
+        if (fl) {
+          const current = fl.value;
+          fl.innerHTML = '<option value="">All leads &amp; general events</option>' +
+            LEADS.map(l => `<option value="${l.id}">${esc(leadLabel(l))}</option>`).join('');
+          fl.value = current;
+        }
+      }
+
+      function renderLegend() {
+        const box = document.getElementById('owner-legend');
+        if (!box) return;
+        const seen = new Map();
+        LEADS.forEach(l => {
+          const name = l.assigned_to_name;
+          if (name && !seen.has(name)) seen.set(name, l.assigned_to_color || '#14B8A6');
+        });
+        if (localStorage.getItem('crm_user_name') && !IS_ADMIN) {
+          const me = localStorage.getItem('crm_user_name');
+          if (!seen.has(me)) seen.set(me, localStorage.getItem('crm_color') || '#14B8A6');
+        }
+        if (seen.size === 0) { box.innerHTML = ''; return; }
+        box.innerHTML = Array.from(seen.entries()).map(([name, color]) => `
+          <span class="owner-chip" style="--chip-color:${esc(color)}">
+            <span class="owner-dot" style="--chip-color:${esc(color)}"></span>${esc(name)}
+          </span>`).join('');
+      }
+
+      await loadLeads();
+      populateLeadPickers();
+      renderLegend();
+
+      /* ------------------------------------------------------------------
+         Calendar
+      ------------------------------------------------------------------ */
       const calendarEl = document.getElementById('calendar');
       const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
@@ -230,52 +326,70 @@
           center: 'title',
           right: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth'
         },
-        eventContent: function(arg) {
-          const descHtml = arg.event.extendedProps.description 
-            ? `<div class="text-[10px] text-indigo-200 truncate mt-0.5">${arg.event.extendedProps.description}</div>` 
+        eventContent: function (arg) {
+          const p = arg.event.extendedProps || {};
+          const color = arg.event.backgroundColor || '#14B8A6';
+          const leadHtml = p.lead_name
+            ? `<div class="truncate text-[9px] opacity-90 mt-0.5 flex items-center gap-1">
+                 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                 ${esc(p.lead_name)}</div>`
             : '';
-          const color = arg.event.backgroundColor || '#6366f1';
-            
           return {
             html: `
               <div class="flex flex-col overflow-hidden text-ellipsis px-1.5 py-1">
                 <div class="flex items-center gap-1.5 overflow-hidden">
-                  <div class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background-color: ${color}; box-shadow: 0 0 6px ${color};"></div>
-                  <div class="truncate text-white text-[11px] leading-tight font-bold tracking-wide w-full">${arg.timeText ? arg.timeText + ' ' : ''}${arg.event.title}</div>
+                  <div class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background-color:${color}"></div>
+                  <div class="truncate text-[11px] leading-tight font-bold tracking-wide w-full fc-event-title-text">
+                    ${arg.timeText ? esc(arg.timeText) + ' ' : ''}${esc(arg.event.title)}
+                  </div>
                 </div>
-                ${descHtml}
-              </div>
-            `
+                ${leadHtml}
+              </div>`
           };
         },
-        eventDidMount: function(info) {
-          const color = info.event.backgroundColor || '#6366f1';
-          info.el.style.backgroundColor = color + '1f'; // ~12% opacity
+        eventDidMount: function (info) {
+          const color = info.event.backgroundColor || '#14B8A6';
+          info.el.style.backgroundColor = color + '20';
           info.el.style.borderLeft = `3px solid ${color}`;
           info.el.style.borderTop = 'none';
           info.el.style.borderRight = 'none';
           info.el.style.borderBottom = 'none';
-          info.el.style.borderRadius = '6px';
+          info.el.style.borderRadius = '7px';
+          info.el.style.color = color;
+          // accessible tooltip
+          const p = info.event.extendedProps || {};
+          const owner = p.owner_name ? ` · ${p.owner_name}` : '';
+          const lead = p.lead_name ? `\nLead: ${p.lead_name}` : '';
+          info.el.title = `${info.event.title}${owner}${lead}`;
         },
-        events: async function(info, successCallback, failureCallback) {
+        events: async function (info, successCallback, failureCallback) {
           if (!token) return successCallback([]);
           try {
-            const res = await fetch('/api/events/', {
-              headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const leadId = document.getElementById('leadFilter')?.value;
+            const url = leadId
+              ? `/api/events/?lead_id=${encodeURIComponent(leadId)}`
+              : '/api/events/';
+            const res = await fetch(url, { headers: authHeaders });
             if (!res.ok) throw new Error('Failed to fetch events');
             const data = await res.json();
-            
+
             const events = data.map(ev => ({
-              id: ev.id,
+              id: String(ev.id),
               title: ev.title,
               start: ev.start,
               end: ev.end,
               allDay: ev.is_all_day,
-              backgroundColor: ev.color || '#6366f1',
+              backgroundColor: ev.color || '#14B8A6',
+              borderColor: ev.color || '#14B8A6',
               extendedProps: {
                 description: ev.description,
                 type: ev.event_type,
+                lead_id: ev.lead_id,
+                lead_name: ev.lead_name,
+                lead_stage: ev.lead_stage,
+                owner_name: ev.owner_name,
+                owner_id: ev.owner_id,
+                color: ev.color,
                 opportunity_id: ev.opportunity_id,
                 contact_id: ev.contact_id
               }
@@ -286,47 +400,79 @@
             failureCallback(err);
           }
         },
-        eventClick: function(info) {
+        eventClick: function (info) {
           const ev = info.event;
+          const p = ev.extendedProps || {};
+
           document.getElementById('detailTitle').textContent = ev.title;
-          document.getElementById('detailDescription').textContent = ev.extendedProps.description || 'No additional details.';
-          document.getElementById('detailType').textContent = ev.extendedProps.type || 'General';
-          
-          let timeStr = ev.start ? new Date(ev.start).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'N/A';
+          document.getElementById('detailDescription').textContent = p.description || 'No additional details.';
+          document.getElementById('detailType').textContent =
+            (p.type || 'General').replace(/_/g, ' ');
+
+          let timeStr = ev.start
+            ? new Date(ev.start).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
+            : 'N/A';
           if (ev.end) {
-            timeStr += ' - ' + new Date(ev.end).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+            timeStr += ' – ' + new Date(ev.end).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
           }
           document.getElementById('detailTime').textContent = timeStr;
-          
+
+          // owner colour badge
+          const badge = document.getElementById('detailOwnerBadge');
+          if (badge) {
+            if (p.owner_name) {
+              badge.style.display = '';
+              badge.className = 'owner-chip mt-2';
+              badge.style.setProperty('--chip-color', p.color || '#14B8A6');
+              badge.innerHTML = `<span class="owner-dot" style="--chip-color:${esc(p.color || '#14B8A6')}"></span>${esc(p.owner_name)}`;
+            } else {
+              badge.style.display = 'none';
+            }
+          }
+
           const leadContainer = document.getElementById('detailLeadContainer');
-          if (ev.extendedProps.opportunity_id) {
+          if (p.lead_id) {
             leadContainer.classList.remove('hidden');
-            let leadName = 'Linked Lead';
-            const title = ev.title;
-            const matchApt = title.match(/Appointment with (.+)/);
-            const matchRem = title.match(/\((.+)\)$/);
-            if (matchApt) leadName = matchApt[1];
-            else if (matchRem) leadName = matchRem[1];
-            
-            document.getElementById('detailLeadName').textContent = leadName;
-            document.getElementById('detailLeadLink').href = `/leads.html?lead_id=${ev.extendedProps.opportunity_id}`;
+            document.getElementById('detailLeadName').textContent = p.lead_name || ('Lead #' + p.lead_id);
+            document.getElementById('detailLeadLink').href = `/lead-details.html?id=${p.lead_id}`;
+            const stageEl = document.getElementById('detailLeadStage');
+            if (stageEl) stageEl.textContent = p.lead_stage ? p.lead_stage.replace(/_/g, ' ') : '';
           } else {
             leadContainer.classList.add('hidden');
           }
-          
+
           document.getElementById('eventDetailsModal').classList.remove('hidden');
         }
       });
       calendar.render();
 
-      // Form submission
+      // re-fetch when the lead filter changes
+      document.getElementById('leadFilter')?.addEventListener('change', () => calendar.refetchEvents());
+
+      /* ------------------------------------------------------------------
+         Create event
+      ------------------------------------------------------------------ */
       document.getElementById('addEventForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const title = document.getElementById('eventTitle').value;
-        const desc = document.getElementById('eventDescription').value;
+        const title = document.getElementById('eventTitle').value.trim();
+        const desc = document.getElementById('eventDescription').value.trim();
         const start = document.getElementById('eventStart').value;
-        // format to ISO if necessary or just append :00Z. HTML datetime-local gives YYYY-MM-DDThh:mm
+        const leadId = document.getElementById('eventLead').value;
+
+        if (!start) return;
         const startIso = new Date(start).toISOString();
+
+        const payload = {
+          title: title,
+          description: desc || null,
+          start_datetime: startIso,
+          end_datetime: null
+        };
+        if (leadId) payload.lead_id = parseInt(leadId, 10);
+
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const originalHtml = submitBtn.innerHTML;
+        submitBtn.disabled = true;
 
         try {
           const res = await fetch('/api/events/', {
@@ -335,26 +481,28 @@
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({
-              title: title,
-              description: desc,
-              start_datetime: startIso,
-              end_datetime: null
-            })
+            body: JSON.stringify(payload)
           });
-          
+
           if (res.ok) {
             document.getElementById('addEventModal').classList.add('hidden');
             document.getElementById('addEventForm').reset();
             calendar.refetchEvents();
+            if (window.showToast) window.showToast('Event created', 'success');
           } else {
-            alert("Error creating event");
+            const err = await res.json().catch(() => ({}));
+            if (window.showToast) window.showToast(err.error || 'Error creating event', 'error');
+            else alert(err.error || 'Error creating event');
           }
-        } catch(err) {
+        } catch (err) {
           console.error(err);
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalHtml;
         }
       });
     });
+
   </script>
 </body>
 </html>

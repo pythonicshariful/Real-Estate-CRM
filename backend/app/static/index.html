@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script src="/assets/js/crm-store.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - Southeast Landmark CRM v2.0</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/assets/css/tailwind.css">
   <link rel="stylesheet" href="/assets/css/main.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <link rel="stylesheet" href="/assets/css/theme.css">
+  <script src="/assets/js/theme.js"></script>
 </head>
 <body class="auth-bg h-screen w-screen flex items-center justify-center font-sans antialiased text-white">
   
@@ -73,58 +75,9 @@
   <script type="module" src="/assets/js/app.js"></script>
   <script type="module" src="/assets/js/auth.js"></script>
   <script>
-    // Simple 3D background animation
-    const canvas = document.getElementById('auth-canvas');
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
-
-    const particles = new THREE.Group();
-    scene.add(particles);
-
-    const geometry = new THREE.SphereGeometry(0.1, 8, 8);
-    const material = new THREE.MeshBasicMaterial({ color: 0x6366f1, transparent: true, opacity: 0.5 });
-
-    for(let i=0; i<100; i++) {
-      const mesh = new THREE.Mesh(geometry, material);
-      mesh.position.set(
-        (Math.random() - 0.5) * 20,
-        (Math.random() - 0.5) * 20,
-        (Math.random() - 0.5) * 20
-      );
-      mesh.velocity = new THREE.Vector3(
-        (Math.random() - 0.5) * 0.02,
-        (Math.random() - 0.5) * 0.02,
-        (Math.random() - 0.5) * 0.02
-      );
-      particles.add(mesh);
-    }
-
-    camera.position.z = 5;
-
-    function animate() {
-      requestAnimationFrame(animate);
-      particles.rotation.y += 0.001;
-      particles.rotation.x += 0.0005;
-      
-      particles.children.forEach(p => {
-        p.position.add(p.velocity);
-        if(p.position.length() > 10) {
-          p.position.setLength(Math.random() * 5);
-        }
-      });
-      
-      renderer.render(scene, camera);
-    }
-    animate();
-
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+    // (the 600 KB three.js particle background was removed — the #auth-canvas
+    //  element it drew into no longer exists on this page, so it was dead weight
+    //  that delayed first paint on the login screen)
 
     // Fetch dynamic branding
     fetch('/api/settings/branding').then(r => r.json()).then(data => {

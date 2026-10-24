@@ -1,0 +1,988 @@
+{
+  "total": 109,
+  "passed": 109,
+  "failed": 0,
+  "results": [
+    {
+      "module": "core",
+      "name": "health",
+      "method": "GET",
+      "path": "/health",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['status', 'version']"
+    },
+    {
+      "module": "core",
+      "name": "root page",
+      "method": "GET",
+      "path": "/",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "core",
+      "name": "login page",
+      "method": "GET",
+      "path": "/index.html",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "core",
+      "name": "dashboard page",
+      "method": "GET",
+      "path": "/dashboard.html",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "core",
+      "name": "leads page",
+      "method": "GET",
+      "path": "/leads.html",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "core",
+      "name": "assets css",
+      "method": "GET",
+      "path": "/assets/css/main.css",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "core",
+      "name": "auth required 401",
+      "method": "GET",
+      "path": "/api/auth/me",
+      "code": 401,
+      "ok": true,
+      "note": "No access token"
+    },
+    {
+      "module": "auth",
+      "name": "login bad password",
+      "method": "POST",
+      "path": "/api/auth/login",
+      "code": 401,
+      "ok": true,
+      "note": "Bad email or password"
+    },
+    {
+      "module": "auth",
+      "name": "login admin",
+      "method": "POST",
+      "path": "/api/auth/login",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['access_token', 'avatar_url', 'color', 'full_name']"
+    },
+    {
+      "module": "auth",
+      "name": "login lead owner",
+      "method": "POST",
+      "path": "/api/auth/login",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['access_token', 'avatar_url', 'color', 'full_name']"
+    },
+    {
+      "module": "auth",
+      "name": "me",
+      "method": "GET",
+      "path": "/api/auth/me",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['avatar_url', 'calendar_color', 'created_at', 'email']"
+    },
+    {
+      "module": "auth",
+      "name": "me stats",
+      "method": "GET",
+      "path": "/api/auth/me/stats",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['active_leads', 'completed_tasks', 'recent_activities', 'total_leads']"
+    },
+    {
+      "module": "dashboard",
+      "name": "stats",
+      "method": "GET",
+      "path": "/api/dashboard/stats",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['closed_won', 'lead_owner_count', 'lead_owners', 'new_today']"
+    },
+    {
+      "module": "dashboard",
+      "name": "badges",
+      "method": "GET",
+      "path": "/api/dashboard/badges",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['messages', 'tickets']"
+    },
+    {
+      "module": "dashboard",
+      "name": "funnel",
+      "method": "GET",
+      "path": "/api/dashboard/funnel",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['funnel']"
+    },
+    {
+      "module": "dashboard",
+      "name": "recent activity",
+      "method": "GET",
+      "path": "/api/dashboard/recent-activity",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "dashboard",
+      "name": "sla overdue",
+      "method": "GET",
+      "path": "/api/dashboard/sla-overdue",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "reports",
+      "name": "kpis",
+      "method": "GET",
+      "path": "/api/reports/kpis",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['active_pipeline_val', 'appointment_booking_rate', 'average_sales_cycle_days', 'avg_deal_size']"
+    },
+    {
+      "module": "reports",
+      "name": "charts",
+      "method": "GET",
+      "path": "/api/reports/charts",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['cac_trend', 'lead_outcome', 'objection_intelligence', 'rev_per_100_leads_trend']"
+    },
+    {
+      "module": "reports",
+      "name": "sales summary",
+      "method": "GET",
+      "path": "/api/reports/sales-manager-summary",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['agent_workload', 'kpis', 'manager_id', 'stage_breakdown']"
+    },
+    {
+      "module": "reports",
+      "name": "export leads csv",
+      "method": "GET",
+      "path": "/api/reports/export/leads",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "leads",
+      "name": "list",
+      "method": "GET",
+      "path": "/api/leads/",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "leads",
+      "name": "list (owner scoped)",
+      "method": "GET",
+      "path": "/api/leads/",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "leads",
+      "name": "sample csv",
+      "method": "GET",
+      "path": "/api/leads/sample-csv",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "leads",
+      "name": "import template",
+      "method": "GET",
+      "path": "/api/leads/import/template",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "leads",
+      "name": "create",
+      "method": "POST",
+      "path": "/api/leads/",
+      "code": 201,
+      "ok": true,
+      "note": "keys=['activity_label', 'appointment_status', 'assigned_to_color', 'assigned_to_id']"
+    },
+    {
+      "module": "leads",
+      "name": "duplicate blocked (409)",
+      "method": "POST",
+      "path": "/api/leads/",
+      "code": 409,
+      "ok": true,
+      "note": "Duplicate Lead: Test Buyer One is already an active lead (Assigned: John Rahman | Stage: N"
+    },
+    {
+      "module": "leads",
+      "name": "duplicate check",
+      "method": "GET",
+      "path": "/api/leads/check-duplicate?phone=%2B8801712345678",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['assigned_to', 'contact_id', 'contact_name', 'email']"
+    },
+    {
+      "module": "leads",
+      "name": "duplicate count",
+      "method": "GET",
+      "path": "/api/leads/duplicate-count",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['details', 'duplicate_contact_groups', 'duplicate_groups', 'duplicate_leads']"
+    },
+    {
+      "module": "leads",
+      "name": "create (owner)",
+      "method": "POST",
+      "path": "/api/leads/",
+      "code": 201,
+      "ok": true,
+      "note": "keys=['activity_label', 'appointment_status', 'assigned_to_color', 'assigned_to_id']"
+    },
+    {
+      "module": "leads",
+      "name": "create 2 more",
+      "method": "POST",
+      "path": "/api/leads/",
+      "code": 201,
+      "ok": true,
+      "note": "keys=['activity_label', 'appointment_status', 'assigned_to_color', 'assigned_to_id']"
+    },
+    {
+      "module": "leads",
+      "name": "detail",
+      "method": "GET",
+      "path": "/api/leads/1",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['activity_label', 'appointment_status', 'assigned_to_color', 'assigned_to_id']"
+    },
+    {
+      "module": "leads",
+      "name": "profile",
+      "method": "GET",
+      "path": "/api/leads/1/profile",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['activity_label', 'appointment_status', 'appointments', 'assigned_to_color']"
+    },
+    {
+      "module": "leads",
+      "name": "update",
+      "method": "PUT",
+      "path": "/api/leads/1",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['activity_label', 'appointment_status', 'assigned_to_color', 'assigned_to_id']"
+    },
+    {
+      "module": "leads",
+      "name": "temperature",
+      "method": "PUT",
+      "path": "/api/leads/1/temperature",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['activity_label', 'appointment_status', 'assigned_to_color', 'assigned_to_id']"
+    },
+    {
+      "module": "leads",
+      "name": "star",
+      "method": "PUT",
+      "path": "/api/leads/1/star",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['activity_label', 'appointment_status', 'assigned_to_color', 'assigned_to_id']"
+    },
+    {
+      "module": "leads",
+      "name": "add note",
+      "method": "POST",
+      "path": "/api/leads/1/notes",
+      "code": 201,
+      "ok": true,
+      "note": "Note added"
+    },
+    {
+      "module": "leads",
+      "name": "questionnaire get",
+      "method": "GET",
+      "path": "/api/leads/1/questionnaire",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['answers', 'lead_id', 'questions']"
+    },
+    {
+      "module": "leads",
+      "name": "add call log",
+      "method": "POST",
+      "path": "/api/leads/1/calls",
+      "code": 201,
+      "ok": true,
+      "note": "Call logged"
+    },
+    {
+      "module": "leads",
+      "name": "appointments list",
+      "method": "GET",
+      "path": "/api/leads/1/appointments",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "leads",
+      "name": "objections",
+      "method": "GET",
+      "path": "/api/leads/1/objections",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "leads",
+      "name": "reservations",
+      "method": "GET",
+      "path": "/api/leads/1/reservations",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "leads",
+      "name": "appointment create",
+      "method": "POST",
+      "path": "/api/leads/1/appointments",
+      "code": 201,
+      "ok": true,
+      "note": "Appointment booked"
+    },
+    {
+      "module": "leads",
+      "name": "coaching",
+      "method": "GET",
+      "path": "/api/leads/coaching",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "leads",
+      "name": "bulk assign",
+      "method": "POST",
+      "path": "/api/leads/bulk-assign",
+      "code": 200,
+      "ok": true,
+      "note": "Successfully assigned 1 leads to John Rahman."
+    },
+    {
+      "module": "leads",
+      "name": "reassign",
+      "method": "PUT",
+      "path": "/api/leads/1/reassign",
+      "code": 200,
+      "ok": true,
+      "note": "Lead reassigned to Unassigned"
+    },
+    {
+      "module": "contacts",
+      "name": "list",
+      "method": "GET",
+      "path": "/api/contacts/",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "contacts",
+      "name": "create",
+      "method": "POST",
+      "path": "/api/contacts/",
+      "code": 201,
+      "ok": true,
+      "note": "keys=['address', 'city', 'created_at', 'district']"
+    },
+    {
+      "module": "contacts",
+      "name": "detail",
+      "method": "GET",
+      "path": "/api/contacts/4",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['address', 'city', 'created_at', 'district']"
+    },
+    {
+      "module": "contacts",
+      "name": "inquiries",
+      "method": "GET",
+      "path": "/api/contacts/4/inquiries",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "contacts",
+      "name": "opportunities",
+      "method": "GET",
+      "path": "/api/contacts/4/opportunities",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "projects",
+      "name": "list",
+      "method": "GET",
+      "path": "/api/projects/",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "projects",
+      "name": "create",
+      "method": "POST",
+      "path": "/api/projects/",
+      "code": 201,
+      "ok": true,
+      "note": "keys=['id', 'message']"
+    },
+    {
+      "module": "projects",
+      "name": "phases",
+      "method": "GET",
+      "path": "/api/projects/2/phases",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "projects",
+      "name": "create phase",
+      "method": "POST",
+      "path": "/api/projects/2/phases",
+      "code": 201,
+      "ok": true,
+      "note": "keys=['created_at', 'description', 'id', 'name']"
+    },
+    {
+      "module": "projects",
+      "name": "plots",
+      "method": "GET",
+      "path": "/api/projects/2/plots",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "projects",
+      "name": "create plot",
+      "method": "POST",
+      "path": "/api/projects/2/plots",
+      "code": 201,
+      "ok": true,
+      "note": "keys=['block_id', 'created_at', 'facing', 'id']"
+    },
+    {
+      "module": "projects",
+      "name": "blocks",
+      "method": "GET",
+      "path": "/api/projects/phases/1/blocks",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "team",
+      "name": "lead owners",
+      "method": "GET",
+      "path": "/api/team/lead-owners",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "team",
+      "name": "users",
+      "method": "GET",
+      "path": "/api/team/users",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "team",
+      "name": "members",
+      "method": "GET",
+      "path": "/api/team/members",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "team",
+      "name": "owner stats",
+      "method": "GET",
+      "path": "/api/team/lead-owners/2/stats",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['active_leads', 'completed_tasks', 'recent_activities', 'total_leads']"
+    },
+    {
+      "module": "team",
+      "name": "owner activities",
+      "method": "GET",
+      "path": "/api/team/lead-owners/2/activities",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['avatar_url', 'calendar_color', 'created_at', 'email']"
+    },
+    {
+      "module": "rbac",
+      "name": "owner blocked from team (403)",
+      "method": "GET",
+      "path": "/api/team/lead-owners",
+      "code": 403,
+      "ok": true,
+      "note": "keys=['error']"
+    },
+    {
+      "module": "rbac",
+      "name": "owner blocked from settings (403)",
+      "method": "GET",
+      "path": "/api/settings/general",
+      "code": 403,
+      "ok": true,
+      "note": "keys=['error', 'required_roles', 'your_role']"
+    },
+    {
+      "module": "tasks",
+      "name": "list",
+      "method": "GET",
+      "path": "/api/tasks/",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "tasks",
+      "name": "create",
+      "method": "POST",
+      "path": "/api/tasks/",
+      "code": 201,
+      "ok": true,
+      "note": "keys=['assigned_to_id', 'assigned_to_name', 'created_at', 'created_by_id']"
+    },
+    {
+      "module": "tasks",
+      "name": "update",
+      "method": "PUT",
+      "path": "/api/tasks/1",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['assigned_to_id', 'assigned_to_name', 'created_at', 'created_by_id']"
+    },
+    {
+      "module": "events",
+      "name": "list",
+      "method": "GET",
+      "path": "/api/events/",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "events",
+      "name": "create",
+      "method": "POST",
+      "path": "/api/events/",
+      "code": 201,
+      "ok": true,
+      "note": "keys=['color', 'created_by_id', 'created_by_name', 'description']"
+    },
+    {
+      "module": "events",
+      "name": "detail",
+      "method": "GET",
+      "path": "/api/events/1",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['color', 'created_by_id', 'created_by_name', 'description']"
+    },
+    {
+      "module": "events",
+      "name": "update",
+      "method": "PUT",
+      "path": "/api/events/1",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['color', 'created_by_id', 'created_by_name', 'description']"
+    },
+    {
+      "module": "notes",
+      "name": "list",
+      "method": "GET",
+      "path": "/api/notes/",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "notes",
+      "name": "create",
+      "method": "POST",
+      "path": "/api/notes/",
+      "code": 201,
+      "ok": true,
+      "note": "keys=['contact_id', 'content', 'created_at', 'created_by_id']"
+    },
+    {
+      "module": "notes",
+      "name": "update",
+      "method": "PUT",
+      "path": "/api/notes/2",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['contact_id', 'content', 'created_at', 'created_by_id']"
+    },
+    {
+      "module": "messages",
+      "name": "list",
+      "method": "GET",
+      "path": "/api/messages/",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "messages",
+      "name": "unread count",
+      "method": "GET",
+      "path": "/api/messages/unread-count",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['unread_count']"
+    },
+    {
+      "module": "messages",
+      "name": "send",
+      "method": "POST",
+      "path": "/api/messages/",
+      "code": 201,
+      "ok": true,
+      "note": "keys=['body', 'created_at', 'id', 'is_read']"
+    },
+    {
+      "module": "messages",
+      "name": "conversation",
+      "method": "GET",
+      "path": "/api/messages/conversation/2",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "tickets",
+      "name": "list",
+      "method": "GET",
+      "path": "/api/tickets/",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "tickets",
+      "name": "create",
+      "method": "POST",
+      "path": "/api/tickets/",
+      "code": 201,
+      "ok": true,
+      "note": "keys=['assigned_to_id', 'contact_id', 'created_at', 'created_by_id']"
+    },
+    {
+      "module": "finance",
+      "name": "invoices",
+      "method": "GET",
+      "path": "/api/finance/invoices/",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "finance",
+      "name": "contracts",
+      "method": "GET",
+      "path": "/api/finance/contracts/",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "finance",
+      "name": "orders",
+      "method": "GET",
+      "path": "/api/finance/orders/",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "finance",
+      "name": "items",
+      "method": "GET",
+      "path": "/api/finance/items/",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "expenses",
+      "name": "list",
+      "method": "GET",
+      "path": "/api/expenses/",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['currency', 'expenses', 'total']"
+    },
+    {
+      "module": "expenses",
+      "name": "summary",
+      "method": "GET",
+      "path": "/api/expenses/summary",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "settings",
+      "name": "general",
+      "method": "GET",
+      "path": "/api/settings/general",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['admin_email', 'company_logo', 'company_name', 'currency_symbol']"
+    },
+    {
+      "module": "settings",
+      "name": "sla",
+      "method": "GET",
+      "path": "/api/settings/sla",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['auto_reassign_sla_breach', 'sla_escalation_minutes', 'sla_manager_alert_minutes', 'sla_reminder_minutes']"
+    },
+    {
+      "module": "settings",
+      "name": "system",
+      "method": "GET",
+      "path": "/api/settings/system",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['settings']"
+    },
+    {
+      "module": "settings",
+      "name": "roles",
+      "method": "GET",
+      "path": "/api/settings/roles",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['roles']"
+    },
+    {
+      "module": "settings",
+      "name": "branding",
+      "method": "GET",
+      "path": "/api/settings/branding",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['company_logo', 'company_name']"
+    },
+    {
+      "module": "settings",
+      "name": "meta-webhook",
+      "method": "GET",
+      "path": "/api/settings/meta-webhook",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['last_payload_received', 'meta_app_id', 'meta_app_secret', 'meta_page_access_token']"
+    },
+    {
+      "module": "settings",
+      "name": "questionnaire",
+      "method": "GET",
+      "path": "/api/settings/questionnaire",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "settings",
+      "name": "activity-labels",
+      "method": "GET",
+      "path": "/api/settings/activity-labels",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "settings",
+      "name": "email-templates",
+      "method": "GET",
+      "path": "/api/settings/email-templates",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['sender_email', 'smtp_host', 'smtp_password', 'smtp_port']"
+    },
+    {
+      "module": "settings",
+      "name": "b2-storage",
+      "method": "GET",
+      "path": "/api/settings/b2-storage",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['b2_application_key', 'b2_bucket_name', 'b2_endpoint', 'b2_key_id']"
+    },
+    {
+      "module": "settings",
+      "name": "quick_notes",
+      "method": "GET",
+      "path": "/api/settings/quick_notes",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['quick_notes']"
+    },
+    {
+      "module": "security",
+      "name": "audit log",
+      "method": "GET",
+      "path": "/api/security/audit-log",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "security",
+      "name": "recording downloads",
+      "method": "GET",
+      "path": "/api/security/recording-downloads",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "help",
+      "name": "articles",
+      "method": "GET",
+      "path": "/api/help/articles",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "prospects",
+      "name": "proposals",
+      "method": "GET",
+      "path": "/api/prospects/proposals",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "prospects",
+      "name": "estimates",
+      "method": "GET",
+      "path": "/api/prospects/estimates",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "webhooks",
+      "name": "meta verify",
+      "method": "GET",
+      "path": "/api/webhooks/meta?hub.mode=subscribe&hub.verify_token=sl_crm_secure_webhook_token_2025&hub.challenge=TEST123",
+      "code": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "module": "webhooks",
+      "name": "meta status",
+      "method": "GET",
+      "path": "/api/webhooks/meta/status",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['instructions', 'status']"
+    },
+    {
+      "module": "tasks",
+      "name": "delete",
+      "method": "DELETE",
+      "path": "/api/tasks/1",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['message']"
+    },
+    {
+      "module": "notes",
+      "name": "delete",
+      "method": "DELETE",
+      "path": "/api/notes/2",
+      "code": 200,
+      "ok": true,
+      "note": "keys=['message']"
+    },
+    {
+      "module": "auth",
+      "name": "logout",
+      "method": "POST",
+      "path": "/api/auth/logout",
+      "code": 200,
+      "ok": true,
+      "note": "Successfully logged out"
+    },
+    {
+      "module": "auth",
+      "name": "token revoked (401)",
+      "method": "GET",
+      "path": "/api/auth/me",
+      "code": 401,
+      "ok": true,
+      "note": "Token has been revoked"
+    }
+  ]
+}
