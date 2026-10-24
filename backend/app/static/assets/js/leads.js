@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updateKPIs();
             
             // Set initial filter dropdown value if URL param is present
-            if (ownerParam && IS_ADMIN) {
+            if (ownerParam) {
                 const ownerFilter = document.getElementById('filter-owner');
                 if (ownerFilter) ownerFilter.value = ownerParam;
             }
@@ -1381,6 +1381,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        } // end admin-only buttons; owner filter below is for EVERYONE
+        // (leads page shows all leads to all roles — filter stays available)
+
         const container = document.getElementById('filter-owner-container');
         if (container) container.classList.remove('hidden');
         
@@ -1427,6 +1430,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(err => console.error("Failed to load members for filter/bulk assign", err));
         }
 
+    if (IS_ADMIN) {
         // Bulk Assign Modal Logic
         const bulkAssignModal = document.getElementById('bulk-assign-modal');
         const bulkAssignModalContent = document.getElementById('bulk-assign-modal-content');
