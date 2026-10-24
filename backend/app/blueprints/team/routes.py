@@ -121,7 +121,12 @@ def update_lead_owner(id):
 
     if 'full_name' in data: user.full_name = data['full_name']
     if 'phone' in data: user.phone = data['phone']
-    if 'color' in data: user.calendar_color = data['color']
+    # Colour is admin-only everywhere: managers keep schedule/capacity
+    # editing, but only Admin may set a Lead Owner's calendar colour.
+    if 'color' in data:
+        if claims.get('role') != UserRole.ADMIN.value:
+            return jsonify({"error": "Only Admin may set calendar colours"}), 403
+        user.calendar_color = data['color']
     # Lead capacity (previously not settable via this route at all).
     if 'max_lead_capacity' in data:
         try:
@@ -161,16 +166,14 @@ def update_user_color(id):
 
     This is the endpoint the team page colour picker calls — it did not
     exist, so picking a colour there 404'd and nothing was ever saved.
-    A user may set their OWN colour (this is how a Lead Owner chooses
-    the colour Admin sees their events in); managers/admins may set
-    anyone's colour.
+    ADMIN-ONLY: Admin sets a Lead Owner's colour; the Lead Owner
+    themselves cannot change it. Admin then sees that owner's events
+    in the colour Admin chose.
     """
     import re
     claims = get_jwt()
-    caller_id = int(get_jwt_identity())
-    role = claims.get('role')
-    if caller_id != id and role not in (UserRole.ADMIN.value, UserRole.MANAGER.value):
-        return jsonify({"error": "You can only set your own calendar colour"}), 403
+    err = _require_admin(claims)
+    if err: return err
 
     user = User.query.get_or_404(id)
     data = request.get_json() or {}
