@@ -571,6 +571,69 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('close-appt-modal')?.addEventListener('click', closeApptModal);
     document.getElementById('cancel-appt-modal')?.addEventListener('click', closeApptModal);
 
+    // ── Set Event from lead profile drawer (linked to this lead) ──
+    const eventBtn = document.getElementById('drawer-event-btn');
+    const setEventModal = document.getElementById('set-event-modal');
+    const setEventModalContent = document.getElementById('set-event-modal-content');
+    const openSetEventModal = () => {
+        if (!currentLeadId) return;
+        document.getElementById('set-event-form').reset();
+        setEventModal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            setEventModal.classList.remove('opacity-0');
+            setEventModalContent.classList.remove('scale-95');
+        });
+        setTimeout(() => jumpToField(document.getElementById('set-event-title')), 250);
+    };
+    const closeSetEventModal = () => {
+        setEventModal.classList.add('opacity-0');
+        setEventModalContent.classList.add('scale-95');
+        setTimeout(() => setEventModal.classList.add('hidden'), 200);
+    };
+    if (eventBtn) eventBtn.addEventListener('click', openSetEventModal);
+    document.getElementById('close-set-event-modal')?.addEventListener('click', closeSetEventModal);
+    document.getElementById('cancel-set-event-modal')?.addEventListener('click', closeSetEventModal);
+    document.getElementById('set-event-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!currentLeadId) return;
+        const btn = document.getElementById('save-set-event-btn');
+        const title = document.getElementById('set-event-title').value.trim();
+        const dt = document.getElementById('set-event-datetime').value;
+        if (!title || !dt) return;
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+        try {
+            const token = localStorage.getItem('crm_token');
+            const res = await fetch(`/api/events/lead/${currentLeadId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({
+                    title,
+                    start_datetime: new Date(dt).toISOString(),
+                    event_type: document.getElementById('set-event-type').value,
+                    location: document.getElementById('set-event-location').value.trim() || null,
+                    status: document.getElementById('set-event-status').value,
+                    priority: document.getElementById('set-event-priority').value,
+                    description: document.getElementById('set-event-notes').value.trim() || null,
+                }),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || 'Could not create event');
+            }
+            closeSetEventModal();
+            if (window.showToast) window.showToast('Event set for this lead', 'success');
+            // Refresh drawer so the new event shows in the timeline
+            const refreshRes = await fetch(`/api/leads/${currentLeadId}/profile`, { headers: { 'Authorization': `Bearer ${token}` } });
+            if (refreshRes.ok) populateDrawer(await refreshRes.json());
+        } catch (err) {
+            if (window.showToast) window.showToast(err.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Save Event';
+        }
+    });
+
     document.getElementById('appt-form')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!currentLeadId) return;
@@ -856,6 +919,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="text-xs font-semibold text-white mb-0.5">Appointment <span class="text-slate-500 font-normal ml-2">${formatDate(item.date)}</span></div>
                     <div class="text-xs text-slate-400">Scheduled for <span class="text-violet-400">${formatDate(item.appointment_datetime)}</span></div>
                     <div class="text-xs text-slate-500">Status: ${item.status} ${item.location ? `| Loc: ${item.location}` : ''}</div>
+                `;
+            } else if (item.type === 'EVENT') {
+                // Linked calendar event — dot uses the owner's set colour
+                dot.style.backgroundColor = item.color || '#14B8A6';
+                const statusColor = item.status === 'COMPLETED' ? 'text-emerald-400' : item.status === 'CANCELLED' ? 'text-rose-400' : 'text-teal-400';
+                contentHtml = `
+                    <div class="text-xs font-semibold text-white mb-0.5">Event: ${item.title} <span class="text-slate-500 font-normal ml-2">${formatDate(item.date)}</span></div>
+                    <div class="text-xs text-slate-400">${(item.event_type || 'EVENT').replace(/_/g, ' ')} ${item.owner_name ? `| Owner: <span style="color:${item.color || '#14B8A6'}">${item.owner_name}</span>` : ''}</div>
+                    <div class="text-xs text-slate-500">Status: <span class="${statusColor}">${item.status}</span> | Priority: ${item.priority} ${item.location ? `| Loc: ${item.location}` : ''}</div>
+                    ${item.description ? `<div class="text-xs text-slate-300 bg-slate-800/50 p-2 rounded border border-slate-700/50 mt-1">${item.description}</div>` : ''}
                 `;
             }
 

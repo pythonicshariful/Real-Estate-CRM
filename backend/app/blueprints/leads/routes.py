@@ -316,6 +316,24 @@ def get_lead_profile(id):
             "location": a.location,
         })
 
+    # Linked calendar Events — keeps the lead <-> event connection visible
+    # in the lead profile (drawer timeline), colour-coded to the owner.
+    for ev in Event.query.filter_by(lead_id=id).order_by(Event.start_datetime.asc()).all():
+        _ev_owner = ev.resolved_owner()
+        timeline_items.append({
+            "type": "EVENT",
+            "id": ev.id,
+            "date": ev.start_datetime.isoformat() if ev.start_datetime else None,
+            "title": ev.title,
+            "event_type": ev.event_type,
+            "location": ev.location,
+            "status": ev.status or "SCHEDULED",
+            "priority": ev.priority or "NORMAL",
+            "description": ev.description,
+            "color": _ev_owner.calendar_color if _ev_owner else "#6366f1",
+            "owner_name": _ev_owner.full_name if _ev_owner else None,
+        })
+
     # Sort timeline by date descending
     timeline_items.sort(key=lambda x: x["date"] or "", reverse=True)
 

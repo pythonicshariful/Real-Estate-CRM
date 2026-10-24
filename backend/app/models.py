@@ -888,6 +888,11 @@ class Event(db.Model):
     created_by = db.relationship('User', foreign_keys=[created_by_id])
     is_all_day = db.Column(db.Boolean, default=False)
 
+    # ── Extra fields (added 2026-10-24, auto-migrated on startup) ──
+    location = db.Column(db.String(255))
+    status = db.Column(db.String(20), default="SCHEDULED")  # SCHEDULED/COMPLETED/CANCELLED
+    priority = db.Column(db.String(20), default="NORMAL")  # LOW/NORMAL/HIGH
+
     # ── Link to a lead (optional: general events like team meetings have none)
     lead_id = db.Column(db.Integer, db.ForeignKey('opportunities.id'), nullable=True, index=True)
     lead = db.relationship('Opportunity', foreign_keys=[lead_id])
@@ -916,6 +921,9 @@ class Event(db.Model):
             "created_by_id": self.created_by_id,
             "created_by_name": self.created_by.full_name if self.created_by else None,
             "is_all_day": self.is_all_day,
+            "location": self.location,
+            "status": self.status or "SCHEDULED",
+            "priority": self.priority or "NORMAL",
             "color": owner.calendar_color if owner else "#6366f1",
             "owner_id": owner.id if owner else None,
             "owner_name": owner.full_name if owner else None,

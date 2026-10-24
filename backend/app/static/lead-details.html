@@ -194,9 +194,30 @@
                 <option value="LEAD_EVENT">Other</option>
               </select>
             </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Location</label>
+              <input type="text" id="le-location" placeholder="e.g. Project site, Office"
+                     class="w-full bg-[#0a0a14] border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500">
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Status</label>
+              <select id="le-status" class="w-full bg-[#0a0a14] border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500">
+                <option value="SCHEDULED">Scheduled</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Priority</label>
+              <select id="le-priority" class="w-full bg-[#0a0a14] border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500">
+                <option value="LOW">Low</option>
+                <option value="NORMAL" selected>Normal</option>
+                <option value="HIGH">High</option>
+              </select>
+            </div>
             <div class="md:col-span-3">
               <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Notes</label>
-              <input type="text" id="le-desc" placeholder="Agenda, location, who is attending…"
+              <input type="text" id="le-desc" placeholder="Agenda, who is attending…"
                      class="w-full bg-[#0a0a14] border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500">
             </div>
             <div class="flex items-end gap-2">
@@ -809,6 +830,7 @@
                   ${past ? '<span class="text-[9px] px-1.5 py-0.5 rounded bg-slate-700/60 text-slate-400 font-bold uppercase tracking-wider">Past</span>' : ''}
                 </div>
                 <div class="text-xs text-slate-400 mt-1 data-mono">${_evEsc(dt)}</div>
+                <div class="text-xs text-slate-500 mt-1">${ev.location ? `📍 ${_evEsc(ev.location)} · ` : ''}Status: ${ev.status || 'SCHEDULED'} · Priority: ${ev.priority || 'NORMAL'}</div>
                 ${ev.description ? `<div class="text-xs text-slate-500 mt-1">${_evEsc(ev.description)}</div>` : ''}
               </div>
               <button onclick="deleteLeadEvent(${ev.id})" title="Delete event"
@@ -847,6 +869,9 @@
             title: title,
             description: desc || null,
             event_type: type,
+            location: document.getElementById('le-location').value.trim() || null,
+            status: document.getElementById('le-status').value,
+            priority: document.getElementById('le-priority').value,
             start_datetime: new Date(start).toISOString()
           })
         });

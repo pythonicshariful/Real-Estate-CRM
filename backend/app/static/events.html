@@ -222,6 +222,14 @@
             <span class="block text-xs font-semibold text-slate-400 mb-1 tracking-wide uppercase">Time</span>
             <div id="detailTime" class="text-slate-200 bg-white/5 rounded-xl px-4 py-2.5 border border-white/5 font-mono text-xs"></div>
           </div>
+          <div>
+            <span class="block text-xs font-semibold text-slate-400 mb-1 tracking-wide uppercase">Location</span>
+            <div id="detailLocation" class="text-slate-200 bg-white/5 rounded-xl px-4 py-2.5 border border-white/5"></div>
+          </div>
+          <div>
+            <span class="block text-xs font-semibold text-slate-400 mb-1 tracking-wide uppercase">Status · Priority</span>
+            <div id="detailStatus" class="text-slate-200 bg-white/5 rounded-xl px-4 py-2.5 border border-white/5"></div>
+          </div>
         </div>
         <div id="detailLeadContainer" class="hidden">
           <span class="block text-xs font-semibold text-slate-400 mb-1 tracking-wide uppercase">Linked Lead</span>
@@ -384,6 +392,9 @@
               extendedProps: {
                 description: ev.description,
                 type: ev.event_type,
+                location: ev.location,
+                status: ev.status,
+                priority: ev.priority,
                 lead_id: ev.lead_id,
                 lead_name: ev.lead_name,
                 lead_stage: ev.lead_stage,
@@ -416,6 +427,9 @@
             timeStr += ' – ' + new Date(ev.end).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
           }
           document.getElementById('detailTime').textContent = timeStr;
+          document.getElementById('detailLocation').textContent = p.location || '—';
+          document.getElementById('detailStatus').textContent =
+            (p.status || 'SCHEDULED') + ' · ' + (p.priority || 'NORMAL');
 
           // owner colour badge
           const badge = document.getElementById('detailOwnerBadge');
