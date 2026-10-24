@@ -704,7 +704,9 @@ def assign_lead_owner_auto(exclude_user_id: int | None = None, app=None):
     (executives are real assignees, not just lead owners).
     1. If a candidate is within their configured date & time schedule
        (schedule_from/to_date, schedule_start/end_time), restrict the
-       pool to those in-window candidates.
+       pool to those in-window candidates. Schedules are evaluated in
+       Bangladesh time (Asia/Dhaka), not server-local time, so a
+       9am-6pm schedule means 9am-6pm in Bangladesh.
     2. Otherwise fall back to the full active candidate pool.
     3. Pick by persisted SystemSetting 'auto_assign_mode':
        - 'lowest_count' (default): lowest active (non-terminal, non-deleted)
@@ -748,7 +750,18 @@ def assign_lead_owner_auto(exclude_user_id: int | None = None, app=None):
         if not active_owners:
             return None
 
-        now = datetime.now()
+        # Schedule windows are Bangladesh wall-clock times. The VPS runs
+        # on UTC, so naive server-local now() would shift every window
+        # by 6 hours. Use Asia/Dhaka (fixed +06:00 fallback if tzdata
+        # is missing) and drop tzinfo before comparing with the naive
+        # schedule time columns.
+        try:
+            from zoneinfo import ZoneInfo
+            _dhaka_tz = ZoneInfo("Asia/Dhaka")
+        except Exception:
+            from datetime import timezone as _tz, timedelta as _td
+            _dhaka_tz = _tz(_td(hours=6))
+        now = datetime.now(_dhaka_tz).replace(tzinfo=None)
         cur_date = now.date()
         cur_time = now.time()
 

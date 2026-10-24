@@ -70,7 +70,7 @@ async function loadEstimates() {
                 <td class="text-white font-medium">${e.contact_name}</td>
                 <td>${e.details || 'N/A'}</td>
                 <td class="text-amber-400 font-semibold">৳${e.estimated_amount.toLocaleString()}</td>
-                <td>${new Date(e.created_at).toLocaleDateString()}</td>
+                <td>${new Date(e.created_at).toLocaleDateString('en-GB', { timeZone: 'Asia/Dhaka' })}</td>
             </tr>
         `).join('');
     } catch (e) {

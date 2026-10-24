@@ -13,6 +13,21 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPage = 1;
     let itemsPerPage = 20;
 
+    // Helper: jump to a field — smooth-scroll it into view, focus it and
+    // flash a highlight ring, so every button lands the user on its field.
+    const jumpToField = (el) => {
+        if (!el) return;
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); }
+        el.classList.add('ring-2', 'ring-indigo-500');
+        setTimeout(() => el.classList.remove('ring-2', 'ring-indigo-500'), 1800);
+    };
+    const focusFirstField = (container) => {
+        if (!container) return;
+        const el = container.querySelector('input:not([type=hidden]):not([disabled]), select:not([disabled]), textarea:not([disabled])');
+        jumpToField(el);
+    };
+
     // Helper: format dates in Bangladesh Standard Time (Asia/Dhaka)
     const formatDate = (isoString) => {
         if (!isoString) return '--';
@@ -144,7 +159,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateKPIs() {
-        const todayStr = new Date().toISOString().split('T')[0];
+        // "Today" in Bangladesh time, not UTC (UTC date flips 6h early)
+        const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Dhaka' });
         
         let newLeadsToday = 0;
         let slaOverdue = 0;
@@ -262,6 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 filterModal.classList.remove('opacity-0');
                 filterModalContent.classList.remove('scale-95');
             }, 10);
+            setTimeout(() => jumpToField(document.getElementById('filter-stage')), 250);
         });
 
         const hideFilterModal = () => {
@@ -522,6 +539,7 @@ document.addEventListener('DOMContentLoaded', () => {
         logCallBtn.addEventListener('click', () => {
             if (currentLeadId && window.showCallModal) {
                 window.showCallModal(currentLeadId);
+                setTimeout(() => jumpToField(document.getElementById('call-outcome')), 250);
             }
         });
     }
@@ -538,6 +556,7 @@ document.addEventListener('DOMContentLoaded', () => {
             apptModal.classList.remove('opacity-0');
             apptModalContent.classList.remove('scale-95');
         });
+        setTimeout(() => jumpToField(document.getElementById('appt-datetime')), 250);
     };
     
     const closeApptModal = () => {
@@ -604,9 +623,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // set active tab
             tab.classList.remove('text-slate-500', 'border-transparent');
             tab.classList.add('text-indigo-400', 'border-indigo-500');
-            // show target pane
+            // show target pane, scroll to it and focus its first field
             const target = tab.getAttribute('data-target');
-            document.getElementById(target).classList.remove('hidden');
+            const pane = document.getElementById(target);
+            pane.classList.remove('hidden');
+            if (drawerContent) drawerContent.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => focusFirstField(pane), 100);
         });
     });
 
@@ -1025,6 +1047,7 @@ document.addEventListener('DOMContentLoaded', () => {
             addLeadModal.classList.remove('opacity-0');
             addLeadModalContent.classList.remove('scale-95');
         });
+        setTimeout(() => jumpToField(addLeadForm.querySelector('input[name="full_name"]')), 250);
         await loadProjectsIntoDropdown();
         await renderDynamicCustomFields(document.getElementById('add-lead-custom-fields-container'));
     };
@@ -1840,6 +1863,7 @@ document.addEventListener('DOMContentLoaded', () => {
             modal.classList.remove('opacity-0');
             content.classList.remove('scale-95');
         });
+        setTimeout(() => jumpToField(document.getElementById('exit-stage-select')), 250);
     };
 
     window.closeExitModal = function() {
@@ -1919,6 +1943,7 @@ document.addEventListener('DOMContentLoaded', () => {
             modal.classList.remove('opacity-0');
             content.classList.remove('scale-95');
         });
+        setTimeout(() => jumpToField(document.getElementById('debrief-notes')), 250);
     };
 
     window.openDebriefModalForLead = async function(leadId) {
@@ -2002,6 +2027,7 @@ document.addEventListener('DOMContentLoaded', () => {
             modal.classList.remove('opacity-0');
             content.classList.remove('scale-95');
         });
+        setTimeout(() => focusFirstField(modal), 250);
     };
 
     window.closeObjectionModal = function() {
