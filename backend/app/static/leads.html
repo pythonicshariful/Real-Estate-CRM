@@ -123,6 +123,9 @@
         <button id="drawer-appt-btn" class="flex-1 min-w-[110px] btn-ghost py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-slate-700 hover:border-indigo-500">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg> Book Appt
         </button>
+        <button id="drawer-event-btn" class="flex-1 min-w-[110px] btn-ghost py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-teal-500/40 text-teal-300 hover:bg-teal-500/10" title="Set an event for this lead">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg> Set Event
+        </button>
         <button id="drawer-debrief-btn" class="flex-1 min-w-[110px] btn-ghost py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-purple-500/40 text-purple-300 hover:bg-purple-500/10">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg> Post-Visit Debrief
         </button>
@@ -421,6 +424,73 @@
           <button type="submit" id="save-appt-btn" class="btn-gradient px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2">
             Schedule
           </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Set Event Modal (from lead profile drawer, linked to the lead) -->
+  <div id="set-event-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl transform scale-95 transition-transform duration-200" id="set-event-modal-content">
+      <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center glass-dark">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <svg class="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          Set Event for this Lead
+        </h3>
+        <button id="close-set-event-modal" class="text-slate-400 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="set-event-form" class="p-6 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Event Title *</label>
+          <input type="text" id="set-event-title" required placeholder="e.g. Site visit — Block C" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-teal-500">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Date &amp; Time *</label>
+            <input type="datetime-local" id="set-event-datetime" required style="color-scheme: dark;" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-teal-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Type</label>
+            <select id="set-event-type" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-teal-500">
+              <option value="SITE_VISIT">Site Visit</option>
+              <option value="CALL">Call</option>
+              <option value="MEETING">Meeting</option>
+              <option value="FOLLOW_UP">Follow-up</option>
+              <option value="LEAD_EVENT">Other</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Location</label>
+          <input type="text" id="set-event-location" placeholder="e.g. Project site, Office, Zoom link" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-teal-500">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Status</label>
+            <select id="set-event-status" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-teal-500">
+              <option value="SCHEDULED">Scheduled</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Priority</label>
+            <select id="set-event-priority" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-teal-500">
+              <option value="LOW">Low</option>
+              <option value="NORMAL" selected>Normal</option>
+              <option value="HIGH">High</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Notes</label>
+          <textarea id="set-event-notes" rows="3" placeholder="Agenda, who is attending…" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-teal-500"></textarea>
+        </div>
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" id="cancel-set-event-modal" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-800 transition-colors">Cancel</button>
+          <button type="submit" id="save-set-event-btn" class="btn-gradient px-6 py-2.5 rounded-xl text-sm font-bold">Save Event</button>
         </div>
       </form>
     </div>

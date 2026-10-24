@@ -237,6 +237,13 @@ def create_event():
 
     owner_id = (lead.assigned_to_id if lead and lead.assigned_to_id else user_id)
 
+    status = data.get("status") or "SCHEDULED"
+    if status not in ("SCHEDULED", "COMPLETED", "CANCELLED"):
+        return jsonify({"error": "Invalid status (SCHEDULED/COMPLETED/CANCELLED)"}), 400
+    priority = data.get("priority") or "NORMAL"
+    if priority not in ("LOW", "NORMAL", "HIGH"):
+        return jsonify({"error": "Invalid priority (LOW/NORMAL/HIGH)"}), 400
+
     event = Event(
         title=data["title"],
         description=data.get("description"),
@@ -244,6 +251,9 @@ def create_event():
         start_datetime=start_dt,
         end_datetime=end_dt,
         is_all_day=data.get("is_all_day", False),
+        location=data.get("location"),
+        status=status,
+        priority=priority,
         created_by_id=user_id,
         lead_id=lead.id if lead else None,
         owner_id=owner_id,
@@ -287,6 +297,16 @@ def update_event(event_id):
         event.description = data["description"]
     if "event_type" in data:
         event.event_type = data["event_type"]
+    if "location" in data:
+        event.location = data["location"]
+    if "status" in data:
+        if data["status"] not in ("SCHEDULED", "COMPLETED", "CANCELLED"):
+            return jsonify({"error": "Invalid status (SCHEDULED/COMPLETED/CANCELLED)"}), 400
+        event.status = data["status"]
+    if "priority" in data:
+        if data["priority"] not in ("LOW", "NORMAL", "HIGH"):
+            return jsonify({"error": "Invalid priority (LOW/NORMAL/HIGH)"}), 400
+        event.priority = data["priority"]
     if "is_all_day" in data:
         event.is_all_day = data["is_all_day"]
     if "start_datetime" in data:
