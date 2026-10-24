@@ -121,6 +121,10 @@
       <!-- Owner colour legend + lead filter -->
       <div class="mb-4 flex flex-wrap items-center gap-3">
         <div id="owner-legend" class="flex flex-wrap items-center gap-2"></div>
+        <div class="flex items-center gap-2" title="Your calendar colour — Admin sees your events in this colour">
+          <label for="myColorPicker" class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">My colour</label>
+          <input type="color" id="myColorPicker" class="bg-transparent border-0 w-8 h-8 p-0 cursor-pointer rounded-lg" value="#14B8A6">
+        </div>
         <div class="ml-auto flex items-center gap-2">
           <label for="leadFilter" class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Lead</label>
           <select id="leadFilter" class="bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-teal-500 transition-all max-w-[240px]">
@@ -163,6 +167,28 @@
         <div>
           <label class="block text-xs font-semibold text-slate-400 mb-2 tracking-wide uppercase">Start Date &amp; Time</label>
           <input type="datetime-local" id="eventStart" required class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all [color-scheme:dark]">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-2 tracking-wide uppercase">Location</label>
+          <input type="text" id="eventLocation" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-600" placeholder="e.g. Project site, Office">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-2 tracking-wide uppercase">Status</label>
+            <select id="eventStatus" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+              <option value="SCHEDULED">Scheduled</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-2 tracking-wide uppercase">Priority</label>
+            <select id="eventPriority" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+              <option value="LOW">Low</option>
+              <option value="NORMAL" selected>Normal</option>
+              <option value="HIGH">High</option>
+            </select>
+          </div>
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-400 mb-2 tracking-wide uppercase flex items-center justify-between">
@@ -464,6 +490,43 @@
       document.getElementById('leadFilter')?.addEventListener('change', () => calendar.refetchEvents());
 
       /* ------------------------------------------------------------------
+         My calendar colour — every user (incl. Lead Owners) sets their
+         own colour here; Admin sees their events in exactly this colour.
+      ------------------------------------------------------------------ */
+      let myUserId = null;
+      const myColorPicker = document.getElementById('myColorPicker');
+      try {
+        const meRes = await fetch('/api/auth/me', { headers: authHeaders });
+        if (meRes.ok) {
+          const me = await meRes.json();
+          myUserId = me.id;
+          if (me.calendar_color && myColorPicker) myColorPicker.value = me.calendar_color;
+        }
+      } catch (e) { console.warn('me load failed', e); }
+      if (!myColorPicker?.value) {
+        const saved = localStorage.getItem('crm_color');
+        if (saved && myColorPicker) myColorPicker.value = saved;
+      }
+      myColorPicker?.addEventListener('change', async (e) => {
+        if (!myUserId) return;
+        const newColor = e.target.value;
+        try {
+          const res = await fetch(`/api/team/users/${myUserId}/color`, {
+            method: 'PUT',
+            headers: { ...authHeaders, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ calendar_color: newColor }),
+          });
+          if (!res.ok) throw new Error('Could not save colour');
+          localStorage.setItem('crm_color', newColor);
+          await loadLeads();
+          renderLegend();
+          calendar.refetchEvents();
+        } catch (err) {
+          console.error(err);
+        }
+      });
+
+      /* ------------------------------------------------------------------
          Create event
       ------------------------------------------------------------------ */
       document.getElementById('addEventForm').addEventListener('submit', async (e) => {
@@ -480,7 +543,10 @@
           title: title,
           description: desc || null,
           start_datetime: startIso,
-          end_datetime: null
+          end_datetime: null,
+          location: document.getElementById('eventLocation').value.trim() || null,
+          status: document.getElementById('eventStatus').value,
+          priority: document.getElementById('eventPriority').value
         };
         if (leadId) payload.lead_id = parseInt(leadId, 10);
 
