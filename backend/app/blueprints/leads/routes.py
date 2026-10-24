@@ -25,11 +25,12 @@ def get_leads():
         Contact, Opportunity.contact_id == Contact.id
     ).filter(Opportunity.is_deleted == False)
 
-    # Leads page shows ALL leads to every role (owner asked: "sob lead
-    # show kora uchit"). Narrowing down is done via the filter options
-    # (stage / temperature / owner / starred), not by hiding others'
-    # leads. Private manager assessment is still hidden below for
-    # non-managers.
+    # Visibility (corrected per owner): ADMIN sees all leads; every
+    # other role (incl. LEAD_OWNER) sees only their own assigned leads.
+    # Private manager assessment is still hidden below for non-managers.
+    if not is_admin(role):
+        query = query.filter(Opportunity.assigned_to_id == user_id)
+
     # Optional filters
     stage = request.args.get('stage')
     if stage:
@@ -39,10 +40,11 @@ def get_leads():
             pass
 
     owner_id = request.args.get('owner_id')
-    if owner_id == 'none':
-        query = query.filter(Opportunity.assigned_to_id == None)
-    elif owner_id and owner_id.isdigit():
-        query = query.filter(Opportunity.assigned_to_id == int(owner_id))
+    if owner_id and is_admin(role):
+        if owner_id == 'none':
+            query = query.filter(Opportunity.assigned_to_id == None)
+        elif owner_id.isdigit():
+            query = query.filter(Opportunity.assigned_to_id == int(owner_id))
         
     leads_and_contacts = query.order_by(Opportunity.created_at.desc()).all()
     
