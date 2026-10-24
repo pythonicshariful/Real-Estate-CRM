@@ -154,6 +154,34 @@ def toggle_lead_owner_status(id):
     db.session.commit()
     return jsonify({'message': f"Status changed to {'Active' if user.is_active else 'Inactive'}", 'user': user.to_dict()}), 200
 
+@team_bp.route('/users/<int:id>/color', methods=['PUT'])
+@jwt_required()
+def update_user_color(id):
+    """Set a user's calendar colour.
+
+    This is the endpoint the team page colour picker calls — it did not
+    exist, so picking a colour there 404'd and nothing was ever saved.
+    A user may set their OWN colour (this is how a Lead Owner chooses
+    the colour Admin sees their events in); managers/admins may set
+    anyone's colour.
+    """
+    import re
+    claims = get_jwt()
+    caller_id = int(get_jwt_identity())
+    role = claims.get('role')
+    if caller_id != id and role not in (UserRole.ADMIN.value, UserRole.MANAGER.value):
+        return jsonify({"error": "You can only set your own calendar colour"}), 403
+
+    user = User.query.get_or_404(id)
+    data = request.get_json() or {}
+    color = (data.get('calendar_color') or data.get('color') or '').strip()
+    if not re.fullmatch(r'#[0-9a-fA-F]{6}', color):
+        return jsonify({"error": "Invalid colour (expected #RRGGBB)"}), 400
+
+    user.calendar_color = color
+    db.session.commit()
+    return jsonify({'message': 'Calendar colour updated', 'user': user.to_dict()}), 200
+
 @team_bp.route('/lead-owners/<int:id>/reset-password', methods=['POST'])
 @jwt_required()
 def reset_lead_owner_password(id):
