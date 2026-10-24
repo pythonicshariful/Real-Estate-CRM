@@ -13,6 +13,21 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPage = 1;
     let itemsPerPage = 20;
 
+    // Helper: jump to a field — smooth-scroll it into view, focus it and
+    // flash a highlight ring, so every button lands the user on its field.
+    const jumpToField = (el) => {
+        if (!el) return;
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); }
+        el.classList.add('ring-2', 'ring-indigo-500');
+        setTimeout(() => el.classList.remove('ring-2', 'ring-indigo-500'), 1800);
+    };
+    const focusFirstField = (container) => {
+        if (!container) return;
+        const el = container.querySelector('input:not([type=hidden]):not([disabled]), select:not([disabled]), textarea:not([disabled])');
+        jumpToField(el);
+    };
+
     // Helper: format dates in Bangladesh Standard Time (Asia/Dhaka)
     const formatDate = (isoString) => {
         if (!isoString) return '--';
@@ -144,7 +159,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateKPIs() {
-        const todayStr = new Date().toISOString().split('T')[0];
+        // "Today" in Bangladesh time, not UTC (UTC date flips 6h early)
+        const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Dhaka' });
         
         let newLeadsToday = 0;
         let slaOverdue = 0;
@@ -262,6 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 filterModal.classList.remove('opacity-0');
                 filterModalContent.classList.remove('scale-95');
             }, 10);
+            setTimeout(() => jumpToField(document.getElementById('filter-stage')), 250);
         });
 
         const hideFilterModal = () => {
@@ -522,6 +539,7 @@ document.addEventListener('DOMContentLoaded', () => {
         logCallBtn.addEventListener('click', () => {
             if (currentLeadId && window.showCallModal) {
                 window.showCallModal(currentLeadId);
+                setTimeout(() => jumpToField(document.getElementById('call-outcome')), 250);
             }
         });
     }
@@ -538,6 +556,7 @@ document.addEventListener('DOMContentLoaded', () => {
             apptModal.classList.remove('opacity-0');
             apptModalContent.classList.remove('scale-95');
         });
+        setTimeout(() => jumpToField(document.getElementById('appt-datetime')), 250);
     };
     
     const closeApptModal = () => {
@@ -604,9 +623,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // set active tab
             tab.classList.remove('text-slate-500', 'border-transparent');
             tab.classList.add('text-indigo-400', 'border-indigo-500');
-            // show target pane
+            // show target pane, scroll to it and focus its first field
             const target = tab.getAttribute('data-target');
-            document.getElementById(target).classList.remove('hidden');
+            const pane = document.getElementById(target);
+            pane.classList.remove('hidden');
+            if (drawerContent) drawerContent.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => focusFirstField(pane), 100);
         });
     });
 
@@ -1025,6 +1047,7 @@ document.addEventListener('DOMContentLoaded', () => {
             addLeadModal.classList.remove('opacity-0');
             addLeadModalContent.classList.remove('scale-95');
         });
+        setTimeout(() => jumpToField(addLeadForm.querySelector('input[name="full_name"]')), 250);
         await loadProjectsIntoDropdown();
         await renderDynamicCustomFields(document.getElementById('add-lead-custom-fields-container'));
     };
@@ -1498,6 +1521,7 @@ document.addEventListener('DOMContentLoaded', () => {
         importForm.reset();
         importResultBox.className = 'hidden p-4 rounded-xl border';
         importResultBox.innerHTML = '';
+        if (typeof resetImportMapping === 'function') resetImportMapping();
         importModal.classList.remove('hidden');
         requestAnimationFrame(() => {
             importModal.classList.remove('opacity-0');
@@ -1536,23 +1560,93 @@ document.addEventListener('DOMContentLoaded', () => {
     if (closeImportBtn) closeImportBtn.addEventListener('click', closeImportModal);
     if (cancelImportBtn) cancelImportBtn.addEventListener('click', closeImportModal);
 
+    // Mapped import flow: 1) upload -> preview headers + suggested mapping,
+    // 2) user maps each header to a CRM field (or skips it) and previews
+    // parsed rows, 3) confirm -> import with that mapping.
+    let importMappingReady = false;
+    const importMappingBox = document.getElementById('import-mapping-box');
+    const importPreviewBox = document.getElementById('import-preview-box');
+    const FIELD_LABELS = { full_name: 'Full Name', phone: 'Phone', email: 'Email', profession: 'Profession', service_type: 'Service Type', project_name: 'Project Name', budget: 'Budget', source: 'Source', notes: 'Notes' };
+    const renderImportMapping = (preview) => {
+        if (!importMappingBox) return;
+        const rowsHtml = (preview.preview_rows || []).map(r =>
+            `<tr>${preview.headers.map(h => `<td class="px-2 py-1 border-b border-slate-800 whitespace-nowrap">${(r[h] ?? '')}</td>`).join('')}</tr>`).join('');
+        importMappingBox.innerHTML = `<div class="text-xs font-semibold text-slate-400 uppercase">Map columns (${preview.total_rows} rows found) — leave as “Skip” to ignore a column</div>` +
+            preview.headers.map(h => {
+                const suggested = (preview.suggested_mapping || {})[h] || '';
+                const opts = `<option value="">Skip</option>` + Object.entries(FIELD_LABELS).map(([v, l]) =>
+                    `<option value="${v}" ${v === suggested ? 'selected' : ''}>${l}</option>`).join('');
+                return `<div class="flex items-center gap-2 text-xs"><span class="flex-1 truncate text-slate-300">${h}</span><select data-import-header="${h}" class="bg-[#161825] border border-slate-700 rounded-lg px-2 py-1.5 text-slate-200">${opts}</select></div>`;
+            }).join('');
+        importMappingBox.classList.remove('hidden');
+        if (importPreviewBox) {
+            importPreviewBox.innerHTML = `<div class="font-semibold text-slate-400 mb-2">Preview (first ${preview.preview_rows.length} rows)</div><table class="text-xs"><thead><tr>${preview.headers.map(h => `<th class="px-2 py-1 text-left text-slate-400">${h}</th>`).join('')}</tr></thead><tbody>${rowsHtml}</tbody></table>`;
+            importPreviewBox.classList.remove('hidden');
+        }
+        const submitLabel = submitImportBtn.querySelector('span') || submitImportBtn;
+        submitImportBtn.childNodes.forEach(n => { if (n.nodeType === 3) n.remove(); });
+        submitImportBtn.insertAdjacentText('beforeend', 'Confirm Import');
+    };
+    const resetImportMapping = () => {
+        importMappingReady = false;
+        if (importMappingBox) { importMappingBox.classList.add('hidden'); importMappingBox.innerHTML = ''; }
+        if (importPreviewBox) { importPreviewBox.classList.add('hidden'); importPreviewBox.innerHTML = ''; }
+        submitImportBtn.childNodes.forEach(n => { if (n.nodeType === 3) n.remove(); });
+        submitImportBtn.insertAdjacentText('beforeend', 'Start Import');
+    };
+
     if (importForm) {
         importForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const fileInput = document.getElementById('import-file-input');
             if (!fileInput.files || fileInput.files.length === 0) {
-                if (window.showToast) window.showToast("Please choose a CSV file.", "error");
+                if (window.showToast) window.showToast("Please choose a CSV or Excel file.", "error");
                 return;
             }
-            
+
             const file = fileInput.files[0];
             const dupStrategy = document.querySelector('input[name="import_dup_strategy"]:checked')?.value || 'merge';
             const ownerId = importOwnerSelect.value || '';
             const defaultSource = document.getElementById('import-source-input').value.trim() || 'CSV Import';
-            
+            const token = localStorage.getItem('crm_token');
+
+            // Step 1: preview + mapping (no import yet).
+            if (!importMappingReady) {
+                submitImportBtn.disabled = true;
+                importSpinner.classList.remove('hidden');
+                try {
+                    const previewData = new FormData();
+                    previewData.append('file', file);
+                    const previewRes = await fetch('/api/leads/import/preview', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        body: previewData
+                    });
+                    const preview = await previewRes.json();
+                    if (!previewRes.ok) throw new Error(preview.error || "Failed to preview file");
+                    renderImportMapping(preview);
+                    importMappingReady = true;
+                    if (window.showToast) window.showToast("Map the columns, then Confirm Import.", "success");
+                } catch (err) {
+                    if (window.showToast) window.showToast(err.message, "error");
+                } finally {
+                    submitImportBtn.disabled = false;
+                    importSpinner.classList.add('hidden');
+                }
+                return;
+            }
+
+            // Step 2: confirm import with the user's mapping.
+            const mapping = {};
+            if (importMappingBox) {
+                importMappingBox.querySelectorAll('select[data-import-header]').forEach(sel => {
+                    mapping[sel.getAttribute('data-import-header')] = sel.value;
+                });
+            }
             const formData = new FormData();
             formData.append('file', file);
             formData.append('duplicate_strategy', dupStrategy);
+            formData.append('mapping', JSON.stringify(mapping));
             if (ownerId) formData.append('assigned_to_id', ownerId);
             formData.append('default_source', defaultSource);
 
@@ -1560,7 +1654,6 @@ document.addEventListener('DOMContentLoaded', () => {
             importSpinner.classList.remove('hidden');
 
             try {
-                const token = localStorage.getItem('crm_token');
                 const res = await fetch('/api/leads/import', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` },
@@ -1585,6 +1678,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
 
                 if (window.showToast) window.showToast(`Imported ${result.created_count} new leads, merged ${result.merged_count}.`, "success");
+                resetImportMapping();
                 loadLeads();
             } catch (err) {
                 console.error(err);
@@ -1769,6 +1863,7 @@ document.addEventListener('DOMContentLoaded', () => {
             modal.classList.remove('opacity-0');
             content.classList.remove('scale-95');
         });
+        setTimeout(() => jumpToField(document.getElementById('exit-stage-select')), 250);
     };
 
     window.closeExitModal = function() {
@@ -1848,6 +1943,7 @@ document.addEventListener('DOMContentLoaded', () => {
             modal.classList.remove('opacity-0');
             content.classList.remove('scale-95');
         });
+        setTimeout(() => jumpToField(document.getElementById('debrief-notes')), 250);
     };
 
     window.openDebriefModalForLead = async function(leadId) {
@@ -1931,6 +2027,7 @@ document.addEventListener('DOMContentLoaded', () => {
             modal.classList.remove('opacity-0');
             content.classList.remove('scale-95');
         });
+        setTimeout(() => focusFirstField(modal), 250);
     };
 
     window.closeObjectionModal = function() {
