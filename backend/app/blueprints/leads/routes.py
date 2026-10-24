@@ -1,6 +1,6 @@
 from flask import request, jsonify, current_app
 from app.blueprints.leads import leads_bp
-from app.models import Opportunity, Contact, CallLog, Appointment, PipelineStage, AppointmentStatus, Objection, ObjectionCategory, Reservation, Note, PipelineHistory, db, UserRole, LeadTemperature, AuditLog, User, DurationBand, ActivityOutcome, ActivityType, Inquiry, Plot, PlotStatus, Installment, CancellationRequest, PaymentMethod, InstallmentStatus, CancellationStatus, CoachingLog
+from app.models import Opportunity, Contact, CallLog, Appointment, PipelineStage, AppointmentStatus, Objection, ObjectionCategory, Reservation, Note, PipelineHistory, db, UserRole, LeadTemperature, AuditLog, User, DurationBand, ActivityOutcome, ActivityType, Inquiry, Plot, PlotStatus, Installment, CancellationRequest, PaymentMethod, InstallmentStatus, CancellationStatus, CoachingLog, Event
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -818,13 +818,27 @@ def log_call(id):
         except KeyError:
             pass
 
+    # Disposition activity-type aliases: the UI offers literal "Follow-up"
+    # and "Client Visit". ActivityType has no FOLLOW_UP member (adding one
+    # would need a production enum migration), so "Follow-up" is carried on
+    # the Event itself (event_type, free text) and "Client Visit" maps to VISIT.
+    _ACTIVITY_TYPE_ALIASES = {
+        'follow-up': None, 'follow_up': None, 'followup': None,
+        'client visit': ActivityType.VISIT, 'client_visit': ActivityType.VISIT,
+    }
     next_action_type_val = None
     next_action_type_str = data.get('next_action_type')
+    disposition_activity_type = (data.get('disposition_activity_type') or '').strip() or None
     if next_action_type_str:
         try:
             next_action_type_val = ActivityType[next_action_type_str]
         except KeyError:
-            pass
+            alias = _ACTIVITY_TYPE_ALIASES.get(str(next_action_type_str).strip().lower())
+            if alias is not None:
+                next_action_type_val = alias
+            elif str(next_action_type_str).strip().lower() in _ACTIVITY_TYPE_ALIASES:
+                next_action_type_val = None  # "Follow-up": kept on the Event, not the enum
+            # Unknown values are ignored (previous behaviour).
 
     # Validation
     if connected:
@@ -839,6 +853,18 @@ def log_call(id):
     if activity_label:
         activity_label = sanitize_input(activity_label)
 
+    # Was this lead ever called before? Decides first-call SLA resolution.
+    had_prior_call = CallLog.query.filter_by(opportunity_id=id).count() > 0
+
+    # Parse the follow-up deadline once, so the CallLog, the lead and the
+    # disposition Event all share the same datetime.
+    deadline_dt = None
+    if next_deadline:
+        try:
+            deadline_dt = datetime.fromisoformat(next_deadline)
+        except ValueError:
+            deadline_dt = None
+
     log = CallLog(
         opportunity_id=id,
         logged_by_id=user_id,
@@ -848,6 +874,7 @@ def log_call(id):
         outcome=outcome_val,
         duration_band=duration_val,
         next_action_type=next_action_type_val,
+        next_action_deadline=deadline_dt,
         activity_label=activity_label,
     )
     
@@ -865,16 +892,41 @@ def log_call(id):
         lead.first_contact_date = now_dt
     lead.last_contact_date = now_dt
     
-    if next_deadline:
-        try:
-            lead.next_action_deadline = datetime.fromisoformat(next_deadline)
-        except ValueError:
-            pass
-    
+    if deadline_dt:
+        lead.next_action_deadline = deadline_dt
+
     lead.last_activity_at = now_dt
-    
+
     db.session.add(log)
     db.session.flush()
+
+    # Disposition -> Event (same transaction as the CallLog): when a
+    # follow-up date is given, create a persistent lead-linked Event for
+    # that date/activity. It is editable/deletable via the existing
+    # PUT/DELETE /api/events/<id> endpoints, and GET /api/events/
+    # suppresses the duplicate virtual opp_ reminder for this lead+deadline.
+    created_event = None
+    if deadline_dt:
+        from datetime import timedelta as _td
+        event_activity = (
+            disposition_activity_type
+            or (next_action_type_val.value if next_action_type_val else None)
+            or activity_label
+            or "Follow-up"
+        )
+        contact_name_ev = lead.contact.full_name if lead.contact else "Lead"
+        created_event = Event(
+            title=f"{event_activity}: {contact_name_ev}",
+            description=notes,
+            event_type=event_activity,
+            start_datetime=deadline_dt,
+            end_datetime=deadline_dt + _td(minutes=30),
+            created_by_id=user_id,
+            lead_id=id,
+            owner_id=lead.assigned_to_id or user_id,
+        )
+        db.session.add(created_event)
+        db.session.flush()
     
     contact_name = lead.contact.full_name if lead.contact else "Unknown"
     audit = AuditLog(
@@ -887,6 +939,16 @@ def log_call(id):
     )
     db.session.add(audit)
     db.session.commit()  # commit first so we have log.id for the filename
+
+    # First call ever on this lead: resolve/cancel the SLA chain now, not
+    # only when the pipeline stage later changes.
+    if not had_prior_call:
+        try:
+            from app.tasks import cancel_sla_chain, _mark_sla_resolved
+            cancel_sla_chain(id)
+            _mark_sla_resolved(id)
+        except Exception:
+            pass  # SLA scheduler may be disabled in tests/dev; never fail the call log
 
     # ── Handle optional recording file upload ──────────────────────────────
     recording_url = None
@@ -942,7 +1004,8 @@ def log_call(id):
         resp_data = {
             "id": log.id,
             "msg": "Call logged",
-            "recording_url": recording_url
+            "recording_url": recording_url,
+            "event_id": created_event.id if created_event else None,
         }
         if upload_error:
             resp_data["upload_error"] = upload_error
@@ -952,7 +1015,8 @@ def log_call(id):
     # No recording file attached (the common case) — still return a valid
     # response. Previously this path fell through and returned None, which
     # made Flask raise "view function did not return a valid response" (500).
-    return jsonify({"id": log.id, "msg": "Call logged", "recording_url": None}), 201
+    return jsonify({"id": log.id, "msg": "Call logged", "recording_url": None,
+                    "event_id": created_event.id if created_event else None}), 201
 
 @leads_bp.route('/calls/<int:log_id>/status', methods=['GET'])
 @jwt_required()
@@ -1312,8 +1376,8 @@ def add_note(id):
 def bulk_assign_leads():
     current_user_id = int(get_jwt_identity())
     role = get_jwt().get('role')
-    if role != 'ADMIN':
-        return jsonify({"error": "Admin access required"}), 403
+    if role not in ('ADMIN', 'MANAGER'):
+        return jsonify({"error": "Manager or Admin access required"}), 403
 
     data = request.get_json()
     lead_ids = data.get('lead_ids', [])
@@ -1348,6 +1412,31 @@ def bulk_assign_leads():
         
     db.session.commit()
     return jsonify({"msg": f"Successfully assigned {len(leads)} leads to {owner_name}."}), 200
+# ── Assignment rule (persisted, manager-settable) ─────────────────────────
+# auto_assign_mode (SystemSetting): 'lowest_count' (default) or 'round_robin'.
+# Both modes are schedule-aware and respect max_lead_capacity; see
+# assign_lead_owner_auto() in app/tasks.py for the full documented rule.
+@leads_bp.route('/assignment-rule', methods=['GET', 'PUT'])
+@jwt_required()
+def assignment_rule():
+    from app.models import SystemSetting
+    role = get_jwt().get('role')
+    if role not in ('ADMIN', 'MANAGER'):
+        return jsonify({"error": "Manager or Admin access required"}), 403
+    if request.method == 'GET':
+        return jsonify({
+            "auto_assign_mode": SystemSetting.get('auto_assign_mode', 'lowest_count'),
+            "modes": ["lowest_count", "round_robin"],
+        }), 200
+    data = request.get_json() or {}
+    mode = data.get('auto_assign_mode')
+    if mode not in ('lowest_count', 'round_robin'):
+        return jsonify({"error": "auto_assign_mode must be 'lowest_count' or 'round_robin'"}), 400
+    SystemSetting.set('auto_assign_mode', mode, 'Auto-assignment rule for incoming leads')
+    db.session.commit()
+    return jsonify({"auto_assign_mode": mode}), 200
+
+
 # ── Reservations (Module M-10) ───────────────────────────────────────────────
 @leads_bp.route('/reservations', methods=['GET'])
 @jwt_required()
@@ -2009,6 +2098,133 @@ def download_import_template():
     )
 
 
+# ---------------------------------------------------------------------------
+# Import parsing helpers (shared by /import and /import/preview).
+# Single consolidated import handler lives below; the old second
+# POST /api/leads/import handler (import_leads_csv, CSV-only, assigned every
+# lead to the uploader) was removed — it shadowed/competed with this one.
+# ---------------------------------------------------------------------------
+IMPORT_FIELDS = ['full_name', 'phone', 'email', 'profession', 'service_type',
+                 'project_name', 'budget', 'source', 'notes']
+
+
+def _suggest_mapping(headers):
+    """Guess a CRM field for each file header; '' means 'skip this column'."""
+    mapping = {}
+    for h in headers:
+        key = str(h).strip().lower().replace(' ', '_').replace('-', '_')
+        field = ''
+        if any(k in key for k in ['phone', 'mobile', 'contact', 'cell']):
+            field = 'phone'
+        elif 'email' in key or 'mail' in key:
+            field = 'email'
+        elif any(k in key for k in ['profession', 'occupation', 'job']):
+            field = 'profession'
+        elif 'project' in key:
+            field = 'project_name'
+        elif any(k in key for k in ['service', 'type', 'plot', 'interest']):
+            field = 'service_type'
+        elif any(k in key for k in ['budget', 'price', 'amount']):
+            field = 'budget'
+        elif any(k in key for k in ['source', 'channel', 'campaign', 'origin']):
+            field = 'source'
+        elif any(k in key for k in ['note', 'comment', 'remark', 'desc']):
+            field = 'notes'
+        elif any(k in key for k in ['name', 'client', 'customer']):
+            field = 'full_name'
+        mapping[h] = field
+    return mapping
+
+
+def _parse_import_file(f):
+    """Parse an uploaded .csv or .xlsx file -> (headers, rows as str dicts).
+
+    Raises ValueError with a user-facing message on bad input.
+    All cell values are stringified so rows are JSON-safe for raw_payload.
+    """
+    import csv as _csv
+    import io as _io
+    filename = (f.filename or '').lower()
+    if filename.endswith('.xlsx'):
+        try:
+            import openpyxl
+        except ImportError:
+            raise ValueError("Excel support requires openpyxl (see requirements.txt)")
+        wb = openpyxl.load_workbook(f, data_only=True, read_only=True)
+        ws = wb.active
+        rows_iter = ws.iter_rows(values_only=True)
+        try:
+            header_row = next(rows_iter)
+        except StopIteration:
+            raise ValueError("The Excel file is empty")
+        headers = [str(h).strip() if h is not None else '' for h in header_row]
+        rows = []
+        for values in rows_iter:
+            if all(v is None or str(v).strip() == '' for v in values):
+                continue
+            row = {}
+            for h, v in zip(headers, values):
+                if h:
+                    row[h] = '' if v is None else str(v).strip()
+            rows.append(row)
+        return headers, rows
+    if filename.endswith('.csv'):
+        content = f.read().decode('utf-8-sig', errors='replace')
+        reader = _csv.DictReader(_io.StringIO(content))
+        headers = [str(h).strip() for h in (reader.fieldnames or []) if h]
+        rows = []
+        for r in reader:
+            row = {}
+            for k, v in r.items():
+                if k is None:
+                    continue
+                row[str(k).strip()] = '' if v is None else str(v).strip()
+            if any(row.values()):
+                rows.append(row)
+        return headers, rows
+    raise ValueError("Unsupported file type. Upload a .csv or .xlsx file.")
+
+
+def _apply_mapping(rows, mapping):
+    """Rewrite raw rows to canonical CRM field keys per user mapping.
+
+    Unmapped ('' / unknown) columns are skipped, as required.
+    """
+    if not isinstance(mapping, dict):
+        return rows
+    out = []
+    for row in rows:
+        mapped = {}
+        for header, field in mapping.items():
+            if field in IMPORT_FIELDS and header in row and row[header] != '':
+                mapped[field] = row[header]
+        out.append(mapped)
+    return out
+
+
+@leads_bp.route('/import/preview', methods=['POST'])
+@jwt_required()
+def preview_import():
+    """Step 1 of mapped import: upload a file, get its headers, a suggested
+    column mapping and the first 5 parsed rows. Writes nothing to the DB."""
+    f = request.files.get('file')
+    if not f or not f.filename:
+        return jsonify({"error": "No file selected"}), 400
+    try:
+        headers, rows = _parse_import_file(f)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    if not headers:
+        return jsonify({"error": "No headers found in the file"}), 400
+    return jsonify({
+        "headers": headers,
+        "suggested_mapping": _suggest_mapping(headers),
+        "fields": IMPORT_FIELDS,
+        "preview_rows": rows[:5],
+        "total_rows": len(rows),
+    }), 200
+
+
 @leads_bp.route('/import', methods=['POST'])
 @jwt_required()
 def import_leads():
@@ -2032,23 +2248,36 @@ def import_leads():
     default_owner_id = int(default_assigned_to) if default_assigned_to and default_assigned_to.isdigit() else None
 
     rows = []
+    default_source = request.form.get('default_source') or 'Imported'
 
-    # Check for file upload
+    # Check for file upload (.csv or .xlsx, via the shared parser)
     if 'file' in request.files:
         f = request.files['file']
         if not f.filename:
             return jsonify({"error": "No file selected"}), 400
-
-        content = f.read().decode('utf-8-sig', errors='replace')
-        csv_reader = csv.DictReader(io.StringIO(content))
-        for r in csv_reader:
-            rows.append(r)
+        try:
+            _headers, rows = _parse_import_file(f)
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+        # Manual column mapping (from /import/preview step): the frontend
+        # sends mapping as a JSON string; unmapped columns are skipped.
+        mapping_raw = request.form.get('mapping')
+        if mapping_raw:
+            try:
+                import json as _json
+                rows = _apply_mapping(rows, _json.loads(mapping_raw))
+            except Exception:
+                return jsonify({"error": "Invalid mapping JSON"}), 400
     elif request.is_json:
         data = request.json or {}
         rows = data.get('leads', [])
+        if data.get('mapping'):
+            rows = _apply_mapping(rows, data['mapping'])
         duplicate_action = data.get('duplicate_strategy', data.get('duplicate_action', duplicate_action))
         if data.get('assigned_to_id'):
             default_owner_id = int(data['assigned_to_id'])
+        if data.get('default_source'):
+            default_source = data['default_source']
     else:
         return jsonify({"error": "Please provide a CSV file or JSON body with leads"}), 400
 
@@ -2081,7 +2310,7 @@ def import_leads():
             profession = get_val(row, 'Profession', 'Occupation', 'Job', 'profession')
             service_type = get_val(row, 'Service Type', 'Service', 'Property Type', 'service_type')
             project_name = get_val(row, 'Project Name', 'Project', 'project', 'project_name')
-            source = get_val(row, 'Source', 'Lead Source', 'source') or 'Imported'
+            source = get_val(row, 'Source', 'Lead Source', 'source') or default_source
             notes = get_val(row, 'Notes', 'Remarks', 'Comment', 'notes')
             budget_str = get_val(row, 'Budget Range', 'Budget', 'budget')
 
@@ -2155,6 +2384,7 @@ def import_leads():
                             contact_id=existing_contact.id,
                             inquiry_id=inquiry.id,
                             assigned_to_id=assigned_id,
+                            assigned_date=datetime.now(timezone.utc) if assigned_id else None,
                             pipeline_stage=PipelineStage.NEW,
                             service_type=service_type,
                             questionnaire_answers={"profession": profession, "service_type": service_type, "budget": budget_str}
@@ -2198,6 +2428,7 @@ def import_leads():
                     contact_id=contact.id,
                     inquiry_id=inquiry.id,
                     assigned_to_id=assigned_id,
+                    assigned_date=datetime.now(timezone.utc) if assigned_id else None,
                     pipeline_stage=PipelineStage.NEW,
                     service_type=service_type,
                     questionnaire_answers={"profession": profession, "service_type": service_type, "budget": budget_str}
@@ -2224,6 +2455,11 @@ def import_leads():
         "merged_count": duplicates_merged,
         "duplicates_skipped": duplicates_skipped,
         "skipped_count": duplicates_skipped,
+        # Aliases kept for the older import UI (previously served by the
+        # removed duplicate handler): duplicates = matched existing contacts.
+        "duplicates": duplicates_merged,
+        "failed": len(errors),
+        "message": f"Successfully imported {imported} lead(s) ({duplicates_merged} merged, {duplicates_skipped} skipped).",
         "errors": errors[:10]
     }), 200
 
@@ -2503,150 +2739,3 @@ def download_sample_csv():
     response = Response(output.getvalue(), mimetype='text/csv')
     response.headers['Content-Disposition'] = 'attachment; filename=southeast_landmark_leads_sample.csv'
     return response
-
-
-@leads_bp.route('/import', methods=['POST'])
-@jwt_required()
-def import_leads_csv():
-    """Import multiple leads from an uploaded CSV file."""
-    import io
-    import csv
-    
-    claims = get_jwt()
-    role = claims.get('role')
-    user_id = int(get_jwt_identity())
-    
-    file = request.files.get('file')
-    if not file:
-        return jsonify({"status": "error", "message": "No CSV file uploaded. Please select a valid .csv file."}), 400
-        
-    filename = file.filename.lower()
-    if not filename.endswith('.csv'):
-        return jsonify({"status": "error", "message": "Invalid file format. Only CSV (.csv) files are supported."}), 400
-        
-    try:
-        content = file.stream.read().decode('utf-8-sig', errors='ignore')
-        stream = io.StringIO(content)
-        reader = csv.reader(stream)
-    except Exception as e:
-        return jsonify({"status": "error", "message": f"Failed to read file: {str(e)}"}), 400
-        
-    rows = list(reader)
-    if not rows or len(rows) < 2:
-        return jsonify({"status": "error", "message": "The CSV file is empty or missing data rows."}), 400
-        
-    raw_headers = [h.strip().lower().replace(' ', '_').replace('-', '_') for h in rows[0]]
-    
-    def find_col_idx(possible_names):
-        for idx, h in enumerate(raw_headers):
-            if any(p in h for p in possible_names):
-                return idx
-        return -1
-
-    idx_name = find_col_idx(['name', 'full_name', 'client', 'customer'])
-    idx_phone = find_col_idx(['phone', 'mobile', 'contact', 'cell', 'number'])
-    idx_email = find_col_idx(['email', 'mail'])
-    idx_prof = find_col_idx(['prof', 'job', 'occupation', 'title'])
-    idx_source = find_col_idx(['source', 'channel', 'campaign', 'origin'])
-    idx_service = find_col_idx(['service', 'project', 'type', 'plot', 'interest'])
-    idx_budget = find_col_idx(['budget', 'price', 'amount', 'val'])
-    idx_notes = find_col_idx(['note', 'comment', 'remark', 'desc'])
-    
-    if idx_name == -1 or idx_phone == -1:
-        return jsonify({
-            "status": "error",
-            "message": "CSV header must contain at least 'Full Name' and 'Phone Number' columns."
-        }), 400
-        
-    from app.utils.phone import normalize_phone, find_existing_contact
-    from app.utils.security import sanitize_input
-    
-    imported_count = 0
-    duplicate_count = 0
-    failed_count = 0
-    errors = []
-    
-    for row_idx, row in enumerate(rows[1:], start=2):
-        if not any(row):
-            continue
-            
-        name_val = row[idx_name].strip() if idx_name < len(row) else ''
-        phone_val = row[idx_phone].strip() if idx_phone < len(row) else ''
-        email_val = row[idx_email].strip() if idx_email != -1 and idx_email < len(row) else None
-        prof_val = row[idx_prof].strip() if idx_prof != -1 and idx_prof < len(row) else None
-        source_val = row[idx_source].strip() if idx_source != -1 and idx_source < len(row) else 'CSV Import'
-        service_val = row[idx_service].strip() if idx_service != -1 and idx_service < len(row) else 'Residential Plot'
-        budget_val = row[idx_budget].strip() if idx_budget != -1 and idx_budget < len(row) else None
-        notes_val = row[idx_notes].strip() if idx_notes != -1 and idx_notes < len(row) else None
-        
-        if not name_val or not phone_val:
-            failed_count += 1
-            errors.append(f"Row {row_idx}: Missing Name or Phone")
-            continue
-            
-        norm_phone = normalize_phone(phone_val)
-        if not norm_phone:
-            failed_count += 1
-            errors.append(f"Row {row_idx}: Invalid phone number '{phone_val}'")
-            continue
-            
-        contact = find_existing_contact(phone=norm_phone, email=email_val)
-        if not contact:
-            contact = Contact(
-                full_name=sanitize_input(name_val),
-                phone_raw=sanitize_input(phone_val),
-                phone_normalized=norm_phone,
-                email=sanitize_input(email_val) if email_val else None,
-                profession=sanitize_input(prof_val) if prof_val else None,
-                source=sanitize_input(source_val),
-                created_by_id=user_id
-            )
-            db.session.add(contact)
-            db.session.flush()
-        else:
-            duplicate_count += 1
-            if prof_val and not contact.profession:
-                contact.profession = sanitize_input(prof_val)
-            if email_val and not contact.email:
-                contact.email = sanitize_input(email_val)
-                
-        opp = Opportunity(
-            contact_id=contact.id,
-            assigned_to_id=user_id,
-            pipeline_stage=PipelineStage.NEW,
-            service_type=sanitize_input(service_val),
-            questionnaire_answers={
-                "profession": prof_val,
-                "budget": budget_val,
-                "notes": notes_val,
-                "imported_from": "CSV",
-                "import_row": row_idx
-            } if (prof_val or budget_val or notes_val) else {}
-        )
-        db.session.add(opp)
-        db.session.flush()
-        
-        if notes_val:
-            note_obj = Note(
-                opportunity_id=opp.id,
-                contact_id=contact.id,
-                created_by_id=user_id,
-                content=f"📝 [CSV Import Note]: {sanitize_input(notes_val)}"
-            )
-            db.session.add(note_obj)
-            
-        imported_count += 1
-        
-    db.session.commit()
-    
-    return jsonify({
-        "status": "success",
-        "imported": imported_count,
-        "duplicates": duplicate_count,
-        "failed": failed_count,
-        "errors": errors[:5],
-        "message": f"Successfully imported {imported_count} lead(s) ({duplicate_count} matched existing contacts)."
-    }), 200
-
-
-

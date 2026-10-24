@@ -120,6 +120,81 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     loadActivityLabels();
 
+    // ── Disposition popup (client requirement 3) ─────────────────────────
+    // Picking an activity label/status in the Log Call modal immediately
+    // opens this popup. Submitting it posts the CallLog (label + notes +
+    // follow-up date + activity type) to /api/leads/<id>/calls; the backend
+    // creates the persistent lead-linked Event in the same transaction.
+    const dispositionModal = document.getElementById('disposition-modal');
+    const dispositionModalContent = document.getElementById('disposition-modal-content');
+    const dispositionForm = document.getElementById('disposition-form');
+    let pendingDispositionLabel = '';
+    const showDispositionModal = (label) => {
+        if (!dispositionModal || !label) return;
+        pendingDispositionLabel = label;
+        const labelText = document.getElementById('disposition-label-text');
+        if (labelText) labelText.textContent = label;
+        if (dispositionForm) dispositionForm.reset();
+        const activityType = document.getElementById('disposition-activity-type');
+        if (activityType) activityType.value = 'Follow-up';
+        dispositionModal.classList.remove('hidden');
+        setTimeout(() => {
+            dispositionModal.classList.remove('opacity-0');
+            if (dispositionModalContent) dispositionModalContent.classList.remove('scale-95');
+        }, 10);
+    };
+    const hideDispositionModal = () => {
+        if (!dispositionModal) return;
+        dispositionModal.classList.add('opacity-0');
+        if (dispositionModalContent) dispositionModalContent.classList.add('scale-95');
+        setTimeout(() => dispositionModal.classList.add('hidden'), 200);
+    };
+    const closeDispositionBtn = document.getElementById('close-disposition-modal');
+    if (closeDispositionBtn) closeDispositionBtn.addEventListener('click', hideDispositionModal);
+    const cancelDispositionBtn = document.getElementById('cancel-disposition-modal');
+    if (cancelDispositionBtn) cancelDispositionBtn.addEventListener('click', hideDispositionModal);
+    const labelSelect = document.getElementById('call-activity-label');
+    if (labelSelect) {
+        labelSelect.addEventListener('change', () => {
+            if (labelSelect.value) showDispositionModal(labelSelect.value);
+        });
+    }
+    if (dispositionForm) {
+        dispositionForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const leadId = document.getElementById('call-lead-id') ? document.getElementById('call-lead-id').value : '';
+            const notes = document.getElementById('disposition-notes').value.trim();
+            const nextDate = document.getElementById('disposition-next-date').value;
+            const activityType = document.getElementById('disposition-activity-type').value;
+            if (!leadId) { window.showToast("No lead selected.", "error"); return; }
+            if (!nextDate) { window.showToast("Next follow-up date is required.", "error"); return; }
+            try {
+                const token = localStorage.getItem('crm_token');
+                const res = await fetch(`/api/leads/${leadId}/calls`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        notes: notes || 'Disposition logged',
+                        activity_label: pendingDispositionLabel,
+                        next_action_deadline: nextDate,
+                        next_action_type: activityType,
+                        disposition_activity_type: activityType,
+                        connected: true,
+                    })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || data.msg || "Failed to save disposition");
+                window.showToast(data.event_id ? "Disposition saved & follow-up event created." : "Disposition saved.", "success");
+                hideDispositionModal();
+                hideCallModal();
+                if (typeof loadLeads === 'function') loadLeads();
+                else if (window.loadLeads) window.loadLeads();
+            } catch (err) {
+                window.showToast(err.message, "error");
+            }
+        });
+    }
+
     // Form submission
     callLogForm.addEventListener('submit', async (e) => {
         e.preventDefault();

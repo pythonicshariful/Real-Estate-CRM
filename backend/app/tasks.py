@@ -699,9 +699,22 @@ def _fetch_meta_lead(app, leadgen_id: str) -> dict | None:
 
 def assign_lead_owner_auto(exclude_user_id: int | None = None, app=None):
     """
-    Assign incoming Meta lead to a Lead Owner.
-    1. If a Lead Owner is within their configured date & time schedule, assign to them.
-    2. Otherwise, divide leads equally among all active Lead Owners (round-robin / lowest lead count).
+    Auto-assignment rule (client requirement 4), documented in one place:
+    Candidate pool = active users with role LEAD_OWNER or EXECUTIVE
+    (executives are real assignees, not just lead owners).
+    1. If a candidate is within their configured date & time schedule
+       (schedule_from/to_date, schedule_start/end_time), restrict the
+       pool to those in-window candidates.
+    2. Otherwise fall back to the full active candidate pool.
+    3. Pick by persisted SystemSetting 'auto_assign_mode':
+       - 'lowest_count' (default): lowest active (non-terminal, non-deleted)
+         lead count, ties broken by lowest user id, skipping anyone at or
+         over max_lead_capacity (default 30).
+       - 'round_robin': next candidate in id order after the persisted
+         'auto_assign_rr_index' pointer, skipping full candidates; the
+         pointer advances only on a successful pick and is persisted via
+         SystemSetting (flushed here, committed by the caller's transaction).
+    Returns the selected User, or None if the pool is empty / all full.
     """
     # PipelineStage was missing from this import, so the very next use of it
     # (building the terminal-stage filter below) raised NameError and the whole
@@ -711,11 +724,22 @@ def assign_lead_owner_auto(exclude_user_id: int | None = None, app=None):
     from sqlalchemy import func
     from datetime import datetime
 
+    # BUG FIX (pre-existing, found while testing): this function used to
+    # always push a NEW app context, even when called from inside a request
+    # (manual lead create, CSV/Excel import, Meta webhook). Flask-SQLAlchemy
+    # tears the session down when that nested context exits, rolling back
+    # the caller's still-uncommitted Contact flush — the lead was then
+    # committed with a contact_id pointing at a row that never existed
+    # (500 ObjectDeletedError on create_lead). Reuse the existing context
+    # when there is one; only push a new one for scheduler/background calls.
+    from contextlib import nullcontext
+    from flask import has_app_context
     app = _get_app(app)
-    with app.app_context():
+    ctx = nullcontext() if has_app_context() else app.app_context()
+    with ctx:
         active_owners = (
             User.query
-            .filter(User.role == UserRole.LEAD_OWNER)
+            .filter(User.role.in_([UserRole.LEAD_OWNER, UserRole.EXECUTIVE]))
             .filter(User.is_active == True)
             .filter(User.id != exclude_user_id if exclude_user_id else True)
             .all()
@@ -795,18 +819,44 @@ def assign_lead_owner_auto(exclude_user_id: int | None = None, app=None):
             .all()
         )
 
-        # Pick candidate with available capacity
+        # Pick candidate with available capacity, per the persisted mode.
+        mode = 'lowest_count'
+        try:
+            from app.models import SystemSetting
+            mode = SystemSetting.get('auto_assign_mode', 'lowest_count') or 'lowest_count'
+        except Exception:
+            mode = 'lowest_count'
         selected = None
-        for user, active_cnt in candidates_with_counts:
-            max_cap = user.max_lead_capacity if user.max_lead_capacity is not None else 30
-            if active_cnt < max_cap:
-                selected = user
-                break
+        if mode == 'round_robin':
+            pool_by_id = sorted(candidates_with_counts, key=lambda x: x[0].id)
+            try:
+                rr_index = int(SystemSetting.get('auto_assign_rr_index', '0') or 0)
+            except Exception:
+                rr_index = 0
+            for offset in range(len(pool_by_id)):
+                user, active_cnt = pool_by_id[(rr_index + offset) % len(pool_by_id)] if pool_by_id else (None, 0)
+                if user is None:
+                    break
+                max_cap = user.max_lead_capacity if user.max_lead_capacity is not None else 30
+                if active_cnt < max_cap:
+                    selected = user
+                    try:
+                        SystemSetting.set('auto_assign_rr_index', str((rr_index + offset + 1) % len(pool_by_id)))
+                        db.session.flush()
+                    except Exception:
+                        pass
+                    break
+        else:
+            for user, active_cnt in candidates_with_counts:
+                max_cap = user.max_lead_capacity if user.max_lead_capacity is not None else 30
+                if active_cnt < max_cap:
+                    selected = user
+                    break
 
         if selected:
-            logger.info(f"Auto-assigned lead to Lead Owner: {selected.full_name}")
+            logger.info(f"Auto-assigned lead to {selected.full_name} ({selected.role.value})")
         else:
-            logger.warning("All candidate Lead Owners have reached maximum capacity. Leaving lead unassigned.")
+            logger.warning("All auto-assign candidates have reached maximum capacity. Leaving lead unassigned.")
         return selected
 
 

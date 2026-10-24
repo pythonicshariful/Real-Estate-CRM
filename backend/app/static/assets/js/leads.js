@@ -1498,6 +1498,7 @@ document.addEventListener('DOMContentLoaded', () => {
         importForm.reset();
         importResultBox.className = 'hidden p-4 rounded-xl border';
         importResultBox.innerHTML = '';
+        if (typeof resetImportMapping === 'function') resetImportMapping();
         importModal.classList.remove('hidden');
         requestAnimationFrame(() => {
             importModal.classList.remove('opacity-0');
@@ -1536,23 +1537,93 @@ document.addEventListener('DOMContentLoaded', () => {
     if (closeImportBtn) closeImportBtn.addEventListener('click', closeImportModal);
     if (cancelImportBtn) cancelImportBtn.addEventListener('click', closeImportModal);
 
+    // Mapped import flow: 1) upload -> preview headers + suggested mapping,
+    // 2) user maps each header to a CRM field (or skips it) and previews
+    // parsed rows, 3) confirm -> import with that mapping.
+    let importMappingReady = false;
+    const importMappingBox = document.getElementById('import-mapping-box');
+    const importPreviewBox = document.getElementById('import-preview-box');
+    const FIELD_LABELS = { full_name: 'Full Name', phone: 'Phone', email: 'Email', profession: 'Profession', service_type: 'Service Type', project_name: 'Project Name', budget: 'Budget', source: 'Source', notes: 'Notes' };
+    const renderImportMapping = (preview) => {
+        if (!importMappingBox) return;
+        const rowsHtml = (preview.preview_rows || []).map(r =>
+            `<tr>${preview.headers.map(h => `<td class="px-2 py-1 border-b border-slate-800 whitespace-nowrap">${(r[h] ?? '')}</td>`).join('')}</tr>`).join('');
+        importMappingBox.innerHTML = `<div class="text-xs font-semibold text-slate-400 uppercase">Map columns (${preview.total_rows} rows found) — leave as “Skip” to ignore a column</div>` +
+            preview.headers.map(h => {
+                const suggested = (preview.suggested_mapping || {})[h] || '';
+                const opts = `<option value="">Skip</option>` + Object.entries(FIELD_LABELS).map(([v, l]) =>
+                    `<option value="${v}" ${v === suggested ? 'selected' : ''}>${l}</option>`).join('');
+                return `<div class="flex items-center gap-2 text-xs"><span class="flex-1 truncate text-slate-300">${h}</span><select data-import-header="${h}" class="bg-[#161825] border border-slate-700 rounded-lg px-2 py-1.5 text-slate-200">${opts}</select></div>`;
+            }).join('');
+        importMappingBox.classList.remove('hidden');
+        if (importPreviewBox) {
+            importPreviewBox.innerHTML = `<div class="font-semibold text-slate-400 mb-2">Preview (first ${preview.preview_rows.length} rows)</div><table class="text-xs"><thead><tr>${preview.headers.map(h => `<th class="px-2 py-1 text-left text-slate-400">${h}</th>`).join('')}</tr></thead><tbody>${rowsHtml}</tbody></table>`;
+            importPreviewBox.classList.remove('hidden');
+        }
+        const submitLabel = submitImportBtn.querySelector('span') || submitImportBtn;
+        submitImportBtn.childNodes.forEach(n => { if (n.nodeType === 3) n.remove(); });
+        submitImportBtn.insertAdjacentText('beforeend', 'Confirm Import');
+    };
+    const resetImportMapping = () => {
+        importMappingReady = false;
+        if (importMappingBox) { importMappingBox.classList.add('hidden'); importMappingBox.innerHTML = ''; }
+        if (importPreviewBox) { importPreviewBox.classList.add('hidden'); importPreviewBox.innerHTML = ''; }
+        submitImportBtn.childNodes.forEach(n => { if (n.nodeType === 3) n.remove(); });
+        submitImportBtn.insertAdjacentText('beforeend', 'Start Import');
+    };
+
     if (importForm) {
         importForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const fileInput = document.getElementById('import-file-input');
             if (!fileInput.files || fileInput.files.length === 0) {
-                if (window.showToast) window.showToast("Please choose a CSV file.", "error");
+                if (window.showToast) window.showToast("Please choose a CSV or Excel file.", "error");
                 return;
             }
-            
+
             const file = fileInput.files[0];
             const dupStrategy = document.querySelector('input[name="import_dup_strategy"]:checked')?.value || 'merge';
             const ownerId = importOwnerSelect.value || '';
             const defaultSource = document.getElementById('import-source-input').value.trim() || 'CSV Import';
-            
+            const token = localStorage.getItem('crm_token');
+
+            // Step 1: preview + mapping (no import yet).
+            if (!importMappingReady) {
+                submitImportBtn.disabled = true;
+                importSpinner.classList.remove('hidden');
+                try {
+                    const previewData = new FormData();
+                    previewData.append('file', file);
+                    const previewRes = await fetch('/api/leads/import/preview', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        body: previewData
+                    });
+                    const preview = await previewRes.json();
+                    if (!previewRes.ok) throw new Error(preview.error || "Failed to preview file");
+                    renderImportMapping(preview);
+                    importMappingReady = true;
+                    if (window.showToast) window.showToast("Map the columns, then Confirm Import.", "success");
+                } catch (err) {
+                    if (window.showToast) window.showToast(err.message, "error");
+                } finally {
+                    submitImportBtn.disabled = false;
+                    importSpinner.classList.add('hidden');
+                }
+                return;
+            }
+
+            // Step 2: confirm import with the user's mapping.
+            const mapping = {};
+            if (importMappingBox) {
+                importMappingBox.querySelectorAll('select[data-import-header]').forEach(sel => {
+                    mapping[sel.getAttribute('data-import-header')] = sel.value;
+                });
+            }
             const formData = new FormData();
             formData.append('file', file);
             formData.append('duplicate_strategy', dupStrategy);
+            formData.append('mapping', JSON.stringify(mapping));
             if (ownerId) formData.append('assigned_to_id', ownerId);
             formData.append('default_source', defaultSource);
 
@@ -1560,7 +1631,6 @@ document.addEventListener('DOMContentLoaded', () => {
             importSpinner.classList.remove('hidden');
 
             try {
-                const token = localStorage.getItem('crm_token');
                 const res = await fetch('/api/leads/import', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` },
@@ -1585,6 +1655,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
 
                 if (window.showToast) window.showToast(`Imported ${result.created_count} new leads, merged ${result.merged_count}.`, "success");
+                resetImportMapping();
                 loadLeads();
             } catch (err) {
                 console.error(err);

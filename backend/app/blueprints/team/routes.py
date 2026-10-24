@@ -24,11 +24,21 @@ def _require_admin(claims):
         return jsonify({"error": "Admin access required"}), 403
     return None
 
+
+def _require_manager_or_admin(claims):
+    """Managers may view team members and set owner schedules / lead
+    capacity (client requirement 4); account creation, deactivation and
+    password resets stay admin-only."""
+    role = claims.get('role')
+    if role not in (UserRole.ADMIN.value, UserRole.MANAGER.value):
+        return jsonify({"error": "Manager or Admin access required"}), 403
+    return None
+
 @team_bp.route('/lead-owners', methods=['GET'])
 @jwt_required()
 def list_lead_owners():
     claims = get_jwt()
-    err = _require_admin(claims)
+    err = _require_manager_or_admin(claims)
     if err: return err
     
     users = User.query.filter_by(role=UserRole.LEAD_OWNER).order_by(User.id.asc()).all()
@@ -93,7 +103,7 @@ def create_lead_owner():
 @jwt_required()
 def get_lead_owner(id):
     claims = get_jwt()
-    err = _require_admin(claims)
+    err = _require_manager_or_admin(claims)
     if err: return err
     
     user = User.query.get_or_404(id)
@@ -103,15 +113,21 @@ def get_lead_owner(id):
 @jwt_required()
 def update_lead_owner(id):
     claims = get_jwt()
-    err = _require_admin(claims)
+    err = _require_manager_or_admin(claims)
     if err: return err
-    
+
     user = User.query.get_or_404(id)
     data = request.get_json() or {}
-    
+
     if 'full_name' in data: user.full_name = data['full_name']
     if 'phone' in data: user.phone = data['phone']
     if 'color' in data: user.calendar_color = data['color']
+    # Lead capacity (previously not settable via this route at all).
+    if 'max_lead_capacity' in data:
+        try:
+            user.max_lead_capacity = int(data['max_lead_capacity'])
+        except (TypeError, ValueError):
+            return jsonify({"error": "max_lead_capacity must be an integer"}), 400
     if 'schedule_from_date' in data: user.schedule_from_date = _parse_date(data['schedule_from_date'])
     if 'schedule_to_date' in data: user.schedule_to_date = _parse_date(data['schedule_to_date'])
     if 'schedule_start_time' in data: user.schedule_start_time = _parse_time(data['schedule_start_time'])

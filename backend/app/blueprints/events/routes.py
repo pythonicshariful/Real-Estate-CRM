@@ -159,7 +159,17 @@ def list_events():
             query_opp = query_opp.filter(Opportunity.assigned_to_id == user_id)
             
         opps = query_opp.all()
+        # Suppress the virtual opp_ reminder when a real, persistent Event
+        # already exists for this lead at exactly this deadline (created by
+        # a disposition submit). Otherwise the calendar shows the same
+        # follow-up twice. Queried independently of any type filter above.
+        real_event_keys = {
+            (ev.lead_id, ev.start_datetime)
+            for ev in Event.query.filter(Event.lead_id.isnot(None)).all()
+        }
         for opp in opps:
+            if (opp.id, opp.next_action_deadline) in real_event_keys:
+                continue
             contact = Contact.query.get(opp.contact_id)
             contact_name = contact.full_name if contact else "Unknown Contact"
             action_type_name = opp.next_action_type.value if opp.next_action_type else "Follow-up"

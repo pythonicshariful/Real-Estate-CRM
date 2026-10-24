@@ -74,29 +74,33 @@ def get_reports_kpis():
     
     total_leads = sum(stage_map.values())
 
-    # 1. Speed-to-lead (Avg minutes from lead created_at to first CallLog created_at)
+    # 1. Speed-to-lead (Avg minutes from assignment to first CallLog created_at).
+    # Response-time analytics are manager-only (see /response-times): for
+    # EXECUTIVE / LEAD_OWNER callers this is not computed and not returned.
+    is_manager_role = role in ('MANAGER', 'GM', 'CEO', 'ADMIN')
     speed_to_lead_min = 0.0
-    first_calls = db.session.query(
-        Opportunity.id,
-        Opportunity.created_at,
-        func.min(CallLog.created_at).label('first_call_at')
-    ).join(CallLog, CallLog.opportunity_id == Opportunity.id)\
-     .filter(Opportunity.is_deleted == False)
+    if is_manager_role:
+        first_calls = db.session.query(
+            Opportunity.id,
+            Opportunity.created_at,
+            func.min(CallLog.created_at).label('first_call_at')
+        ).join(CallLog, CallLog.opportunity_id == Opportunity.id)\
+         .filter(Opportunity.is_deleted == False)
 
-    if not is_admin(role):
-        first_calls = first_calls.filter(Opportunity.assigned_to_id == user_id)
-    
-    first_calls = first_calls.group_by(Opportunity.id).all()
-    
-    if first_calls:
-        durations = []
-        for opp_id, created_at, first_call_at in first_calls:
-            if first_call_at and created_at:
-                diff = (first_call_at - created_at).total_seconds() / 60.0
-                if diff > 0:
-                    durations.append(diff)
-        if durations:
-            speed_to_lead_min = round(sum(durations) / len(durations), 1)
+        if not is_admin(role):
+            first_calls = first_calls.filter(Opportunity.assigned_to_id == user_id)
+
+        first_calls = first_calls.group_by(Opportunity.id).all()
+
+        if first_calls:
+            durations = []
+            for opp_id, created_at, first_call_at in first_calls:
+                if first_call_at and created_at:
+                    diff = (first_call_at - created_at).total_seconds() / 60.0
+                    if diff > 0:
+                        durations.append(diff)
+            if durations:
+                speed_to_lead_min = round(sum(durations) / len(durations), 1)
 
     # 2. Contact Rate (% of call logs connected vs total call logs)
     contact_rate = 0
@@ -228,17 +232,18 @@ def get_reports_kpis():
     else:
         follow_up_compliance = 100.0
 
-    # 12. SLA Compliance %
+    # 12. SLA Compliance % — manager-only, same gating as speed-to-lead.
     sla_compliance = 100
-    sla_q = SLAEvent.query
-    if not is_admin(role):
-        sla_q = sla_q.filter(SLAEvent.opportunity_id.in_(
-            db.session.query(Opportunity.id).filter(Opportunity.assigned_to_id == user_id)
-        ))
-    total_sla = sla_q.count()
-    if total_sla > 0:
-        clean_sla = sla_q.filter(~SLAEvent.status.in_([SLAStatus.ESCALATED, SLAStatus.MANAGER_ALERTED])).count()
-        sla_compliance = round((clean_sla / total_sla) * 100)
+    if is_manager_role:
+        sla_q = SLAEvent.query
+        if not is_admin(role):
+            sla_q = sla_q.filter(SLAEvent.opportunity_id.in_(
+                db.session.query(Opportunity.id).filter(Opportunity.assigned_to_id == user_id)
+            ))
+        total_sla = sla_q.count()
+        if total_sla > 0:
+            clean_sla = sla_q.filter(~SLAEvent.status.in_([SLAStatus.ESCALATED, SLAStatus.MANAGER_ALERTED])).count()
+            sla_compliance = round((clean_sla / total_sla) * 100)
 
     # 12. Lead Aging Heatmap (Open leads grouped by age: 1 / 3 / 7 / 14 / 30 days untouched)
     now_utc = datetime.now(timezone.utc)
@@ -344,8 +349,8 @@ def get_reports_kpis():
 
     result_payload = {
         # 20 Architecture v2.0 Section D Metrics
-        "speed_to_lead": speed_to_lead_min,
-        "sla_compliance": sla_compliance,
+        # NOTE: speed_to_lead / sla_compliance are added below only for
+        # manager roles — executives must not see response-time analytics.
         "contact_rate": contact_rate,
         "qualification_rate": qualification_rate,
         "appointment_booking_rate": appointment_booking_rate,
@@ -382,8 +387,114 @@ def get_reports_kpis():
         "completed_appts": completed_appts,
         "closed_won": closed_won
     }
+    if is_manager_role:
+        result_payload["speed_to_lead"] = speed_to_lead_min
+        result_payload["sla_compliance"] = sla_compliance
     _set_cache(cache_key, result_payload)
     return jsonify(result_payload)
+
+@reports_bp.route('/response-times', methods=['GET'])
+@jwt_required()
+def get_response_times():
+    """Manager-only response-time analytics (client requirement 2).
+
+    Response time for a lead = first CallLog.created_at minus the
+    assignment start, where the start is Opportunity.assigned_date,
+    falling back to the earliest SLAEvent.assigned_at for that lead,
+    then Opportunity.created_at. Leads with no call yet report
+    response_minutes=None and status "uncontacted".
+
+    assigned_date / first_contact_date are exposed ONLY here — they are
+    deliberately not added to Opportunity.to_dict(), which executives see.
+    Roles MANAGER / GM / CEO / ADMIN only; everyone else gets 403.
+    """
+    claims = get_jwt()
+    role = claims.get('role')
+    if role not in ('MANAGER', 'GM', 'CEO', 'ADMIN'):
+        return jsonify({"error": "Manager access required: response-time analytics are manager-only"}), 403
+
+    assigned_to_filter = request.args.get('assigned_to_id') or request.args.get('executive_id')
+    opps_q = Opportunity.query.filter(Opportunity.is_deleted == False)
+    if assigned_to_filter:
+        try:
+            opps_q = opps_q.filter(Opportunity.assigned_to_id == int(assigned_to_filter))
+        except ValueError:
+            return jsonify({"error": "Invalid assigned_to_id"}), 400
+    opps = opps_q.order_by(Opportunity.created_at.desc()).all()
+    opp_ids = [o.id for o in opps]
+
+    first_calls = {}
+    if opp_ids:
+        rows = db.session.query(
+            CallLog.opportunity_id, func.min(CallLog.created_at).label('first_call_at')
+        ).filter(CallLog.opportunity_id.in_(opp_ids)).group_by(CallLog.opportunity_id).all()
+        first_calls = {r[0]: r[1] for r in rows}
+    sla_by_opp = {}
+    if opp_ids:
+        for sla in SLAEvent.query.filter(SLAEvent.opportunity_id.in_(opp_ids)).order_by(SLAEvent.assigned_at.asc()).all():
+            sla_by_opp.setdefault(sla.opportunity_id, sla)
+
+    per_lead = []
+    per_exec = {}
+    for opp in opps:
+        sla = sla_by_opp.get(opp.id)
+        start = opp.assigned_date or (sla.assigned_at if sla else None) or opp.created_at
+        first_call_at = first_calls.get(opp.id)
+        response_minutes = None
+        if first_call_at and start:
+            diff = (first_call_at - start).total_seconds() / 60.0
+            if diff >= 0:
+                response_minutes = round(diff, 1)
+        first_contact = opp.first_contact_date or first_call_at
+        row = {
+            "lead_id": opp.id,
+            "contact_name": opp.contact.full_name if opp.contact else None,
+            "assigned_to_id": opp.assigned_to_id,
+            "assigned_to_name": opp.assigned_to.full_name if opp.assigned_to else None,
+            "assigned_date": opp.assigned_date.isoformat() if opp.assigned_date else None,
+            "first_contact_date": first_contact.isoformat() if first_contact else None,
+            "first_call_at": first_call_at.isoformat() if first_call_at else None,
+            "response_minutes": response_minutes,
+            "status": "contacted" if first_call_at else "uncontacted",
+            "sla_status": sla.status.value if sla and sla.status else None,
+        }
+        per_lead.append(row)
+        key = opp.assigned_to_id
+        bucket = per_exec.setdefault(key, {
+            "assigned_to_id": key,
+            "assigned_to_name": opp.assigned_to.full_name if opp.assigned_to else None,
+            "total_leads": 0, "contacted_leads": 0, "uncontacted_leads": 0,
+            "_minutes": [],
+        })
+        bucket["total_leads"] += 1
+        if first_call_at:
+            bucket["contacted_leads"] += 1
+            if response_minutes is not None:
+                bucket["_minutes"].append(response_minutes)
+        else:
+            bucket["uncontacted_leads"] += 1
+
+    per_executive = []
+    for bucket in per_exec.values():
+        minutes = bucket.pop("_minutes")
+        per_executive.append({
+            **bucket,
+            "avg_response_minutes": round(sum(minutes) / len(minutes), 1) if minutes else None,
+        })
+    per_executive.sort(key=lambda b: (b["avg_response_minutes"] is None, b["avg_response_minutes"] or 0))
+
+    contacted = [r["response_minutes"] for r in per_lead if r["response_minutes"] is not None]
+    return jsonify({
+        "per_lead": per_lead,
+        "per_executive": per_executive,
+        "summary": {
+            "total_leads": len(per_lead),
+            "contacted_leads": len(contacted),
+            "uncontacted_leads": len(per_lead) - len(contacted),
+            "avg_response_minutes": round(sum(contacted) / len(contacted), 1) if contacted else None,
+        },
+    }), 200
+
 
 @reports_bp.route('/charts', methods=['GET'])
 @jwt_required()
@@ -620,8 +731,10 @@ def get_reports_charts():
         "rev_per_100_leads_trend": rev_per_100_trend,
         "weekly_trends": {
             "labels": weekly_labels,
-            "speed": weekly_speed,
-            "sla": weekly_sla
+            # Response-time trend data is manager-only; non-managers get
+            # empty series so no response-time analytics leak via /charts.
+            "speed": weekly_speed if role in ('MANAGER', 'GM', 'CEO', 'ADMIN') else [],
+            "sla": weekly_sla if role in ('MANAGER', 'GM', 'CEO', 'ADMIN') else []
         }
     }
     _set_cache(cache_key, charts_payload)
