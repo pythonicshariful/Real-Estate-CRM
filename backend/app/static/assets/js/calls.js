@@ -258,7 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.upload_error) {
                 window.showToast(`Call logged, but Cloud Storage upload failed: ${data.upload_error}`, "error");
             } else if (data.recording_url && data.recording_url.startsWith('http')) {
-                window.showToast("Call logged & recording uploaded to Cloud Storage!", "success");
+                window.showToast("Uploaded successfully", "success");
             } else {
                 window.showToast("Call logged successfully.", "success");
             }
