@@ -151,7 +151,10 @@ def facebook_oauth_start():
         'state': state,
         'response_type': 'code',
         # Page management + lead retrieval + form definitions
-        'scope': 'pages_show_list,pages_read_engagement,pages_manage_metadata,'
+        # NOTE: pages_manage_metadata was removed — Facebook rejects it as
+        # an invalid scope and the plain Connect click failed with
+        # "Invalid Scopes: pages_manage_metadata" (2026-10-25 live test).
+        'scope': 'pages_show_list,pages_read_engagement,'
                  'leads_retrieval,pages_manage_ads,business_management',
     }
     return jsonify({
@@ -221,12 +224,13 @@ def facebook_oauth_callback():
         _set('mode', 'live')
         _set('oauth_state', '')
 
-        # 3. pull lead forms for that page
+        # 3. subscribe the app to the Page's lead webhooks, then pull forms
+        sub_info = _subscribe_page_webhooks(page['id'], page.get('access_token', ''))
         sync_info = _sync_lead_forms(page['id'], page.get('access_token', ''))
 
         return _callback_html(
             True,
-            f"Connected to Page “{page.get('name','')}”. {sync_info}",
+            f"Connected to Page “{page.get('name','')}”. {sub_info} {sync_info}",
         )
     except requests.RequestException as exc:
         return _callback_html(False, f"Network error talking to Facebook: {exc}")
@@ -238,6 +242,28 @@ def facebook_oauth_callback():
 def _now():
     from datetime import datetime, timezone
     return datetime.now(timezone.utc).isoformat()
+
+
+def _subscribe_page_webhooks(page_id, page_token):
+    """Subscribe the Meta app to this Page's leadgen webhooks.
+
+    Without this, Meta never delivers lead events to our webhook even
+    though the app-level webhook is verified and the page is connected
+    (found in the 2026-10-25 live test: the Lead Ads Testing Tool warned
+    "Selected page has no app associated with it" and no test lead
+    arrived). Uses the stored Page token, so no user action is needed.
+    Returns a short status string.
+    """
+    try:
+        resp = requests.post(f"{GRAPH}/{page_id}/subscribed_apps", params={
+            'access_token': page_token,
+            'subscribed_fields': 'leadgen',
+        }, timeout=20).json()
+        if 'error' in resp:
+            return f"Webhook subscription failed: {resp['error'].get('message', 'unknown error')}"
+        return "Page subscribed to lead webhooks."
+    except Exception as exc:  # noqa: BLE001
+        return f"Webhook subscription failed: {exc}"
 
 
 def _sync_lead_forms(page_id, page_token):
@@ -293,9 +319,10 @@ def facebook_sync_forms():
         return jsonify({'success': True, 'message': 'Demo connection — forms are fixed.',
                         'forms': _demo_forms()}), 200
 
+    sub_msg = _subscribe_page_webhooks(page_id, page_token)
     msg = _sync_lead_forms(page_id, page_token)
     import json
-    return jsonify({'success': True, 'message': msg,
+    return jsonify({'success': True, 'message': f'{sub_msg} {msg}',
                     'forms': json.loads(_get('forms') or '[]')}), 200
 
 
