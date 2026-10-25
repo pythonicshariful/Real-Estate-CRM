@@ -72,9 +72,45 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Lead temperature options (admin-configurable via Settings).
+    // Loaded once from /api/settings/temperature-options before the first
+    // render; the built-in list below is the fallback if the call fails.
+    let temperatureOptions = [
+        { value: 'COLD', label: 'Cold', color: '#3b82f6' },
+        { value: 'WARM', label: 'Warm', color: '#f59e0b' },
+        { value: 'HOT', label: 'Hot', color: '#f43f5e' }
+    ];
+    const tempOption = (val) => temperatureOptions.find(o => o.value === (val || '').toUpperCase());
+    const tempColor = (val) => (tempOption(val) || {}).color || '#64748b';
+    const tempLabel = (val) => (tempOption(val) || {}).label || (val || 'COLD');
+    const tempTitle = () => 'Click to change temperature: ' + temperatureOptions.map(o => o.label).join(' → ');
+    const loadTemperatureOptions = async () => {
+        try {
+            const token = localStorage.getItem('crm_token');
+            const res = await fetch('/api/settings/temperature-options', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const opts = await res.json();
+                if (Array.isArray(opts) && opts.length) temperatureOptions = opts;
+            }
+        } catch (e) {
+            console.error('Failed to load temperature options', e);
+        }
+        populateTempFilter();
+    };
+    const populateTempFilter = () => {
+        const sel = document.getElementById('filter-temp');
+        if (!sel) return;
+        const current = sel.value;
+        sel.innerHTML = '<option value="">All Temperatures</option>' + temperatureOptions.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+        if (temperatureOptions.some(o => o.value === current)) sel.value = current;
+    };
+
     const toggleTemperature = async (id, currentTemp) => {
-        const temps = ['COLD', 'WARM', 'HOT'];
-        const nextTemp = temps[(temps.indexOf(currentTemp) + 1) % temps.length] || 'COLD';
+        const temps = temperatureOptions.map(o => o.value);
+        const idx = temps.indexOf((currentTemp || '').toUpperCase());
+        const nextTemp = temps[(idx + 1) % temps.length] || temps[0];
         
         try {
             const token = localStorage.getItem('crm_token');
@@ -471,8 +507,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             <svg class="w-4 h-4 ${lead.is_starred ? 'text-yellow-400 fill-current' : 'text-slate-500'}" viewBox="0 0 24 24" stroke="currentColor" fill="none"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
                         </button>
                         <span class="badge ${getBadgeClass(lead.pipeline_stage)}">${lead.pipeline_stage || 'NEW'}</span>
-                        <button title="Click to change temperature: Cold → Warm → Hot" class="temp-btn badge ${lead.lead_temperature === 'HOT' ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' : lead.lead_temperature === 'WARM' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-blue-500/20 text-blue-400 border-blue-500/30'} hover:opacity-80 transition-opacity" data-id="${lead.id}" data-temp="${lead.lead_temperature}">
-                            ${lead.lead_temperature || 'COLD'}
+                        <button title="${tempTitle()}" class="temp-btn badge hover:opacity-80 transition-opacity" style="background: ${tempColor(lead.lead_temperature)}22; color: ${tempColor(lead.lead_temperature)}; border-color: ${tempColor(lead.lead_temperature)}55" data-id="${lead.id}" data-temp="${lead.lead_temperature}">
+                            ${tempLabel(lead.lead_temperature)}
                         </button>
                         <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${prioClass}">${prio}</span>
                         ${lead.is_overdue ? '<span class="badge badge-overdue">SLA Overdue</span>' : ''}
@@ -842,9 +878,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const tempEl = document.getElementById('drawer-lead-temp');
         if (tempEl) {
-            tempEl.textContent = data.lead_temperature || 'COLD';
-            tempEl.className = `px-2 py-0.5 rounded badge font-bold hover:opacity-80 transition-opacity ${data.lead_temperature === 'HOT' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : data.lead_temperature === 'WARM' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'}`;
-            tempEl.title = 'Click to change temperature: Cold → Warm → Hot';
+            tempEl.textContent = tempLabel(data.lead_temperature);
+            tempEl.className = 'px-2 py-0.5 rounded badge font-bold hover:opacity-80 transition-opacity';
+            tempEl.style.background = tempColor(data.lead_temperature) + '22';
+            tempEl.style.color = tempColor(data.lead_temperature);
+            tempEl.style.borderColor = tempColor(data.lead_temperature) + '55';
+            tempEl.title = tempTitle();
             tempEl.onclick = async () => {
                 await toggleTemperature(data.id, data.lead_temperature || 'COLD');
                 openDrawer(data.id);
@@ -2412,7 +2451,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Initial Load
-    loadLeads();
+    // Initial Load — temperature options first, then the leads list
+    loadTemperatureOptions().then(loadLeads);
 });
 

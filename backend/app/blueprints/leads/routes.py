@@ -1,6 +1,6 @@
 from flask import request, jsonify, current_app
 from app.blueprints.leads import leads_bp
-from app.models import Opportunity, Contact, CallLog, Appointment, PipelineStage, AppointmentStatus, Objection, ObjectionCategory, Reservation, Note, PipelineHistory, db, UserRole, LeadTemperature, AuditLog, User, DurationBand, ActivityOutcome, ActivityType, Inquiry, Plot, PlotStatus, Installment, CancellationRequest, PaymentMethod, InstallmentStatus, CancellationStatus, CoachingLog, Event, utc_iso
+from app.models import Opportunity, Contact, CallLog, Appointment, PipelineStage, AppointmentStatus, Objection, ObjectionCategory, Reservation, Note, PipelineHistory, db, UserRole, AuditLog, User, DurationBand, ActivityOutcome, ActivityType, Inquiry, Plot, PlotStatus, Installment, CancellationRequest, PaymentMethod, InstallmentStatus, CancellationStatus, CoachingLog, Event, utc_iso, get_temperature_options
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from datetime import datetime, timezone, timedelta
 from decimal import Decimal
@@ -811,13 +811,15 @@ def update_temperature(id):
     if not _check_lead_access(lead, role, user_id):
         return jsonify({"error": "Access denied"}), 403
     
-    data = request.json
-    new_temp = data.get('temperature', 'COLD').upper()
-    try:
-        lead.lead_temperature = LeadTemperature[new_temp]
-    except KeyError:
+    data = request.json or {}
+    new_temp = str(data.get('temperature') or '').strip().upper()
+    # Validate against the ADMIN-configured temperature options, not a
+    # hardcoded enum. Leads already set to a removed value keep it.
+    allowed = {o['value'] for o in get_temperature_options()}
+    if new_temp not in allowed:
         return jsonify({"error": "Invalid temperature"}), 400
-    
+    lead.lead_temperature = new_temp
+
     db.session.commit()
     return jsonify(lead.to_dict())
 

@@ -3,6 +3,7 @@ from enum import Enum as PyEnum
 from zoneinfo import ZoneInfo
 from app.extensions import db
 import bcrypt
+import json
 import pyotp
 
 DHAKA_TZ = ZoneInfo("Asia/Dhaka")
@@ -484,7 +485,7 @@ class Opportunity(db.Model, SoftDeleteMixin):
     next_action_owner_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     next_action_deadline = db.Column(db.DateTime)
     appointment_status = db.Column(db.Enum(AppointmentStatus))
-    lead_temperature = db.Column(db.Enum(LeadTemperature), default=LeadTemperature.COLD)
+    lead_temperature = db.Column(db.String(32), default='COLD')
     priority = db.Column(db.Enum(LeadPriority), default=LeadPriority.MEDIUM)
     is_starred = db.Column(db.Boolean, default=False)
     manager_assessment = db.Column(db.Text)
@@ -550,7 +551,7 @@ class Opportunity(db.Model, SoftDeleteMixin):
             "last_activity_outcome": self.last_activity_outcome.value if self.last_activity_outcome else None,
             "last_activity_at": self.last_activity_at.isoformat() if self.last_activity_at else None,
             "appointment_status": self.appointment_status.value if self.appointment_status else None,
-            "lead_temperature": self.lead_temperature.value if self.lead_temperature else None,
+            "lead_temperature": (self.lead_temperature.value if hasattr(self.lead_temperature, 'value') else self.lead_temperature),
             "priority": self.priority.value if self.priority else "MEDIUM",
             "next_action_type": self.next_action_type.value if self.next_action_type else None,
             "next_action_deadline": self.next_action_deadline.isoformat() if self.next_action_deadline else None,
@@ -1259,6 +1260,49 @@ class SystemSetting(db.Model):
                 setting.description = description
         db.session.commit()
         return setting
+
+
+# ---------------------------------------------------------------------------
+# Lead Temperature Options (admin-configurable, stored as JSON in
+# SystemSetting under the key 'temperature_options').
+# Each option: {"value": "COLD", "label": "Cold", "color": "#3b82f6"}.
+# The Opportunity.lead_temperature column is a plain String, so options can
+# be added/removed freely; leads already set to a removed value keep it.
+# ---------------------------------------------------------------------------
+DEFAULT_TEMPERATURE_OPTIONS = [
+    {"value": "COLD", "label": "Cold", "color": "#3b82f6"},
+    {"value": "WARM", "label": "Warm", "color": "#f59e0b"},
+    {"value": "HOT", "label": "Hot", "color": "#f43f5e"},
+]
+
+TEMPERATURE_COLOR_PALETTE = [
+    "#3b82f6", "#f59e0b", "#f43f5e", "#8b5cf6",
+    "#10b981", "#06b6d4", "#f97316", "#ec4899",
+]
+
+
+def get_temperature_options():
+    """Load the configured lead-temperature options (list of dicts).
+    Falls back to the defaults when nothing is stored or the stored
+    JSON is missing/invalid/empty."""
+    raw = SystemSetting.get('temperature_options')
+    if raw:
+        try:
+            opts = json.loads(raw)
+        except (ValueError, TypeError):
+            opts = None
+        if isinstance(opts, list):
+            cleaned = []
+            for o in opts:
+                if isinstance(o, dict) and o.get('value') and o.get('label'):
+                    cleaned.append({
+                        "value": str(o['value']).strip().upper(),
+                        "label": str(o['label']).strip(),
+                        "color": str(o.get('color') or '#6366f1').strip(),
+                    })
+            if cleaned:
+                return cleaned
+    return [dict(o) for o in DEFAULT_TEMPERATURE_OPTIONS]
 
 
 class TokenBlocklist(db.Model):

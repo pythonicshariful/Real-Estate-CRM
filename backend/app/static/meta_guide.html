@@ -75,23 +75,32 @@
       </div>
     </div>
 
-    <!-- Step 1: App Creation -->
+    <!-- Current Status -->
+    <div class="glass-card rounded-2xl p-5 border-emerald-500/40 bg-emerald-950/10 space-y-2">
+      <h3 class="text-sm font-bold text-emerald-300">✅ বর্তমান অবস্থা — অ্যাপ PUBLISHED ও LIVE</h3>
+      <ul class="text-xs text-slate-300 list-disc list-inside space-y-1">
+        <li>Meta App <strong class="text-white">"Southeast Landmark CRM"</strong> (App ID: <strong class="text-white">988028163659869</strong>) এখন <strong class="text-emerald-300">Published</strong> এবং CRM-এ <strong class="text-emerald-300">LIVE কানেক্টেড</strong> — টেস্ট পেজ <strong class="text-white">"Pythonic Shariful"</strong> (Page ID: 609852418868032), <strong class="text-white">৩টি lead form</strong> sync হয়েছে। নতুন অ্যাপ বানানোর দরকার নেই।</li>
+        <li>Privacy Policy URL লাইভ: <a href="https://southeastlandmark.pythonicshariful.tech/privacy-policy.html" target="_blank" class="text-indigo-400 underline">https://southeastlandmark.pythonicshariful.tech/privacy-policy.html</a> — Data Deletion: একই URL + <code class="text-sky-300">#data-deletion</code>।</li>
+        <li><strong class="text-rose-300">⚠️ https://www.southeastlandmark.com কখনো ব্যবহার করবেন না</strong> — ওই ডোমেইন এখন থাই জুয়ার (gambling) সাইট দেখায়। Meta-র কোনো URL-এ এটি দেবেন না।</li>
+      </ul>
+    </div>
+
+    <!-- Step 1: App (already created & published) -->
     <div class="glass-card rounded-2xl p-6 border-slate-800 space-y-3">
       <div class="flex items-center gap-3">
         <div class="w-8 h-8 rounded-xl step-number flex items-center justify-center text-white font-black text-sm shrink-0">১</div>
         <div>
-          <h2 class="text-base font-bold text-white">Facebook Developer Account এবং Business App তৈরি করুন</h2>
-          <p class="text-xs text-slate-400">ফেসবুকের সাথে সিআরএম কানেক্ট করার জন্য একটি Meta Business App প্রয়োজন।</p>
+          <h2 class="text-base font-bold text-white">Meta App — ইতিমধ্যে তৈরি ও Published (নতুন অ্যাপ বানাবেন না)</h2>
+          <p class="text-xs text-slate-400">অ্যাপ <strong class="text-white">"Southeast Landmark CRM"</strong> (App ID: <strong class="text-white">988028163659869</strong>) ইতিমধ্যে তৈরি, <strong class="text-emerald-300">Published</strong> এবং CRM-এ LIVE কানেক্টেড। এই ধাপটি শুধু জানার জন্য — নতুন করে অ্যাপ বানালে কানেকশন ভেঙে যাবে।</p>
         </div>
       </div>
       <div class="text-xs text-slate-300 space-y-2 pl-11">
         <ol class="list-decimal list-inside space-y-1.5 text-slate-400">
-          <li>ব্রাউজারে যান: <a href="https://developers.facebook.com" target="_blank" class="text-indigo-400 font-bold hover:underline">developers.facebook.com</a> (আপনার ফেসবুক একাউন্টে লগইন করুন)।</li>
-          <li>উপরের ডান কোনায় <strong>My Apps</strong> &gt; <strong>Create App</strong>-এ ক্লিক করুন।</li>
-          <li>App Type হিসেবে <strong>"Business"</strong> অথবা <strong>"Other &gt; Business"</strong> নির্বাচন করুন।</li>
-          <li>অ্যাপের নাম দিন (যেমন: <code class="text-sky-300 bg-slate-900 px-1.5 py-0.5 rounded font-mono">Southeast Landmark CRM</code>) এবং Create App বাটনে চাপুন।</li>
-          <li>অ্যাপ তৈরি হলে বামের মেনু থেকে <strong>Add Product</strong> এ গিয়ে <strong>Webhooks</strong> এবং <strong>Lead Ads</strong> প্রোডাক্ট দুটি Set Up করুন।</li>
-          <li>ড্যাশবোর্ড থেকে <strong>App ID</strong> কপি করে সিআরএম-এর Settings &gt; Meta Webhook-এ সেভ করুন।</li>
+          <li>অ্যাপ ড্যাশবোর্ড: <a href="https://developers.facebook.com/apps/988028163659869/dashboard/" target="_blank" class="text-indigo-400 font-bold hover:underline">developers.facebook.com/apps/988028163659869/dashboard</a></li>
+          <li>Use Case: <strong>Business</strong> — "Capture &amp; manage ad leads with Marketing API" এবং "Manage everything on your Page"।</li>
+          <li>Permissions (সবগুলো "Ready for testing"): <code class="text-sky-300 bg-slate-900 px-1.5 py-0.5 rounded font-mono">leads_retrieval</code>, <code class="text-sky-300 bg-slate-900 px-1.5 py-0.5 rounded font-mono">pages_manage_ads</code>, <code class="text-sky-300 bg-slate-900 px-1.5 py-0.5 rounded font-mono">pages_read_engagement</code>, <code class="text-sky-300 bg-slate-900 px-1.5 py-0.5 rounded font-mono">pages_show_list</code>, <code class="text-sky-300 bg-slate-900 px-1.5 py-0.5 rounded font-mono">business_management</code>।</li>
+          <li>Privacy Policy URL ও Data Deletion URL: <strong class="text-white">https://southeastlandmark.pythonicshariful.tech/privacy-policy.html</strong> (Data Deletion: একই URL + <code class="text-sky-300">#data-deletion</code>)। App Icon (1024×1024) আপলোড করা আছে।</li>
+          <li>আগের ভুল অ্যাপ (App ID: 1803115624293156, Facebook Login use case) ব্যবহার করা হয় না — ওটার দিকে তাকাবেন না।</li>
         </ol>
       </div>
     </div>
@@ -229,13 +238,19 @@
         </div>
       </div>
       <div class="text-xs text-slate-300 space-y-2 pl-11">
+        <div class="bg-rose-500/10 border border-rose-500/40 rounded-xl p-3.5 space-y-1.5">
+          <p class="text-rose-300 font-bold">⚠️ App Secret অবশ্যই মিলতে হবে — না মিললে লিড আসবে না!</p>
+          <p class="text-slate-300">CRM-এ সেভ করা App Secret আর Meta ড্যাশবোর্ডের <strong>বর্তমান</strong> secret না মিললে CRM প্রতিটি webhook <strong>403 "Invalid signature. The App Secret does not match."</strong> দিয়ে ফিরিয়ে দেয়, আর Meta-র Testing Tool-এ দেখায় <strong>"Failure — Failure in webhook integration" / webhooks.delivery.rejected</strong>।</p>
+          <p class="text-slate-300"><strong>ঠিক করতে:</strong> Meta ড্যাশবোর্ড → <strong>App Settings → Basic</strong> → App Secret-এর পাশে <strong>Show</strong> (পাসওয়ার্ড দিয়ে দেখুন) → কপি করে CRM <strong>Settings → Meta</strong>-তে App Secret বক্সে পেস্ট করে <strong>Save</strong> করুন → তারপর নতুন টেস্ট লিড পাঠিয়ে যাচাই করুন।</p>
+        </div>
         <ol class="list-decimal list-inside space-y-1.5 text-slate-400">
           <li>মেটা ডেভেলপার পোর্টালে <strong>App settings &gt; Basic</strong>-এ গিয়ে <strong>App Secret</strong> কপি করে সিআরএম-এর Settings-এ সেভ করুন।</li>
-          <li>পেজের লিড অ্যাপে রুট করতে Graph API Explorer-এ গিয়ে POST রিকোয়েস্ট পাঠান (অথবা টার্মিনালে রান করুন):
+          <li>পেজ সাবস্ক্রিপশন এখন <strong>স্বয়ংক্রিয়</strong>: CRM-এ "Connect with Facebook" করলেই OAuth callback পেজটিকে <code class="text-sky-300">leadgen</code> webhook-এ সাবস্ক্রাইব করে দেয়। হাতে করতে চাইলে Graph API Explorer-এ POST রিকোয়েস্ট পাঠান (অথবা টার্মিনালে রান করুন):
             <div class="bg-slate-900 border border-slate-800 rounded-lg p-2.5 mt-1 font-mono text-[11px] text-sky-300 overflow-x-auto">
               curl -X POST "https://graph.facebook.com/v19.0/{PAGE_ID}/subscribed_apps?subscribed_fields=leadgen&access_token={PAGE_ACCESS_TOKEN}"
             </div>
           </li>
+          <li>যাচাই: Meta ড্যাশবোর্ড → <strong>Webhooks → Page</strong>-এ Callback URL সেভ আছে এবং <code class="text-sky-300">leadgen</code> ফিল্ডে <strong>Subscribed</strong> দেখাচ্ছে কিনা দেখুন।</li>
         </ol>
       </div>
     </div>
@@ -277,11 +292,33 @@
           <ol class="list-decimal list-inside text-xs text-slate-400 space-y-1">
             <li>ফেসবুকের এই লিংকে যান: <a href="https://developers.facebook.com/tools/lead-ads-testing" target="_blank" class="text-indigo-400 font-bold underline">Lead Ads Testing Tool</a></li>
             <li>আপনার <strong>Page</strong> এবং তৈরি করা <strong>Lead Form</strong> সিলেক্ট করুন।</li>
-            <li><strong>"Create Lead"</strong> বাটনে চাপ দিন।</li>
-            <li>আপনার সিআরএম-এর <strong>Leads</strong> পেজ রিফ্রেশ করলেই ফেসবুকের পাঠানো লিড ও প্রশ্নোত্তরের ডাটা দেখতে পাবেন!</li>
+            <li>আগের কোনো টেস্ট লিড আটকে ("Pending") থাকলে সেটি <strong>আগে ডিলিট করুন</strong> — নইলে নতুন লিড বানাতে দেবে না।</li>
+            <li><strong>"Create Lead"</strong> বাটনে চাপ দিন — একবারে <strong>একটিই</strong> নতুন টেস্ট লিড পাঠান।</li>
+            <li>RTU Status-এ <strong class="text-emerald-300">"Success — Successful webhook integration"</strong> দেখা গেলেই বুঝবেন লিড CRM-এ পৌঁছেছে। তারপর CRM-এর <strong>Leads</strong> পেজে দেখুন (Source: "Meta Lead Ads")।</li>
+            <li class="text-amber-300">নোট: Meta-র টেস্ট লিডে <strong>ডামি ডেটা</strong> থাকে — নাম "Meta Test Lead" আর ইমেইল test@meta.com দেখাবে। আসল লিডে আসল নাম ও তথ্য আসবে।</li>
           </ol>
         </div>
 
+      </div>
+    </div>
+
+    <!-- Step 6: Switch to the client's REAL page later -->
+    <div class="glass-card rounded-2xl p-6 border-slate-800 space-y-3">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-xl step-number flex items-center justify-center text-white font-black text-sm shrink-0">৬</div>
+        <div>
+          <h2 class="text-base font-bold text-white">পরে ক্লায়েন্টের আসল পেজে কানেক্ট করা</h2>
+          <p class="text-xs text-slate-400">টেস্ট শেষ হলে একই অ্যাপ দিয়ে আসল পেজে বদলাতে পারবেন — নতুন অ্যাপ লাগবে না।</p>
+        </div>
+      </div>
+      <div class="text-xs text-slate-300 space-y-2 pl-11">
+        <ol class="list-decimal list-inside space-y-1.5 text-slate-400">
+          <li>CRM-এ <strong>Settings → Meta</strong> ট্যাবে গিয়ে <strong>Disconnect</strong> চাপুন।</li>
+          <li><strong>"Connect with Facebook"</strong> চাপুন — OAuth ডায়ালগে ক্লায়েন্টের আসল পেজটি বেছে নিন। <strong>যে অ্যাকাউন্ট দিয়ে লগইন করবেন, সেটি ওই পেজের অ্যাডমিন হতে হবে।</strong></li>
+          <li>কানেক্ট হলে <strong>"Sync Forms"</strong> চাপুন — আসল পেজের lead form-গুলো sync হবে।</li>
+          <li>বদলের পর Lead Ads Testing Tool দিয়ে একটি <strong>নতুন টেস্ট লিড</strong> পাঠিয়ে আবার যাচাই করুন (RTU Status "Success" হতে হবে)।</li>
+          <li>নোট: আসল পেজের ফর্মের প্রশ্নের নাম Meta-র <strong>Standard Full Name / Phone Number</strong> হলে নাম-ফোন সরাসরি প্রোফাইলে ম্যাপ হবে; অন্য নাম হলে উত্তরগুলো লিডের <strong>"Custom Lead Form Answers"</strong>-এ দেখাবে।</li>
+        </ol>
       </div>
     </div>
 
@@ -298,17 +335,68 @@
       </ul>
     </div>
 
+    <!-- FAQ -->
+    <div class="glass-card rounded-2xl p-6 border-slate-800 space-y-4">
+      <h2 class="text-base font-bold text-white">❓ সচরাচর জিজ্ঞাসা (FAQ)</h2>
+      <div class="space-y-3 text-xs">
+        <div>
+          <p class="font-bold text-white">১. টেস্ট লিড "Pending — Lead publish in progress"-এ আটকে আছে, আসছে না কেন?</p>
+          <p class="text-slate-400">এটা Meta-র দিকের সমস্যা — লিডটি Meta-র সার্ভারেই publish হতে দেরি হচ্ছে, CRM-এ এখনো পাঠানোই হয়নি। অ্যাপ Unpublished থাকলে শুধু টেস্ট webhook আসে। কিছুক্ষণ অপেক্ষা করুন; না এলে Testing Tool-এ পুরনো লিডটি ডিলিট করে একটি নতুন টেস্ট লিড পাঠান।</p>
+        </div>
+        <div>
+          <p class="font-bold text-white">২. RTU Status-এ "Failure — Failure in webhook integration / webhooks.delivery.rejected" দেখাচ্ছে কেন?</p>
+          <p class="text-slate-400">CRM-এ সেভ করা App Secret আর Meta ড্যাশবোর্ডের বর্তমান secret মিলছে না — তাই CRM webhook 403 "Invalid signature" দিয়ে ফিরিয়ে দিচ্ছে। ধাপ ৪ দেখে Meta ড্যাশবোর্ড (App Settings → Basic) থেকে বর্তমান secret নিয়ে CRM Settings → Meta-তে সেভ করুন, তারপর নতুন টেস্ট লিড পাঠান।</p>
+        </div>
+        <div>
+          <p class="font-bold text-white">৩. লিডের নাম ফাঁকা বা "Meta Test Lead" দেখাচ্ছে কেন?</p>
+          <p class="text-slate-400">Meta-র টেস্ট লিডে ডামি ডেটা থাকে — নাম <code class="text-sky-300">&lt;test lead: dummy data for full_name&gt;</code>, ইমেইল test@meta.com। এটা টেস্টের স্বাভাবিক আচরণ; আসল বিজ্ঞাপনের লিডে কাস্টমারের আসল নাম ও তথ্য আসবে।</p>
+        </div>
+        <div>
+          <p class="font-bold text-white">৪. Sarah শুধু নিজের লিড দেখে, Admin সব লিড দেখে কেন?</p>
+          <p class="text-slate-400">এটাই নিয়ম: Lead Owner শুধু নিজের assigned লিড দেখতে পারে, আর Admin সব লিড দেখতে পারে। এতে প্রত্যেকের কাজ আলাদা থাকে।</p>
+        </div>
+        <div>
+          <p class="font-bold text-white">৫. ক্যালেন্ডারের ইভেন্টের রং কে সেট করে?</p>
+          <p class="text-slate-400">শুধু <strong>Admin</strong>। Admin Team পেজ থেকে প্রত্যেক Lead Owner-এর রং সেট করেন; Lead Owner নিজের রং বদলাতে পারে না। এতে Admin ক্যালেন্ডারে রং দেখেই বুঝতে পারেন কোন ইভেন্ট কার।</p>
+        </div>
+        <div>
+          <p class="font-bold text-white">৬. SLA ব্যানারে "৫ মিনিটে breach" বলছে কেন?</p>
+          <p class="text-slate-400">লিড assign হওয়ার ৫ মিনিটের মধ্যে প্রথম কল না করলে SLA breach ধরা হয়। লিড পাওয়ার সাথে সাথে কল করলেই SLA resolved হয়ে যায়।</p>
+        </div>
+        <div>
+          <p class="font-bold text-white">৭. Settings-এ "Last payload received" মানে কী?</p>
+          <p class="text-slate-400">এটি শেষ Meta Inquiry (লিড) তৈরি হওয়ার সময় — শেষ webhook POST আসার সময় নয়। তাই নতুন লিড না এলে এই সময় বদলাবে না।</p>
+        </div>
+        <div>
+          <p class="font-bold text-white">৮. ফর্মের কাস্টম প্রশ্নগুলোর জন্য কি CRM-এ কিছু সেটআপ করতে হবে?</p>
+          <p class="text-slate-400">না। প্রতিটি প্রশ্নের উত্তর নিজে থেকেই চলে আসে। Standard ফিল্ড (নাম, ইমেইল, ফোন, পেশা, সার্ভিস, প্রজেক্ট) সরাসরি প্রোফাইলে ম্যাপ হয়, বাকি সব উত্তর লিডের <strong>"Custom Lead Form Answers"</strong>-এ দেখায়। তবে নাম/ফোন ম্যাপ হতে ফর্মে Meta-র Standard <strong>Full Name / Phone Number</strong> প্রশ্ন থাকতে হবে — অন্য নামে প্রশ্ন করলে উত্তরটি Custom Answers-এ যাবে।</p>
+        </div>
+        <div>
+          <p class="font-bold text-white">৯. CRM সেশন expire হয়ে গেলে কী করব?</p>
+          <p class="text-slate-400">আবার Admin হিসেবে লগইন করুন। ব্রাউজারের লগইন প্রতি ব্রাউজারে আলাদা — এক ব্রাউজারে লগইন থাকলেও অন্য ব্রাউজারে আবার লগইন করতে হবে।</p>
+        </div>
+        <div>
+          <p class="font-bold text-white">১০. লিড আসছে না — প্রথমে কী কী চেক করব?</p>
+          <p class="text-slate-400">(ক) Settings → Meta-তে <strong>LIVE</strong> ব্যাজ আছে কিনা, (খ) App Secret বর্তমান secret-এর সাথে মিলছে কিনা, (গ) Meta ড্যাশবোর্ডে Webhook → Page-এ <code class="text-sky-300">leadgen</code> <strong>Subscribed</strong> কিনা, (ঘ) Testing Tool-এ RTU Status <strong>"Success"</strong> কিনা। RTU "Pending" থাকলে লিড Meta-র দিকেই আটকে আছে — CRM-এর দোষ নয়।</p>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- ENGLISH CONTENT (Toggled via JS) -->
   <div id="content-en" class="space-y-6 hidden">
     <div class="glass-card rounded-2xl p-6 border-slate-800 space-y-4 text-xs">
       <h2 class="text-base font-bold text-white">English Setup Summary</h2>
-      <p>1. Register a Meta Business App at <a href="https://developers.facebook.com" class="text-indigo-400 underline">developers.facebook.com</a>.</p>
+      <p><strong class="text-emerald-300">Current status:</strong> the Meta App <strong>"Southeast Landmark CRM"</strong> (App ID 988028163659869) is <strong>Published</strong> and <strong>LIVE-connected</strong> in the CRM to the test page <strong>"Pythonic Shariful"</strong> (Page ID 609852418868032), with <strong>3 lead forms</strong> synced. Do not create a new app.</p>
+      <p>Privacy Policy URL: <a href="https://southeastlandmark.pythonicshariful.tech/privacy-policy.html" class="text-indigo-400 underline">https://southeastlandmark.pythonicshariful.tech/privacy-policy.html</a> (Data Deletion: same URL + #data-deletion). Never use https://www.southeastlandmark.com — that domain now serves gambling content.</p>
+      <p>1. Register a Meta Business App at <a href="https://developers.facebook.com" class="text-indigo-400 underline">developers.facebook.com</a> (already done — see above).</p>
       <p>2. Set Callback URL to your active CRM domain + <code>/api/webhooks/meta</code> and enter the Verify Token from Settings.</p>
-      <p>3. Subscribe to the <code>leadgen</code> field under the <strong>Page</strong> object.</p>
+      <p>3. Subscribe to the <code>leadgen</code> field under the <strong>Page</strong> object (automatic now: the OAuth callback subscribes the page).</p>
       <p>4. Generate a <strong>Never-Expiring Page Access Token</strong> using Meta Business Settings &gt; System Users &gt; Generate Token &gt; Expiration: Never with <code>leads_retrieval, pages_manage_ads, pages_read_engagement</code>.</p>
-      <p>5. Test with either the In-App "Simulate Lead Now" button or Meta's <a href="https://developers.facebook.com/tools/lead-ads-testing" class="text-indigo-400 underline">Lead Ads Testing Tool</a>.</p>
+      <p>5. <strong>App Secret must match:</strong> if the secret stored in the CRM differs from the app's current secret, the CRM rejects every webhook with 403 "Invalid signature" and Meta shows "Failure / webhooks.delivery.rejected". Reveal the current secret in the Meta dashboard (App Settings &gt; Basic) and save it in CRM Settings &gt; Meta.</p>
+      <p>6. Test with either the In-App "Simulate Lead Now" button or Meta's <a href="https://developers.facebook.com/tools/lead-ads-testing" class="text-indigo-400 underline">Lead Ads Testing Tool</a> — delete any stuck test lead first, send ONE fresh test lead, and RTU status must show "Success — Successful webhook integration". Test leads carry dummy data (name "Meta Test Lead", email test@meta.com).</p>
+      <p>7. To switch to the client's real page later: Settings &gt; Meta &gt; Disconnect, then Connect with Facebook and pick the real page (the account must be a page admin), then re-test with a fresh test lead.</p>
     </div>
   </div>
 

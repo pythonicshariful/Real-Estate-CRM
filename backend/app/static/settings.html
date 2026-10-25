@@ -64,6 +64,10 @@
           <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
           Activity Labels
         </button>
+        <button id="nav-temperature-options" onclick="switchTab('temperature-options')" class="tab-btn admin-only inline-flex md:flex w-auto md:w-full text-left px-4 py-2.5 rounded-xl text-xs text-slate-400 hover:bg-white/5 transition-all items-center gap-2.5">
+          <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z"/></svg>
+          Lead Temperature
+        </button>
         <button id="nav-questionnaire" onclick="switchTab('questionnaire')" class="tab-btn admin-only inline-flex md:flex w-auto md:w-full text-left px-4 py-2.5 rounded-xl text-xs text-slate-400 hover:bg-white/5 transition-all items-center gap-2.5">
           <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
           Lead Custom Fields
@@ -638,6 +642,48 @@
                   </div>
                   <div class="pt-2 border-t border-slate-800 flex justify-end">
                     <button type="submit" id="label-save-btn" class="btn-gradient px-5 py-2 rounded-xl text-xs font-bold">Save Label</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6b. LEAD TEMPERATURE TAB -->
+        <div id="tab-temperature-options" class="tab-content hidden">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Options List Column -->
+            <div class="lg:col-span-7 space-y-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-base font-bold text-white">Lead Temperature Options</div>
+                  <div class="text-xs text-slate-400">Add or remove the Cold / Warm / Hot tags that sales agents cycle through by clicking a lead's temperature badge. Colour is assigned automatically.</div>
+                </div>
+              </div>
+              <div class="chart-card p-0 overflow-hidden">
+                <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/40">
+                  <div class="text-xs font-bold text-white uppercase tracking-wider">Current Options</div>
+                  <div class="text-xs text-slate-400" id="temp-count-badge">0 Options</div>
+                </div>
+                <div id="temperature-options-list" class="divide-y divide-slate-800/60">
+                  <div class="p-4 text-xs text-slate-500">Loading temperature options...</div>
+                </div>
+              </div>
+            </div>
+            <!-- Add Option Column -->
+            <div class="lg:col-span-5 space-y-4">
+              <div class="chart-card space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <div class="text-sm font-bold text-white">Add Temperature Option</div>
+                </div>
+                <form id="temperature-option-form" onsubmit="addTemperatureOption(event)" class="space-y-4">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Label *</label>
+                    <input type="text" id="temp-label" required maxlength="20" class="w-full input-glass px-3.5 py-2.5 rounded-xl text-xs text-slate-200" placeholder="e.g. Boiling / Freezing">
+                  </div>
+                  <div class="text-[11px] text-slate-500">The label becomes the option (e.g. "Boiling" &rarr; BOILING). Colour is picked automatically from the palette. At least one option must always remain.</div>
+                  <div class="pt-2 border-t border-slate-800 flex justify-end">
+                    <button type="submit" class="btn-gradient px-5 py-2 rounded-xl text-xs font-bold">Add Option</button>
                   </div>
                 </form>
               </div>
@@ -1495,6 +1541,86 @@
       }
     }
 
+    // === Lead Temperature Options Management ===
+    let allTemperatureOptions = [];
+    const TEMP_COLOR_PALETTE = ['#3b82f6', '#f59e0b', '#f43f5e', '#8b5cf6', '#10b981', '#06b6d4', '#f97316', '#ec4899'];
+    const tempEscHtml = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    async function loadTemperatureOptionsSettings() {
+      try {
+        const listContainer = document.getElementById('temperature-options-list');
+        if (!listContainer) return;
+        const opts = await fetchAPI('/api/settings/temperature-options');
+        if (!opts) return;
+        allTemperatureOptions = opts;
+        document.getElementById('temp-count-badge').textContent = `${opts.length} Option${opts.length === 1 ? '' : 's'}`;
+
+        if (opts.length === 0) {
+          listContainer.innerHTML = '<div class="p-6 text-center text-xs text-slate-500">No temperature options yet.</div>';
+          return;
+        }
+
+        listContainer.innerHTML = opts.map(o => `
+          <div class="p-4 flex items-center justify-between hover:bg-slate-900/40 transition-colors">
+            <div class="flex items-center gap-3">
+              <span class="w-3.5 h-3.5 rounded-full flex-shrink-0" style="background: ${tempEscHtml(o.color)}"></span>
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold border" style="background: ${tempEscHtml(o.color)}22; color: ${tempEscHtml(o.color)}; border-color: ${tempEscHtml(o.color)}44;">
+                  ${tempEscHtml(o.label)}
+                </span>
+                <span class="text-[11px] text-slate-500 font-mono">${tempEscHtml(o.value)}</span>
+              </div>
+            </div>
+            <button onclick="deleteTemperatureOption('${tempEscHtml(o.value)}')" ${opts.length <= 1 ? 'disabled style="opacity: 0.3; cursor: not-allowed;"' : ''} class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-colors" title="Remove">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+          </div>
+        `).join('');
+      } catch (e) {
+        if (window.showToast) window.showToast(e.message, 'error');
+      }
+    }
+
+    async function saveTemperatureOptions(opts) {
+      const saved = await fetchAPI('/api/settings/temperature-options', { method: 'PUT', body: JSON.stringify(opts) });
+      allTemperatureOptions = saved || opts;
+      loadTemperatureOptionsSettings();
+    }
+
+    async function addTemperatureOption(e) {
+      e.preventDefault();
+      const label = document.getElementById('temp-label').value.trim();
+      if (!label) return;
+      const value = label.toUpperCase().replace(/[^A-Z0-9 ]/g, '').replace(/\s+/g, ' ').trim().slice(0, 20);
+      if (!value) {
+        if (window.showToast) window.showToast('Label must contain letters or numbers', 'error');
+        return;
+      }
+      if (allTemperatureOptions.some(o => o.value === value)) {
+        if (window.showToast) window.showToast(`"${value}" already exists`, 'error');
+        return;
+      }
+      const color = TEMP_COLOR_PALETTE[allTemperatureOptions.length % TEMP_COLOR_PALETTE.length];
+      try {
+        await saveTemperatureOptions([...allTemperatureOptions, { value, label, color }]);
+        document.getElementById('temp-label').value = '';
+        if (window.showToast) window.showToast('Temperature option added!', 'success');
+      } catch (err) {
+        if (window.showToast) window.showToast(err.message, 'error');
+      }
+    }
+
+    async function deleteTemperatureOption(value) {
+      if (allTemperatureOptions.length <= 1) return;
+      if (!confirm(`Remove temperature "${value}"? Leads already set to it will keep their value.`)) return;
+      try {
+        await saveTemperatureOptions(allTemperatureOptions.filter(o => o.value !== value));
+        if (window.showToast) window.showToast('Temperature option removed', 'success');
+      } catch (err) {
+        if (window.showToast) window.showToast(err.message, 'error');
+      }
+    }
+
     // === Lead Questionnaire Management ===
     let allQuestionnaire = [];
 
@@ -1669,6 +1795,7 @@
         loadB2Settings();
         loadQuickNotes();
         loadActivityLabels();
+        loadTemperatureOptionsSettings();
         loadQuestionnaireSettings();
         
         // Auto-upload company logo on file selection
@@ -1774,6 +1901,7 @@
         </div>
       </form>
     </div>
+  </div>
   <!-- Meta Guide Fullscreen Modal -->
   <div id="meta-guide-modal" class="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 p-4">
     <div class="bg-[#0f1122] border border-slate-800 rounded-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden shadow-2xl">

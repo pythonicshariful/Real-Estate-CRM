@@ -2,9 +2,11 @@ from flask import request, jsonify, current_app
 from app.blueprints.settings import settings_bp
 from flask_jwt_extended import jwt_required
 from app.utils.rbac import require_role
-from app.models import UserRole, SystemSetting, Inquiry, db, ActivityLabel, LeadQuestionnaireQuestion
+from app.models import UserRole, SystemSetting, Inquiry, db, ActivityLabel, LeadQuestionnaireQuestion, get_temperature_options, TEMPERATURE_COLOR_PALETTE
 from datetime import datetime
 from sqlalchemy import func
+import json
+import re
 
 DEFAULT_SETTINGS = {
     'company_name': 'Southeast Landmark CRM',
@@ -479,6 +481,50 @@ def delete_activity_label(id):
     label.is_active = False
     db.session.commit()
     return jsonify({'message': f"Label '{label.name}' removed successfully"}), 200
+
+
+# ---------------------------------------------------------------------------
+# Lead Temperature Options Management
+# Stored as JSON in SystemSetting key 'temperature_options'. Any logged-in
+# user may read (the leads page needs them); only ADMIN may replace them.
+# ---------------------------------------------------------------------------
+_TEMP_VALUE_RE = re.compile(r'^[A-Za-z0-9 ]{1,20}$')
+_TEMP_COLOR_RE = re.compile(r'^#[0-9A-Fa-f]{6}$')
+
+
+@settings_bp.route('/temperature-options', methods=['GET'])
+@jwt_required()
+def get_temperature_options_api():
+    return jsonify(get_temperature_options())
+
+
+@settings_bp.route('/temperature-options', methods=['PUT'])
+@jwt_required()
+@require_role(UserRole.ADMIN)
+def put_temperature_options():
+    data = request.json
+    if not isinstance(data, list) or not data:
+        return jsonify({'error': 'At least one temperature option is required'}), 400
+    seen = set()
+    cleaned = []
+    for i, item in enumerate(data):
+        if not isinstance(item, dict):
+            return jsonify({'error': f'Option {i + 1} is invalid'}), 400
+        value = str(item.get('value') or '').strip().upper()
+        label = str(item.get('label') or '').strip()
+        if not value or not _TEMP_VALUE_RE.match(value):
+            return jsonify({'error': f"Option {i + 1}: value must be 1-20 letters, numbers or spaces"}), 400
+        if not label:
+            return jsonify({'error': f"Option {i + 1}: label is required"}), 400
+        if value in seen:
+            return jsonify({'error': f"Duplicate temperature value: {value}"}), 400
+        seen.add(value)
+        color = str(item.get('color') or '').strip()
+        if not _TEMP_COLOR_RE.match(color):
+            color = TEMPERATURE_COLOR_PALETTE[len(cleaned) % len(TEMPERATURE_COLOR_PALETTE)]
+        cleaned.append({'value': value, 'label': label, 'color': color})
+    SystemSetting.set('temperature_options', json.dumps(cleaned), 'Lead temperature options (JSON)')
+    return jsonify(cleaned)
 
 
 # ---------------------------------------------------------------------------

@@ -784,7 +784,7 @@ def export_leads_csv():
             contact.source if contact else '',
             opp.pipeline_stage.value if opp.pipeline_stage else '',
             opp.priority.value if opp.priority else '',
-            opp.lead_temperature.value if opp.lead_temperature else '',
+            opp.lead_temperature if isinstance(opp.lead_temperature, str) else (opp.lead_temperature.value if opp.lead_temperature else ''),
             opp.assigned_to.full_name if opp.assigned_to else 'Unassigned',
             opp.created_at.isoformat() if opp.created_at else ''
         ])
