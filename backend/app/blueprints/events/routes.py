@@ -12,9 +12,11 @@ from ...extensions import db
 from ...models import Event, User, Appointment, Task, Contact, Opportunity
 from ...utils.rbac import get_current_user_role, require_min_role
 
-# Reminder entries on the calendar use one fixed colour so they are instantly
-# distinguishable from real events (which use the lead owner's colour).
-REMINDER_COLOR = "#f59e0b"  # amber
+# Fallback colour for a reminder entry when its owner has no calendar
+# colour set. Reminder entries normally use the EVENT OWNER's colour
+# (admin-set per owner), so the admin can tell whose reminder it is;
+# the "Reminder:" title is what distinguishes them from real events.
+REMINDER_COLOR = "#f59e0b"  # amber (fallback only)
 
 
 def _parse_reminder_minutes(value):
@@ -113,8 +115,9 @@ def list_events():
     out_list = [e.to_dict() for e in events]
 
     # 1b. Reminder entries for real Events — one calendar entry per event
-    # with a reminder, placed at (start - reminder_minutes) in the fixed
-    # reminder colour. A reminder is a schedule entry, not a one-time popup:
+    # with a reminder, placed at (start - reminder_minutes) in the EVENT
+    # OWNER's colour (admin-set per owner, same as the event itself).
+    # A reminder is a schedule entry, not a one-time popup:
     # it stays on the calendar even after it has fired / been read.
     # When the feed is filtered to a reminder type, the section-1 query
     # above yields nothing, so fetch the visible events with reminders
@@ -158,7 +161,7 @@ def list_events():
                 "end": (remind_start + timedelta(minutes=30)).isoformat(),
                 "created_by_id": ev.created_by_id,
                 "is_all_day": False,
-                "color": REMINDER_COLOR,
+                "color": d.get("color") or REMINDER_COLOR,
                 "owner_id": d.get("owner_id"),
                 "owner_name": d.get("owner_name"),
                 "lead_id": ev.lead_id,
@@ -228,8 +231,9 @@ def list_events():
                 "created_by_id": tsk.created_by_id,
                 "opportunity_id": tsk.opportunity_id,
                 "is_all_day": False,
-                # Tasks are reminders: fixed reminder colour, not the owner's.
-                "color": REMINDER_COLOR,
+                # Tasks are reminders: the assignee's colour, so the admin
+                # can tell whose task it is.
+                "color": user.calendar_color if user and user.calendar_color else REMINDER_COLOR,
                 "is_reminder": True,
             })
 
@@ -270,8 +274,8 @@ def list_events():
                 "opportunity_id": opp.id,
                 "contact_id": opp.contact_id,
                 "is_all_day": False,
-                # Virtual follow-up reminders use the fixed reminder colour.
-                "color": REMINDER_COLOR,
+                # Virtual follow-up reminders use the lead owner's colour.
+                "color": user.calendar_color if user and user.calendar_color else REMINDER_COLOR,
                 "is_reminder": True,
             })
 

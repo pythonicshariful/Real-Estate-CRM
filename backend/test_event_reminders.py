@@ -196,13 +196,15 @@ def test_suite():
         assert real[0]["color"] and real[0]["color"] != REMINDER_COLOR, real[0]
         rem = [e for e in feed if e.get("id") == f"rem_{ev_id}"]
         assert len(rem) == 1, f"reminder entry rem_{ev_id} missing from feed"
-        assert rem[0]["color"] == REMINDER_COLOR, rem[0]
+        # Reminder uses the event owner's colour (same as the event itself),
+        # so the admin can tell whose reminder it is.
+        assert rem[0]["color"] == real[0]["color"], (rem[0], real[0])
         assert rem[0]["title"].startswith("\U0001f514 Reminder:"), rem[0]["title"]
         assert rem[0]["event_id"] == ev_id and rem[0]["is_reminder"] is True
         start = datetime.fromisoformat(real[0]["start"].replace("Z", "+00:00"))
         rstart = datetime.fromisoformat(rem[0]["start"].replace("Z", "+00:00"))
         assert abs((start - rstart).total_seconds() - 30 * 60) < 60, (start, rstart)
-        print("   [PASS] feed has event (owner colour) + reminder entry at start-30min, amber")
+        print("   [PASS] feed has event (owner colour) + reminder entry at start-30min, owner's colour")
         passed += 1
 
         rem_none = [e for e in feed if e.get("id") == f"rem_{no_rem_ev_id}"]
@@ -247,9 +249,9 @@ def test_suite():
         res = client.get('/api/events/', headers=sarah_h)
         feed = res.json
         rem_f = [e for e in feed if e.get("id") == f"rem_{f_ev.id}"]
-        assert len(rem_f) == 1 and rem_f[0]["color"] == REMINDER_COLOR, rem_f
+        assert len(rem_f) == 1 and rem_f[0]["color"] == real[0]["color"], rem_f
         assert rem_f[0]["lead_id"] == lead_id
-        print("   [PASS] follow-up reminder entry on calendar (amber, linked to lead)")
+        print("   [PASS] follow-up reminder entry on calendar (owner's colour, linked to lead)")
         passed += 1
 
         # cleanup
