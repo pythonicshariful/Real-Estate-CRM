@@ -1,8 +1,30 @@
 from datetime import datetime, timezone
 from enum import Enum as PyEnum
+from zoneinfo import ZoneInfo
 from app.extensions import db
 import bcrypt
 import pyotp
+
+DHAKA_TZ = ZoneInfo("Asia/Dhaka")
+
+
+def dhaka_iso(dt):
+    """Serialise a stored datetime as Dhaka wall time with a ``+06:00`` offset.
+
+    The calendar feed (GET /api/events/) must use this, NOT utc_iso():
+    FullCalendar keeps the offset that comes WITH an event's ISO string
+    and displays the time in that offset, ignoring the calendar's
+    timeZone setting — so a ``+00:00`` string renders as UTC time
+    (8:05 AM) even with timeZone 'Asia/Dhaka'. A ``+06:00`` string renders
+    as 2:05 PM. The instant is unchanged; only the display offset differs.
+    Other APIs keep utc_iso() (unambiguous instant, parsed correctly by
+    ``new Date(...)``).
+    """
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(DHAKA_TZ).isoformat()
 
 
 def utc_iso(dt):

@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 
 from . import events_bp
 from ...extensions import db
-from ...models import Event, User, Appointment, Task, Contact, Opportunity, utc_iso
+from ...models import Event, User, Appointment, Task, Contact, Opportunity, dhaka_iso
 from ...utils.rbac import get_current_user_role, require_min_role
 
 # Fallback colour for a reminder entry when its owner has no calendar
@@ -113,6 +113,14 @@ def list_events():
 
     events = query_evt.order_by(Event.start_datetime.asc()).all()
     out_list = [e.to_dict() for e in events]
+    # The calendar feed must carry Dhaka (+06:00) offsets, not UTC ones:
+    # FullCalendar displays an event in the offset its own ISO string
+    # carries, so +00:00 strings render as UTC times despite the calendar's
+    # timeZone 'Asia/Dhaka'. (to_dict() itself stays UTC — other callers
+    # parse the instant with new Date(...).)
+    for _ev, _d in zip(events, out_list):
+        _d["start"] = dhaka_iso(_ev.start_datetime)
+        _d["end"] = dhaka_iso(_ev.end_datetime) if _ev.end_datetime else None
 
     # 1b. Reminder entries for real Events — one calendar entry per event
     # with a reminder, placed at (start - reminder_minutes) in the EVENT
@@ -157,8 +165,8 @@ def list_events():
                     + (f" Lead: {d.get('lead_name')}." if d.get("lead_name") else "")
                 ),
                 "event_type": "EVENT_REMINDER",
-                "start": utc_iso(remind_start),
-                "end": utc_iso(remind_start + timedelta(minutes=30)),
+                "start": dhaka_iso(remind_start),
+                "end": dhaka_iso(remind_start + timedelta(minutes=30)),
                 "created_by_id": ev.created_by_id,
                 "is_all_day": False,
                 "color": d.get("color") or REMINDER_COLOR,
@@ -199,8 +207,8 @@ def list_events():
                 "title": f"Appointment with {contact_name}",
                 "description": f"Location: {apt.location or 'TBD'} | Status: {apt.status.value}",
                 "event_type": "APPOINTMENT",
-                "start": utc_iso(apt.appointment_datetime),
-                "end": utc_iso(apt.appointment_datetime + timedelta(hours=1)),
+                "start": dhaka_iso(apt.appointment_datetime),
+                "end": dhaka_iso(apt.appointment_datetime + timedelta(hours=1)),
                 "created_by_id": apt.scheduled_by_id,
                 "opportunity_id": apt.opportunity_id,
                 "contact_id": apt.contact_id,
@@ -226,8 +234,8 @@ def list_events():
                 "title": f"Task/Reminder: {tsk.title}",
                 "description": f"Priority: {tsk.priority.value} | Status: {tsk.status.value} | Details: {tsk.description or 'None'}",
                 "event_type": "REMINDER",
-                "start": utc_iso(tsk.due_date),
-                "end": utc_iso(tsk.due_date + timedelta(minutes=30)),
+                "start": dhaka_iso(tsk.due_date),
+                "end": dhaka_iso(tsk.due_date + timedelta(minutes=30)),
                 "created_by_id": tsk.created_by_id,
                 "opportunity_id": tsk.opportunity_id,
                 "is_all_day": False,
@@ -268,8 +276,8 @@ def list_events():
                 "title": f"Lead Reminder: {action_type_name} ({contact_name})",
                 "description": f"Lead: {contact_name} | Next Action: {action_type_name}",
                 "event_type": "REMINDER",
-                "start": utc_iso(opp.next_action_deadline),
-                "end": utc_iso(opp.next_action_deadline + timedelta(minutes=30)),
+                "start": dhaka_iso(opp.next_action_deadline),
+                "end": dhaka_iso(opp.next_action_deadline + timedelta(minutes=30)),
                 "created_by_id": opp.assigned_to_id,
                 "opportunity_id": opp.id,
                 "contact_id": opp.contact_id,
