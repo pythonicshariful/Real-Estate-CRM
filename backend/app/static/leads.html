@@ -279,7 +279,7 @@
   
   <!-- Log Call / Activity Modal -->
   <div id="call-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto shadow-2xl transform scale-95 transition-transform duration-200" id="call-modal-content">
+    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl transform scale-95 transition-transform duration-200" id="call-modal-content" style="max-height: 92vh; overflow-y: auto;">
       <div class="border-b border-slate-800 p-5 flex justify-between items-center bg-slate-900/50">
         <h3 class="font-bold text-white text-lg">Log Call & Activity</h3>
         <button id="close-call-modal" class="text-slate-400 hover:text-white transition-colors">
@@ -354,7 +354,7 @@
           </div>
         </div>
 
-        <div class="pt-4 pb-1 flex justify-end gap-3 sticky bottom-0 bg-[#0f1019]">
+        <div class="pt-4 pb-1 flex justify-end gap-3 bg-[#0f1019]" style="position: sticky; bottom: 0;">
           <button type="button" id="cancel-call-modal" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-800 transition-colors">Cancel</button>
           <button type="submit" id="submit-call-btn" class="btn-gradient px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2">
             <svg id="upload-spinner" class="hidden animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
@@ -1168,7 +1168,7 @@
 
   <script src="/assets/js/sidebar.js"></script>
   <script type="module" src="/assets/js/app.js"></script>
-  <script src="/assets/js/leads.js?v=21"></script>
+  <script src="/assets/js/leads.js?v=22"></script>
   <script src="/assets/js/calls.js?v=5"></script>
 
   <!-- Dedicated Lead Details Navigation Script -->

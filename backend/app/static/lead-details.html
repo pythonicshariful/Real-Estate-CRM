@@ -435,7 +435,7 @@
                   <span class="text-[10px] text-slate-500">${item.date ? new Date(item.date).toLocaleString() : ''}</span>
                 </div>
                 <div class="text-slate-300 mt-1">${item.notes || 'Activity recorded'}</div>
-                ${item.recording_url ? `<div class="mt-2 space-y-1.5"><div class="text-[11px] text-slate-400 truncate" title="${item.recording_filename || 'Call Recording'}">🎧 ${item.recording_filename || 'Call Recording'}</div><audio controls preload="none" src="${item.recording_url}" class="w-full h-8"></audio><a href="${item.recording_url}" target="_blank" class="text-[11px] font-semibold text-indigo-400 hover:text-indigo-300">Play / Download Recording</a></div>` : ''}
+                ${item.recording_url ? `<div class="mt-2 space-y-1.5"><div class="text-[11px] text-slate-400 truncate" title="${item.recording_filename || 'Call Recording'}">🎧 ${item.recording_filename || 'Call Recording'}</div><audio controls preload="metadata" src="${item.recording_url}" class="w-full h-8"></audio><a href="${item.recording_url}" target="_blank" class="text-[11px] font-semibold text-indigo-400 hover:text-indigo-300">Play / Download Recording</a></div>` : ''}
               </div>
             </div>
           `;
