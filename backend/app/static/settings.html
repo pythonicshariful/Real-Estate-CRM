@@ -944,8 +944,22 @@
       }
     }
 
+    // Two-click confirm instead of the native confirm() dialog: automated
+    // browsers auto-dismiss native dialogs, so Disconnect could never run.
+    let _fbDiscArmed = false;
     async function fbDisconnect() {
-      if (!confirm('Disconnect Facebook from this CRM?')) return;
+      const btn = document.getElementById('fb-disconnect-btn');
+      if (!_fbDiscArmed) {
+        _fbDiscArmed = true;
+        if (btn) btn.textContent = 'Click again to confirm disconnect';
+        setTimeout(() => {
+          _fbDiscArmed = false;
+          if (btn) btn.textContent = 'Disconnect';
+        }, 5000);
+        return;
+      }
+      _fbDiscArmed = false;
+      if (btn) btn.textContent = 'Disconnect';
       try {
         const res = await fetch('/api/webhooks/facebook/disconnect', {
           method: 'POST',
