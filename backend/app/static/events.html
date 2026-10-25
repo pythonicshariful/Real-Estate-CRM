@@ -46,6 +46,15 @@
     /* Toolbars */
     /* title styling lives in theme.css so it adapts to light/dark */
     .fc-header-toolbar { padding: 1.5rem; background: rgba(255,255,255,0.01); border-bottom: 1px solid var(--fc-border-color); margin-bottom: 0 !important; }
+    @media (max-width: 640px) {
+      /* Calendar toolbar stacks instead of overflowing on phones */
+      .fc-header-toolbar { flex-wrap: wrap; gap: 0.5rem; padding: 1rem; }
+      .fc-toolbar-chunk { flex-wrap: wrap; }
+      .fc .fc-toolbar-title { font-size: 1.05rem; }
+      .fc .fc-button { padding: 0.4rem 0.6rem; font-size: 0.75rem; }
+      .fc-col-header-cell-cushion { font-size: 0.7rem; padding: 0.5rem 0.25rem; }
+      .fc-daygrid-day-number { padding: 0.4rem; font-size: 0.8rem; }
+    }
     .fc-toolbar-chunk { display: flex; gap: 0.5rem; }
     
     /* Buttons */
@@ -141,7 +150,7 @@
 
   <!-- Premium Add Event Modal -->
   <div id="addEventModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md transition-opacity">
-    <div class="glass-dark border border-white/10 rounded-2xl w-full max-w-md flex flex-col shadow-[0_0_40px_rgba(0,0,0,0.5)] overflow-visible relative">
+    <div class="glass-dark border border-white/10 rounded-2xl w-full max-w-md flex flex-col shadow-[0_0_40px_rgba(0,0,0,0.5)] relative" style="max-height: 92vh; overflow-y: auto;">
       <!-- Glow behind modal -->
       <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-2xl pointer-events-none"></div>
       
@@ -227,7 +236,7 @@
 
   <!-- Premium Event Details Modal -->
   <div id="eventDetailsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md transition-opacity">
-    <div class="glass-dark border border-white/10 rounded-2xl w-full max-w-md flex flex-col shadow-[0_0_40px_rgba(0,0,0,0.5)] overflow-visible relative">
+    <div class="glass-dark border border-white/10 rounded-2xl w-full max-w-md flex flex-col shadow-[0_0_40px_rgba(0,0,0,0.5)] relative" style="max-height: 92vh; overflow-y: auto;">
       <!-- Glow behind modal -->
       <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-2xl pointer-events-none"></div>
       
@@ -444,6 +453,9 @@
       const calendarEl = document.getElementById('calendar');
       const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
+        // Stored datetimes are UTC; display them in Bangladesh time so
+        // 2:05 PM Dhaka shows as 2:05 PM, not 8:05 AM.
+        timeZone: 'Asia/Dhaka',
         height: '100%',
         headerToolbar: {
           left: 'prev,next today',

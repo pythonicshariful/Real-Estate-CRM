@@ -109,6 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             let leads = await res.json();
             allLeadsData = leads;
+            populateSourceFilter();
             updateKPIs();
             
             // Set initial filter dropdown value if URL param is present
@@ -131,16 +132,55 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Parse a stored datetime (naive UTC, or UTC-aware) and return its
+    // Bangladesh date as 'YYYY-MM-DD'. Used by the created-date filter.
+    const dhakaDateStr = (isoString) => {
+        if (!isoString) return '';
+        let s = isoString;
+        if (typeof s === 'string' && !s.endsWith('Z') && !s.includes('+')) s += 'Z';
+        const d = new Date(s);
+        if (isNaN(d)) return '';
+        return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Dhaka' });
+    };
+    const parseUtc = (isoString) => {
+        if (!isoString) return null;
+        let s = isoString;
+        if (typeof s === 'string' && !s.endsWith('Z') && !s.includes('+')) s += 'Z';
+        const d = new Date(s);
+        return isNaN(d) ? null : d;
+    };
+
+    // Populate the Source filter from the sources actually present in the
+    // loaded leads, so new sources (Meta, import, manual, ...) appear.
+    function populateSourceFilter() {
+        const sel = document.getElementById('filter-source');
+        if (!sel) return;
+        const current = sel.value;
+        const sources = [...new Set(allLeadsData.map(l => l.contact?.source || l.source).filter(Boolean))].sort();
+        sel.innerHTML = '<option value="">All Sources</option>' + sources.map(s => `<option value="${s}">${s}</option>`).join('');
+        if (sources.includes(current)) sel.value = current;
+    }
+
     function applyFilters() {
         const stageEl = document.getElementById('filter-stage');
         const tempEl = document.getElementById('filter-temp');
         const starredEl = document.getElementById('filter-starred');
         const ownerEl = document.getElementById('filter-owner');
+        const sourceEl = document.getElementById('filter-source');
+        const fromEl = document.getElementById('filter-created-from');
+        const toEl = document.getElementById('filter-created-to');
+        const followupEl = document.getElementById('filter-followup');
 
         const stage = stageEl ? stageEl.value : '';
         const temp = tempEl ? tempEl.value : '';
         const starred = starredEl ? starredEl.checked : false;
         const owner = ownerEl ? ownerEl.value : '';
+        const source = sourceEl ? sourceEl.value : '';
+        const createdFrom = fromEl ? fromEl.value : '';
+        const createdTo = toEl ? toEl.value : '';
+        const followup = followupEl ? followupEl.value : '';
+
+        const todayDhaka = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Dhaka' });
 
         filteredLeadsData = allLeadsData.filter(lead => {
             if (stage && lead.pipeline_stage !== stage) return false;
@@ -150,6 +190,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (lead.assigned_to_id !== null) return false;
             } else if (owner && String(lead.assigned_to_id) !== owner) {
                 return false;
+            }
+            if (source && (lead.contact?.source || lead.source) !== source) return false;
+            if (createdFrom || createdTo) {
+                const d = dhakaDateStr(lead.created_at);
+                if (!d) return false;
+                if (createdFrom && d < createdFrom) return false;
+                if (createdTo && d > createdTo) return false;
+            }
+            if (followup) {
+                const dl = parseUtc(lead.next_action_deadline);
+                if (!dl) return false;
+                const dlDate = dhakaDateStr(lead.next_action_deadline);
+                if (followup === 'overdue' && !(dl < new Date())) return false;
+                if (followup === 'today' && dlDate !== todayDhaka) return false;
+                if (followup === 'upcoming' && !(dlDate > todayDhaka)) return false;
             }
             return true;
         });
@@ -299,6 +354,14 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('filter-starred').checked = false;
             const ownerFilter = document.getElementById('filter-owner');
             if (ownerFilter) ownerFilter.value = '';
+            const sourceFilter = document.getElementById('filter-source');
+            if (sourceFilter) sourceFilter.value = '';
+            const fromFilter = document.getElementById('filter-created-from');
+            if (fromFilter) fromFilter.value = '';
+            const toFilter = document.getElementById('filter-created-to');
+            if (toFilter) toFilter.value = '';
+            const followupFilter = document.getElementById('filter-followup');
+            if (followupFilter) followupFilter.value = '';
         });
 
         filterForm.addEventListener('submit', (e) => {
@@ -403,7 +466,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <svg class="w-4 h-4 ${lead.is_starred ? 'text-yellow-400 fill-current' : 'text-slate-500'}" viewBox="0 0 24 24" stroke="currentColor" fill="none"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
                         </button>
                         <span class="badge ${getBadgeClass(lead.pipeline_stage)}">${lead.pipeline_stage || 'NEW'}</span>
-                        <button class="temp-btn badge ${lead.lead_temperature === 'HOT' ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' : lead.lead_temperature === 'WARM' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-blue-500/20 text-blue-400 border-blue-500/30'} hover:opacity-80 transition-opacity" data-id="${lead.id}" data-temp="${lead.lead_temperature}">
+                        <button title="Click to change temperature: Cold → Warm → Hot" class="temp-btn badge ${lead.lead_temperature === 'HOT' ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' : lead.lead_temperature === 'WARM' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-blue-500/20 text-blue-400 border-blue-500/30'} hover:opacity-80 transition-opacity" data-id="${lead.id}" data-temp="${lead.lead_temperature}">
                             ${lead.lead_temperature || 'COLD'}
                         </button>
                         <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${prioClass}">${prio}</span>
@@ -451,7 +514,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   <button class="log-activity-btn btn-ghost px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-700 hover:border-indigo-500 transition-colors" data-id="${lead.id}">
                     Log Activity
                   </button>
-                  <button class="exit-lead-btn btn-ghost px-2.5 py-1.5 rounded-lg text-xs font-medium border border-rose-500/30 text-rose-300 hover:bg-rose-500/10 transition-colors" data-id="${lead.id}">
+                  <button title="Move this lead to an exit stage — Closed Lost, Nurture, Bought Elsewhere, Invalid, or Unreachable" class="exit-lead-btn btn-ghost px-2.5 py-1.5 rounded-lg text-xs font-medium border border-rose-500/30 text-rose-300 hover:bg-rose-500/10 transition-colors" data-id="${lead.id}">
                     Exit Lead
                   </button>
                   <a href="/lead-details.html?id=${lead.id}" class="view-profile-btn btn-gradient px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-lg inline-flex items-center gap-1" onclick="event.stopPropagation()">
@@ -776,6 +839,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tempEl) {
             tempEl.textContent = data.lead_temperature || 'COLD';
             tempEl.className = `px-2 py-0.5 rounded badge font-bold hover:opacity-80 transition-opacity ${data.lead_temperature === 'HOT' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : data.lead_temperature === 'WARM' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'}`;
+            tempEl.title = 'Click to change temperature: Cold → Warm → Hot';
             tempEl.onclick = async () => {
                 await toggleTemperature(data.id, data.lead_temperature || 'COLD');
                 openDrawer(data.id);

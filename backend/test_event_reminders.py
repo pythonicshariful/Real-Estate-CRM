@@ -207,6 +207,25 @@ def test_suite():
         print("   [PASS] feed has event (owner colour) + reminder entry at start-30min, owner's colour")
         passed += 1
 
+        # -- 4b. Feed datetimes are UTC-aware (the UTC/PAST bug) ---------
+        # Stored datetimes are naive UTC; the feed must serialise them with
+        # an explicit +00:00 offset, otherwise browsers parse them as local
+        # (Dhaka) time — 6h early — and a future event looks "Past".
+        print("4b. Feed datetimes carry a UTC offset...")
+        for e in feed:
+            for key in ("start", "end"):
+                v = e.get(key)
+                if v:
+                    assert v.endswith("+00:00") or v.endswith("Z"), (e.get("id"), key, v)
+                    assert datetime.fromisoformat(v.replace("Z", "+00:00")).tzinfo is not None
+        # The test event starts in the future: parsed as UTC it must still
+        # be in the future (the old naive string parsed as Dhaka local
+        # made it look 6h in the past).
+        assert start.tzinfo is not None and start > datetime.now(timezone.utc), start
+        assert rem[0]["end"].endswith("+00:00") or rem[0]["end"].endswith("Z")
+        print("   [PASS] feed start/end are UTC-aware; future event is not past")
+        passed += 1
+
         rem_none = [e for e in feed if e.get("id") == f"rem_{no_rem_ev_id}"]
         assert len(rem_none) == 0, "no-reminder event must not produce a reminder entry"
         print("   [PASS] no-reminder event produces no reminder entry")

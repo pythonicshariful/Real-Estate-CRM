@@ -4,6 +4,22 @@ from app.extensions import db
 import bcrypt
 import pyotp
 
+
+def utc_iso(dt):
+    """Serialise a stored datetime as UTC-aware ISO 8601 (``+00:00`` suffix).
+
+    Datetimes are stored naive in the DB but are UTC by convention. A plain
+    ``.isoformat()`` has no offset, so browsers parse it as LOCAL time —
+    in Dhaka that shows event times 6 hours early and marks a future event
+    "Past". Attaching the UTC offset makes ``new Date(...)`` and
+    FullCalendar interpret the instant correctly.
+    """
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc).isoformat()
+
 class PipelineStage(PyEnum):
     NEW = "NEW"
     ASSIGNED = "ASSIGNED"
@@ -923,8 +939,8 @@ class Event(db.Model):
             "title": self.title,
             "description": self.description,
             "event_type": self.event_type,
-            "start": self.start_datetime.isoformat(),
-            "end": self.end_datetime.isoformat() if self.end_datetime else None,
+            "start": utc_iso(self.start_datetime),
+            "end": utc_iso(self.end_datetime) if self.end_datetime else None,
             "created_by_id": self.created_by_id,
             "created_by_name": self.created_by.full_name if self.created_by else None,
             "is_all_day": self.is_all_day,

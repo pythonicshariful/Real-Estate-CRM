@@ -109,7 +109,7 @@
           <button id="drawer-delete-btn" class="hidden text-rose-400 hover:text-white bg-rose-500/10 hover:bg-rose-500/20 p-2 rounded-lg transition-colors" title="Delete Lead">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
           </button>
-          <button id="close-drawer-btn" class="text-slate-400 hover:text-white transition-colors bg-slate-800/50 hover:bg-slate-700 p-2 rounded-lg">
+          <button id="close-drawer-btn" title="Close this panel" class="text-slate-400 hover:text-white transition-colors bg-slate-800/50 hover:bg-slate-700 p-2 rounded-lg">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
@@ -117,22 +117,22 @@
 
       <!-- Quick Actions -->
       <div class="px-6 py-4 border-b border-slate-800/60 flex flex-wrap gap-2 bg-slate-900/20">
-        <button id="drawer-call-btn" class="flex-1 min-w-[120px] btn-gradient py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5">
+        <button id="drawer-call-btn" title="Log a call — notes, outcome, optional recording, and a follow-up reminder" class="flex-1 min-w-[120px] btn-gradient py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg> Log Call
         </button>
-        <button id="drawer-appt-btn" class="flex-1 min-w-[110px] btn-ghost py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-slate-700 hover:border-indigo-500">
+        <button id="drawer-appt-btn" title="Book an appointment / site visit with this lead" class="flex-1 min-w-[110px] btn-ghost py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-slate-700 hover:border-indigo-500">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg> Book Appt
         </button>
-        <button id="drawer-event-btn" class="flex-1 min-w-[110px] btn-ghost py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-teal-500/40 text-teal-300 hover:bg-teal-500/10" title="Set an event for this lead">
+        <button id="drawer-event-btn" class="flex-1 min-w-[110px] btn-ghost py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-teal-500/40 text-teal-300 hover:bg-teal-500/10" title="Set a calendar event for this lead, with a reminder">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg> Set Event
         </button>
-        <button id="drawer-debrief-btn" class="flex-1 min-w-[110px] btn-ghost py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-purple-500/40 text-purple-300 hover:bg-purple-500/10">
+        <button id="drawer-debrief-btn" title="Record notes after a site visit — what the client said and next steps" class="flex-1 min-w-[110px] btn-ghost py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-purple-500/40 text-purple-300 hover:bg-purple-500/10">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg> Post-Visit Debrief
         </button>
-        <button id="drawer-objection-btn" class="flex-1 min-w-[110px] btn-ghost py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-amber-500/40 text-amber-300 hover:bg-amber-500/10">
+        <button id="drawer-objection-btn" title="Record a client objection (e.g. price, location) and how it was handled" class="flex-1 min-w-[110px] btn-ghost py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-amber-500/40 text-amber-300 hover:bg-amber-500/10">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> Log Objection
         </button>
-        <button id="drawer-exit-btn" class="flex-1 min-w-[90px] btn-ghost py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-rose-500/40 text-rose-300 hover:bg-rose-500/10">
+        <button id="drawer-exit-btn" title="Move this lead to an exit stage — Closed Lost, Nurture, Bought Elsewhere, Invalid, or Unreachable" class="flex-1 min-w-[90px] btn-ghost py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-rose-500/40 text-rose-300 hover:bg-rose-500/10">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg> Exit Lead
         </button>
       </div>
@@ -278,7 +278,7 @@
   
   
   <!-- Log Call / Activity Modal -->
-  <div id="call-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+  <div id="call-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 p-4">
     <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl transform scale-95 transition-transform duration-200" id="call-modal-content" style="max-height: 92vh; overflow-y: auto;">
       <div class="border-b border-slate-800 p-5 flex justify-between items-center bg-slate-900/50">
         <h3 class="font-bold text-white text-lg">Log Call & Activity</h3>
@@ -369,8 +369,8 @@
        is picked in the Log Call modal. Submitting saves the CallLog AND
        creates a persistent lead-linked Event for the follow-up date, which
        can then be edited from the Events/Calendar page. -->
-  <div id="disposition-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl transform scale-95 transition-transform duration-200" id="disposition-modal-content">
+  <div id="disposition-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 p-4">
+    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl transform scale-95 transition-transform duration-200" id="disposition-modal-content" style="max-height: 92vh; overflow-y: auto;">
       <div class="border-b border-slate-800 p-5 flex justify-between items-center bg-slate-900/50">
         <h3 class="font-bold text-white text-lg">Disposition — <span id="disposition-label-text"></span></h3>
         <button id="close-disposition-modal" class="text-slate-400 hover:text-white transition-colors">
@@ -407,8 +407,8 @@
   </div>
 
   <!-- Book Appointment Modal -->
-  <div id="appt-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl transform scale-95 transition-transform duration-200" id="appt-modal-content">
+  <div id="appt-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 p-4">
+    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl transform scale-95 transition-transform duration-200" id="appt-modal-content" style="max-height: 92vh; overflow-y: auto;">
       <div class="border-b border-slate-800 p-5 flex justify-between items-center bg-slate-900/50">
         <h3 class="font-bold text-white text-lg">Book Appointment</h3>
         <button id="close-appt-modal" class="text-slate-400 hover:text-white transition-colors">
@@ -436,8 +436,8 @@
   </div>
 
   <!-- Set Event Modal (from lead profile drawer, linked to the lead) -->
-  <div id="set-event-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl transform scale-95 transition-transform duration-200" id="set-event-modal-content">
+  <div id="set-event-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 p-4">
+    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl transform scale-95 transition-transform duration-200" id="set-event-modal-content" style="max-height: 92vh; overflow-y: auto;">
       <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center glass-dark">
         <h3 class="text-lg font-bold text-white flex items-center gap-2">
           <svg class="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
@@ -514,8 +514,8 @@
   </div>
 
   <!-- Add Lead Modal -->
-  <div id="add-lead-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl transform scale-95 transition-transform duration-200" id="add-lead-modal-content">
+  <div id="add-lead-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 p-4">
+    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl transform scale-95 transition-transform duration-200" id="add-lead-modal-content" style="max-height: 92vh; overflow-y: auto;">
       <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center glass-dark">
         <h3 class="text-lg font-bold text-white flex items-center gap-2">
           <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
@@ -570,6 +570,7 @@
                 <option value="">-- None --</option>
               </select>
             </div>
+          </div>
           <div id="add-lead-custom-fields-section" class="border-t border-slate-800/80 pt-3 hidden">
             <label class="block text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2">Custom Lead Fields (Admin Configured)</label>
             <div id="add-lead-custom-fields-container" class="space-y-3 max-h-48 overflow-y-auto pr-1"></div>
@@ -586,8 +587,8 @@
   </div>
 
   <!-- Filter Modal -->
-  <div id="filter-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl transform scale-95 transition-transform duration-200" id="filter-modal-content">
+  <div id="filter-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 p-4">
+    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl transform scale-95 transition-transform duration-200" id="filter-modal-content" style="max-height: 92vh; overflow-y: auto;">
       <div class="border-b border-slate-800 p-5 flex justify-between items-center bg-slate-900/50">
         <h3 class="font-bold text-white text-lg flex items-center gap-2"><svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg> Filter Leads</h3>
         <button id="close-filter-modal" class="text-slate-400 hover:text-white transition-colors">
@@ -616,6 +617,31 @@
             <option value="COLD">Cold</option>
           </select>
         </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Source</label>
+          <select id="filter-source" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+            <option value="">All Sources</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Created From</label>
+            <input type="date" id="filter-created-from" style="color-scheme: dark;" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Created To</label>
+            <input type="date" id="filter-created-to" style="color-scheme: dark;" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Follow-up Due</label>
+          <select id="filter-followup" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+            <option value="">All Follow-ups</option>
+            <option value="overdue">Overdue</option>
+            <option value="today">Due Today</option>
+            <option value="upcoming">Upcoming</option>
+          </select>
+        </div>
         <div id="filter-owner-container" class="hidden">
           <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Lead Owner</label>
           <select id="filter-owner" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
@@ -639,8 +665,8 @@
   </div>
 
   <!-- Bulk Assign Modal -->
-  <div id="bulk-assign-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl transform scale-95 transition-transform duration-200" id="bulk-assign-modal-content">
+  <div id="bulk-assign-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 p-4">
+    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-200" id="bulk-assign-modal-content" style="max-height: 92vh; overflow-y: auto;">
       <div class="border-b border-slate-800 p-5 flex justify-between items-center bg-slate-900/50">
         <h3 class="font-bold text-white text-lg flex items-center gap-2">
           <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg> 
@@ -670,8 +696,8 @@
   </div>
 
   <!-- Edit Lead Modal -->
-  <div id="edit-lead-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl transform scale-95 transition-transform duration-200" id="edit-lead-modal-content">
+  <div id="edit-lead-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 p-4">
+    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl transform scale-95 transition-transform duration-200" id="edit-lead-modal-content" style="max-height: 92vh; overflow-y: auto;">
       <div class="border-b border-slate-800 p-5 flex justify-between items-center bg-slate-900/50">
         <h3 class="font-bold text-white text-lg">Edit Lead</h3>
         <button id="close-edit-modal" class="text-slate-400 hover:text-white transition-colors">
@@ -718,8 +744,8 @@
   </div>
 
   <!-- Import Leads Modal -->
-  <div id="import-lead-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl transform scale-95 transition-transform duration-200" id="import-lead-modal-content">
+  <div id="import-lead-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 p-4">
+    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-xl shadow-2xl transform scale-95 transition-transform duration-200" id="import-lead-modal-content" style="max-height: 92vh; overflow-y: auto;">
       <div class="border-b border-slate-800 p-5 flex justify-between items-center bg-slate-900/50">
         <div>
           <h3 class="font-bold text-white text-lg flex items-center gap-2">
@@ -795,7 +821,7 @@
   </div>
 
   <!-- Edit Lead Questionnaire Modal -->
-  <div id="edit-questionnaire-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+  <div id="edit-questionnaire-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 p-4">
     <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl transform scale-95 transition-transform duration-200" id="edit-questionnaire-modal-content">
       <div class="border-b border-slate-800 p-5 flex justify-between items-center bg-slate-900/50">
         <div>
@@ -825,8 +851,8 @@
 
 
   <!-- Post-Visit Debrief Modal (Fix 4 & M-07) -->
-  <div id="debrief-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl transform scale-95 transition-transform duration-200" id="debrief-modal-content">
+  <div id="debrief-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 p-4">
+    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl transform scale-95 transition-transform duration-200" id="debrief-modal-content" style="max-height: 92vh; overflow-y: auto;">
       <div class="border-b border-slate-800 p-5 flex justify-between items-center bg-slate-900/50">
         <div>
           <h3 class="font-bold text-white text-lg flex items-center gap-2">
@@ -904,8 +930,8 @@
   </div>
 
   <!-- Alternative Exit Modal (Section A: 5 Alternative Exits) -->
-  <div id="exit-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl transform scale-95 transition-transform duration-200" id="exit-modal-content">
+  <div id="exit-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 p-4">
+    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl transform scale-95 transition-transform duration-200" id="exit-modal-content" style="max-height: 92vh; overflow-y: auto;">
       <div class="border-b border-slate-800 p-5 flex justify-between items-center bg-slate-900/50">
         <div>
           <h3 class="font-bold text-white text-lg flex items-center gap-2">
@@ -990,8 +1016,8 @@
   </div>
 
   <!-- Log Objection Modal (M-08) -->
-  <div id="objection-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl transform scale-95 transition-transform duration-200" id="objection-modal-content">
+  <div id="objection-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 p-4">
+    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl transform scale-95 transition-transform duration-200" id="objection-modal-content" style="max-height: 92vh; overflow-y: auto;">
       <div class="border-b border-slate-800 p-5 flex justify-between items-center bg-slate-900/50">
         <div>
           <h3 class="font-bold text-white text-lg flex items-center gap-2">
@@ -1065,8 +1091,8 @@
   </div>
 
   <!-- Manager Coaching Modal (M-05 & M-09) -->
-  <div id="coaching-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl transform scale-95 transition-transform duration-200" id="coaching-modal-content">
+  <div id="coaching-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 p-4">
+    <div class="bg-[#0f1019] border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl transform scale-95 transition-transform duration-200" id="coaching-modal-content" style="max-height: 92vh; overflow-y: auto;">
       <div class="border-b border-slate-800 p-5 flex justify-between items-center bg-slate-900/50">
         <div>
           <h3 class="font-bold text-white text-lg flex items-center gap-2">
@@ -1179,7 +1205,7 @@
 
   <script src="/assets/js/sidebar.js"></script>
   <script type="module" src="/assets/js/app.js"></script>
-  <script src="/assets/js/leads.js?v=23"></script>
+  <script src="/assets/js/leads.js?v=24"></script>
   <script src="/assets/js/calls.js?v=5"></script>
   <script src="/assets/js/notifications.js?v=1"></script>
 

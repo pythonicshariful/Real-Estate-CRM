@@ -1,8 +1,8 @@
 from flask import request, jsonify, current_app
 from app.blueprints.leads import leads_bp
-from app.models import Opportunity, Contact, CallLog, Appointment, PipelineStage, AppointmentStatus, Objection, ObjectionCategory, Reservation, Note, PipelineHistory, db, UserRole, LeadTemperature, AuditLog, User, DurationBand, ActivityOutcome, ActivityType, Inquiry, Plot, PlotStatus, Installment, CancellationRequest, PaymentMethod, InstallmentStatus, CancellationStatus, CoachingLog, Event
+from app.models import Opportunity, Contact, CallLog, Appointment, PipelineStage, AppointmentStatus, Objection, ObjectionCategory, Reservation, Note, PipelineHistory, db, UserRole, LeadTemperature, AuditLog, User, DurationBand, ActivityOutcome, ActivityType, Inquiry, Plot, PlotStatus, Installment, CancellationRequest, PaymentMethod, InstallmentStatus, CancellationStatus, CoachingLog, Event, utc_iso
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from decimal import Decimal
 import os
 from app.utils.rbac import is_admin
@@ -45,7 +45,54 @@ def get_leads():
             query = query.filter(Opportunity.assigned_to_id == None)
         elif owner_id.isdigit():
             query = query.filter(Opportunity.assigned_to_id == int(owner_id))
-        
+
+    # Source filter — matches the contact's source (e.g. "Meta Lead Ads").
+    source = (request.args.get('source') or '').strip()
+    if source:
+        query = query.filter(Contact.source.ilike(source))
+
+    # Created-date range (YYYY-MM-DD, Bangladesh dates). Stored created_at
+    # is naive UTC, so compare in UTC: a Dhaka date D covers
+    # D 00:00 +06 (= D-1 18:00 UTC) to D+1 00:00 +06 (= D 18:00 UTC).
+    _dhaka = timezone(timedelta(hours=6))
+    _bad_date = False
+    created_from = (request.args.get('created_from') or '').strip()
+    if created_from:
+        try:
+            _from = datetime.strptime(created_from, '%Y-%m-%d').replace(tzinfo=_dhaka)
+            query = query.filter(Opportunity.created_at >= _from.astimezone(timezone.utc).replace(tzinfo=None))
+        except ValueError:
+            _bad_date = True
+    created_to = (request.args.get('created_to') or '').strip()
+    if created_to:
+        try:
+            _to = datetime.strptime(created_to, '%Y-%m-%d').replace(tzinfo=_dhaka) + timedelta(days=1)
+            query = query.filter(Opportunity.created_at < _to.astimezone(timezone.utc).replace(tzinfo=None))
+        except ValueError:
+            _bad_date = True
+    if _bad_date:
+        return jsonify({"error": "created_from/created_to must be YYYY-MM-DD"}), 400
+
+    # Follow-up due filter, on next_action_deadline (Dhaka day boundaries):
+    # overdue = deadline already passed; today = deadline falls today
+    # (Dhaka); upcoming = deadline after today.
+    followup = (request.args.get('followup') or '').strip().lower()
+    if followup in ('overdue', 'today', 'upcoming'):
+        _now_utc = datetime.now(timezone.utc)
+        _today_dhaka = _now_utc.astimezone(_dhaka).date()
+        _day_start = datetime(_today_dhaka.year, _today_dhaka.month, _today_dhaka.day, tzinfo=_dhaka)
+        _day_end = _day_start + timedelta(days=1)
+        _ds = _day_start.astimezone(timezone.utc).replace(tzinfo=None)
+        _de = _day_end.astimezone(timezone.utc).replace(tzinfo=None)
+        if followup == 'overdue':
+            query = query.filter(Opportunity.next_action_deadline.isnot(None),
+                                 Opportunity.next_action_deadline < _now_utc.replace(tzinfo=None))
+        elif followup == 'today':
+            query = query.filter(Opportunity.next_action_deadline >= _ds,
+                                 Opportunity.next_action_deadline < _de)
+        else:  # upcoming
+            query = query.filter(Opportunity.next_action_deadline >= _de)
+
     leads_and_contacts = query.order_by(Opportunity.created_at.desc()).all()
     
     result = []
@@ -290,7 +337,7 @@ def get_lead_profile(id):
             _rec_name = _up.unquote(_up.urlparse(c.recording_filename).path.rstrip('/').split('/')[-1]) if c.recording_filename.startswith('http') else c.recording_filename
         timeline_items.append({
             "type": "CALL",
-            "date": c.created_at.isoformat() if c.created_at else None,
+            "date": utc_iso(c.created_at) if c.created_at else None,
             "connected": c.connected,
             "notes": c.notes,
             "recording_url": format_rec_url(c.recording_filename, c.logged_by_id),
@@ -301,7 +348,7 @@ def get_lead_profile(id):
     for n in notes:
         timeline_items.append({
             "type": "NOTE",
-            "date": n.created_at.isoformat() if n.created_at else None,
+            "date": utc_iso(n.created_at) if n.created_at else None,
             "content": n.content,
         })
         
@@ -309,7 +356,7 @@ def get_lead_profile(id):
     for h in history:
         timeline_items.append({
             "type": "STAGE_CHANGE",
-            "date": h.changed_at.isoformat() if h.changed_at else None,
+            "date": utc_iso(h.changed_at) if h.changed_at else None,
             "from_stage": h.from_stage.value if h.from_stage else None,
             "to_stage": h.to_stage.value if h.to_stage else None,
             "notes": h.notes,
@@ -319,8 +366,8 @@ def get_lead_profile(id):
     for a in appointments:
         timeline_items.append({
             "type": "APPOINTMENT",
-            "date": a.created_at.isoformat() if a.created_at else None,
-            "appointment_datetime": a.appointment_datetime.isoformat() if a.appointment_datetime else None,
+            "date": utc_iso(a.created_at) if a.created_at else None,
+            "appointment_datetime": utc_iso(a.appointment_datetime) if a.appointment_datetime else None,
             "status": a.status.value if a.status else None,
             "location": a.location,
         })
@@ -332,7 +379,7 @@ def get_lead_profile(id):
         timeline_items.append({
             "type": "EVENT",
             "id": ev.id,
-            "date": ev.start_datetime.isoformat() if ev.start_datetime else None,
+            "date": utc_iso(ev.start_datetime) if ev.start_datetime else None,
             "title": ev.title,
             "event_type": ev.event_type,
             "location": ev.location,
@@ -365,12 +412,12 @@ def get_lead_profile(id):
         "notes": c.notes,
         "outcome": c.outcome.value if c.outcome else None,
         "activity_label": c.activity_label,
-        "created_at": c.created_at.isoformat() if c.created_at else None,
+        "created_at": utc_iso(c.created_at) if c.created_at else None,
         "recording_url": format_rec_url(c.recording_filename, c.logged_by_id),
     } for c in call_logs]
     profile["appointments"] = [{
         "id": a.id,
-        "appointment_datetime": a.appointment_datetime.isoformat() if a.appointment_datetime else None,
+        "appointment_datetime": utc_iso(a.appointment_datetime) if a.appointment_datetime else None,
         "location": a.location,
         "status": a.status.value if a.status else None,
     } for a in appointments]
