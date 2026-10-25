@@ -428,9 +428,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const ownerColor = lead.assigned_to_color || '#14B8A6';
             const ownerName = lead.assigned_to_name || 'Unassigned';
             
-            // Name initials
-            const contactName = lead.contact?.full_name || `Lead #${lead.id}`;
-            const initials = contactName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'L';
+            // Name initials (escaped: lead names come from Meta/user input
+            // and may contain "<...>" — raw innerHTML would parse it as a
+            // tag, blank the name and break the card layout)
+            const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+            const rawName = lead.contact?.full_name || `Lead #${lead.id}`;
+            const displayName = rawName.startsWith('<test lead') ? 'Meta Test Lead' : rawName;
+            const contactName = esc(displayName);
+            const initials = esc(displayName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'L');
 
             // Calculate lead age (M-04)
             let leadAgeText = '';
@@ -459,7 +464,7 @@ document.addEventListener('DOMContentLoaded', () => {
                        style="background:${ownerColor}1f;border:2px solid ${ownerColor}66;color:${ownerColor}">
                     ${initials}
                   </div>
-                  <div>
+                  <div class="min-w-0 flex-1">
                     <div class="font-bold text-white text-sm flex items-center gap-2 flex-wrap">
                         <a href="/lead-details.html?id=${lead.id}" class="hover:text-indigo-400 hover:underline transition-colors" onclick="event.stopPropagation()">${contactName}</a>
                         <button class="star-btn hover:scale-110 transition-transform" data-id="${lead.id}" data-starred="${lead.is_starred}">
@@ -476,22 +481,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="text-[11px] text-slate-400 mt-1 flex flex-wrap gap-x-4 gap-y-1">
                       <span class="flex items-center gap-1" title="Phone">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                        ${lead.contact?.phone || '--'}
+                        ${esc(lead.contact?.phone || '--')}
                       </span>
                       ${(lead.contact?.profession || lead.profession) ? `
                       <span class="flex items-center gap-1 text-slate-300 font-medium" title="Profession / Job Title">
                         <svg class="w-3 h-3 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                        ${lead.contact?.profession || lead.profession}
+                        ${esc(lead.contact?.profession || lead.profession)}
                       </span>` : ''}
                       ${(lead.contact?.source || lead.source) ? `
                       <span class="flex items-center gap-1 text-slate-400" title="Source">
                         <svg class="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-                        ${lead.contact?.source || lead.source}
+                        ${esc(lead.contact?.source || lead.source)}
                       </span>` : ''}
                       ${lead.project_name ? `
                       <span class="flex items-center gap-1" title="Project">
                         <svg class="w-3 h-3 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                        ${lead.project_name}
+                        ${esc(lead.project_name)}
                       </span>` : ''}
                       <span class="flex items-center gap-1 text-slate-500" title="Added">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> 
@@ -504,7 +509,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   ${lead.assigned_to_name ? `
                     <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold" style="background: ${ownerColor}22; color: ${ownerColor}; border: 1px solid ${ownerColor}44">
                       <span class="w-2 h-2 rounded-full" style="background: ${ownerColor}"></span>
-                      ${lead.assigned_to_name}
+                      ${esc(lead.assigned_to_name)}
                     </div>
                   ` : ''}
                   <a href="tel:${lead.contact?.phone || ''}" class="call-action-btn btn-ghost px-3 py-1.5 rounded-lg text-xs font-medium border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10 transition-colors inline-flex items-center gap-1" onclick="event.stopPropagation()">
