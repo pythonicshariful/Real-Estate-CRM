@@ -1041,6 +1041,85 @@ def check_appointment_reminders(app=None):
         db.session.commit()
 
 
+def check_event_reminders(app=None):
+    """
+    Create in-app notifications for calendar Events whose reminder time
+    has arrived. Runs every 5 minutes via APScheduler.
+
+    An Event qualifies when: status is SCHEDULED, reminder_minutes is set,
+    reminder_sent is False, and (start - reminder_minutes) <= now < start.
+    Times are stored naive-UTC (frontends send ISO UTC), so a naive
+    start_datetime is treated as UTC. Events that already started without
+    a reminder being sent are marked sent (missed) so they are not
+    re-checked forever. reminder_sent + an existing-notification check
+    together guarantee exactly one notification per event.
+    """
+    from zoneinfo import ZoneInfo
+
+    app = _get_app(app)
+    with app.app_context():
+        from app.extensions import db
+        from app.models import Event, Notification
+
+        now = datetime.now(timezone.utc)
+        dhaka = ZoneInfo("Asia/Dhaka")
+        candidates = Event.query.filter(
+            Event.reminder_minutes.isnot(None),
+            Event.reminder_sent == False,
+            Event.status == "SCHEDULED",
+        ).all()
+
+        created = 0
+        for ev in candidates:
+            start = ev.start_datetime
+            if start.tzinfo is None:
+                start = start.replace(tzinfo=timezone.utc)
+            remind_at = start - timedelta(minutes=ev.reminder_minutes)
+            if now < remind_at:
+                continue  # reminder time has not arrived yet
+            if now >= start:
+                # Event already started — reminder window missed; mark sent
+                # so this event is never re-checked.
+                ev.reminder_sent = True
+                continue
+            owner = ev.resolved_owner()
+            recipient_id = owner.id if owner else ev.created_by_id
+            if not recipient_id:
+                ev.reminder_sent = True
+                continue
+            # Duplicate guard: never create a second notification for the
+            # same event, even if reminder_sent was reset concurrently.
+            existing = Notification.query.filter_by(
+                event_id=ev.id, type="EVENT_REMINDER"
+            ).first()
+            if existing:
+                ev.reminder_sent = True
+                continue
+            start_dhaka = start.astimezone(dhaka).strftime("%d %b, %I:%M %p")
+            lead_name = None
+            if ev.lead is not None and ev.lead.contact is not None:
+                lead_name = ev.lead.contact.full_name
+            title = f"Reminder: {ev.title}"
+            body = f"'{ev.title}' starts at {start_dhaka}."
+            if lead_name:
+                body += f" Lead: {lead_name}."
+            db.session.add(Notification(
+                user_id=recipient_id,
+                title=title,
+                body=body,
+                type="EVENT_REMINDER",
+                event_id=ev.id,
+                lead_id=ev.lead_id,
+            ))
+            ev.reminder_sent = True
+            created += 1
+            logger.info(f"Event reminder sent for Event #{ev.id} to user #{recipient_id}")
+
+        db.session.commit()
+        if created:
+            logger.info(f"check_event_reminders: {created} notification(s) created")
+
+
 def retry_failed_webhooks(app=None):
     """
     Retry failed webhooks with exponential backoff.

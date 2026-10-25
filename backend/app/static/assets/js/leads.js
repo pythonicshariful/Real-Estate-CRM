@@ -615,6 +615,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     status: document.getElementById('set-event-status').value,
                     priority: document.getElementById('set-event-priority').value,
                     description: document.getElementById('set-event-notes').value.trim() || null,
+                    reminder_minutes: document.getElementById('set-event-reminder').value === '' ? null : parseInt(document.getElementById('set-event-reminder').value, 10),
                 }),
             });
             if (!res.ok) {

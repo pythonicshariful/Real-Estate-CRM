@@ -953,6 +953,10 @@ def log_call(id):
             event_type=event_activity,
             start_datetime=deadline_dt,
             end_datetime=deadline_dt + _td(minutes=30),
+            # Follow-up reminders default to 30 min before the event, so the
+            # owner gets an in-app notification and a calendar reminder entry.
+            reminder_minutes=30,
+            reminder_sent=False,
             created_by_id=user_id,
             lead_id=id,
             owner_id=lead.assigned_to_id or user_id,

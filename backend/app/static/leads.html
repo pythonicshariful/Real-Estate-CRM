@@ -491,6 +491,17 @@
           </div>
         </div>
         <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Reminder</label>
+          <select id="set-event-reminder" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-teal-500">
+            <option value="">No reminder</option>
+            <option value="15">15 minutes before</option>
+            <option value="30" selected>30 minutes before</option>
+            <option value="60">1 hour before</option>
+            <option value="1440">1 day before</option>
+          </select>
+          <p class="text-[11px] text-slate-500 mt-1">You will get an in-app notification, and the reminder shows on the calendar in amber.</p>
+        </div>
+        <div>
           <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Notes</label>
           <textarea id="set-event-notes" rows="3" placeholder="Agenda, who is attending…" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-teal-500"></textarea>
         </div>
@@ -1168,8 +1179,9 @@
 
   <script src="/assets/js/sidebar.js"></script>
   <script type="module" src="/assets/js/app.js"></script>
-  <script src="/assets/js/leads.js?v=22"></script>
+  <script src="/assets/js/leads.js?v=23"></script>
   <script src="/assets/js/calls.js?v=5"></script>
+  <script src="/assets/js/notifications.js?v=1"></script>
 
   <!-- Dedicated Lead Details Navigation Script -->
   <script>

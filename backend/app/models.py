@@ -893,6 +893,13 @@ class Event(db.Model):
     status = db.Column(db.String(20), default="SCHEDULED")  # SCHEDULED/COMPLETED/CANCELLED
     priority = db.Column(db.String(20), default="NORMAL")  # LOW/NORMAL/HIGH
 
+    # ── Reminder (added 2026-10-25, auto-migrated on startup) ──
+    # Minutes before start_datetime to notify the owner in-app. None = no
+    # reminder. reminder_sent is set once the scheduler has created the
+    # notification, so the job never notifies twice for the same event.
+    reminder_minutes = db.Column(db.Integer, nullable=True)
+    reminder_sent = db.Column(db.Boolean, default=False)
+
     # ── Link to a lead (optional: general events like team meetings have none)
     lead_id = db.Column(db.Integer, db.ForeignKey('opportunities.id'), nullable=True, index=True)
     lead = db.relationship('Opportunity', foreign_keys=[lead_id])
@@ -924,6 +931,8 @@ class Event(db.Model):
             "location": self.location,
             "status": self.status or "SCHEDULED",
             "priority": self.priority or "NORMAL",
+            "reminder_minutes": self.reminder_minutes,
+            "reminder_sent": bool(self.reminder_sent),
             "color": owner.calendar_color if owner else "#6366f1",
             "owner_id": owner.id if owner else None,
             "owner_name": owner.full_name if owner else None,
@@ -933,6 +942,49 @@ class Event(db.Model):
             "lead_phone": (lead_contact.phone_raw or lead_contact.phone_normalized) if lead_contact else None,
             "lead_stage": (self.lead.pipeline_stage.value
                            if self.lead is not None and self.lead.pipeline_stage else None),
+        }
+
+
+# ---------------------------------------------------------------------------
+# In-app Notifications (event reminders, etc.)
+# ---------------------------------------------------------------------------
+
+class Notification(db.Model):
+    """In-app notification for one user.
+
+    Created by background jobs (e.g. check_event_reminders) — never by
+    direct user input. Recipients only ever see their own rows (enforced
+    in the API). Delivery is pull-based: the bell in the header polls
+    GET /api/notifications/ — there is no push/email channel here.
+    """
+    __tablename__ = 'notifications'
+    __table_args__ = (
+        db.Index('ix_notifications_user_unread_created', 'user_id', 'is_read', 'created_at'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    user = db.relationship('User', foreign_keys=[user_id])
+    title = db.Column(db.String(255), nullable=False)
+    body = db.Column(db.Text)
+    type = db.Column(db.String(50), default='EVENT_REMINDER')  # EVENT_REMINDER, ...
+    event_id = db.Column(db.Integer, db.ForeignKey('events.id'), nullable=True, index=True)
+    event = db.relationship('Event', foreign_keys=[event_id])
+    lead_id = db.Column(db.Integer, db.ForeignKey('opportunities.id'), nullable=True, index=True)
+    lead = db.relationship('Opportunity', foreign_keys=[lead_id])
+    is_read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "body": self.body,
+            "type": self.type,
+            "event_id": self.event_id,
+            "lead_id": self.lead_id,
+            "is_read": self.is_read,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
 

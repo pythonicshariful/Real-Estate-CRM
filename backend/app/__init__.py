@@ -282,7 +282,7 @@ def _auto_migrate_db(app):
 
 def _configure_scheduler(app):
     """Configure and start APScheduler with SQLAlchemy jobstore."""
-    from app.tasks import check_sla_compliance, send_daily_summary, check_appointment_reminders, retry_failed_webhooks, auto_update_scheduled_lead_statuses
+    from app.tasks import check_sla_compliance, send_daily_summary, check_appointment_reminders, check_event_reminders, retry_failed_webhooks, auto_update_scheduled_lead_statuses
     from filelock import FileLock, Timeout
 
     scheduler.app = app
@@ -322,6 +322,15 @@ def _configure_scheduler(app):
         trigger='interval',
         minutes=10,
         id='appointment_reminders',
+        replace_existing=True
+    )
+
+    # Event reminders — in-app notifications, runs every 5 minutes
+    scheduler.add_job(
+        func=check_event_reminders,
+        trigger='interval',
+        minutes=5,
+        id='event_reminders',
         replace_existing=True
     )
 
@@ -372,6 +381,7 @@ def _register_blueprints(app):
     from app.blueprints.settings import settings_bp
     from app.blueprints.security import security_bp
     from app.blueprints.events import events_bp
+    from app.blueprints.notifications import notifications_bp
     from app.blueprints.notes import notes_bp
     from app.blueprints.messages import messages_bp
     from app.blueprints.tickets import tickets_bp
@@ -392,6 +402,7 @@ def _register_blueprints(app):
     app.register_blueprint(settings_bp,  url_prefix='/api/settings')
     app.register_blueprint(security_bp,  url_prefix='/api/security')
     app.register_blueprint(events_bp,    url_prefix='/api/events')
+    app.register_blueprint(notifications_bp, url_prefix='/api/notifications')
     app.register_blueprint(notes_bp,     url_prefix='/api/notes')
     app.register_blueprint(messages_bp,  url_prefix='/api/messages')
     app.register_blueprint(tickets_bp,   url_prefix='/api/tickets')

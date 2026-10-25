@@ -12,6 +12,30 @@ from ...extensions import db
 from ...models import Event, User, Appointment, Task, Contact, Opportunity
 from ...utils.rbac import get_current_user_role, require_min_role
 
+# Reminder entries on the calendar use one fixed colour so they are instantly
+# distinguishable from real events (which use the lead owner's colour).
+REMINDER_COLOR = "#f59e0b"  # amber
+
+
+def _parse_reminder_minutes(value):
+    """Validate a reminder_minutes value.
+
+    Returns (minutes_or_None, error_or_None). None means "no reminder".
+    Accepts an int 0..1440 (0 = remind at the event start time).
+    """
+    if value is None or value == "":
+        return None, None
+    if isinstance(value, bool):
+        return None, "reminder_minutes must be an integer number of minutes"
+    try:
+        minutes = int(value)
+    except (TypeError, ValueError):
+        return None, "reminder_minutes must be an integer number of minutes"
+    if minutes < 0 or minutes > 1440:
+        return None, "reminder_minutes must be between 0 and 1440"
+    return minutes, None
+
+
 def _can_view_event(event, user_id, user_role):
     """
     Visibility rules for a single calendar event.
@@ -88,6 +112,65 @@ def list_events():
     events = query_evt.order_by(Event.start_datetime.asc()).all()
     out_list = [e.to_dict() for e in events]
 
+    # 1b. Reminder entries for real Events — one calendar entry per event
+    # with a reminder, placed at (start - reminder_minutes) in the fixed
+    # reminder colour. A reminder is a schedule entry, not a one-time popup:
+    # it stays on the calendar even after it has fired / been read.
+    # When the feed is filtered to a reminder type, the section-1 query
+    # above yields nothing, so fetch the visible events with reminders
+    # separately in that case.
+    if not event_type or event_type in ("REMINDER", "EVENT_REMINDER"):
+        reminder_events = events
+        if event_type in ("REMINDER", "EVENT_REMINDER"):
+            rq = Event.query.filter(Event.reminder_minutes.isnot(None))
+            if user_role != "ADMIN":
+                rq = rq.filter(
+                    db.or_(
+                        Event.created_by_id == user_id,
+                        Event.owner_id == user_id,
+                        Event.lead_id.in_(
+                            db.session.query(Opportunity.id).filter(Opportunity.assigned_to_id == user_id)
+                        ),
+                    )
+                )
+            reminder_events = rq.order_by(Event.start_datetime.asc()).all()
+        for ev in reminder_events:
+            if ev.reminder_minutes is None:
+                continue
+            if (ev.status or "SCHEDULED") != "SCHEDULED":
+                continue
+            d = ev.to_dict()
+            remind_start = ev.start_datetime - timedelta(minutes=ev.reminder_minutes)
+            if start_str and remind_start < start_dt:
+                continue
+            if end_str and remind_start > end_dt:
+                continue
+            out_list.append({
+                "id": f"rem_{ev.id}",
+                "title": f"\U0001f514 Reminder: {ev.title}",
+                "description": (
+                    f"Reminder for event '{ev.title}' — starts "
+                    f"{ev.start_datetime.strftime('%d %b %Y, %I:%M %p')}."
+                    + (f" Lead: {d.get('lead_name')}." if d.get("lead_name") else "")
+                ),
+                "event_type": "EVENT_REMINDER",
+                "start": remind_start.isoformat(),
+                "end": (remind_start + timedelta(minutes=30)).isoformat(),
+                "created_by_id": ev.created_by_id,
+                "is_all_day": False,
+                "color": REMINDER_COLOR,
+                "owner_id": d.get("owner_id"),
+                "owner_name": d.get("owner_name"),
+                "lead_id": ev.lead_id,
+                "lead_name": d.get("lead_name"),
+                "lead_phone": d.get("lead_phone"),
+                "lead_stage": d.get("lead_stage"),
+                "event_id": ev.id,
+                "is_reminder": True,
+                "reminder_minutes": ev.reminder_minutes,
+                "reminder_sent": bool(ev.reminder_sent),
+            })
+
     # 2. Add Appointments (if no specific event_type filter or if type is APPOINTMENT)
     if not event_type or event_type == "APPOINTMENT":
         query_apt = Appointment.query
@@ -145,7 +228,9 @@ def list_events():
                 "created_by_id": tsk.created_by_id,
                 "opportunity_id": tsk.opportunity_id,
                 "is_all_day": False,
-                "color": user.calendar_color if user else "#f59e0b"
+                # Tasks are reminders: fixed reminder colour, not the owner's.
+                "color": REMINDER_COLOR,
+                "is_reminder": True,
             })
 
     # 4. Add Lead Next Action Deadlines (if no specific event_type filter or if type is REMINDER)
@@ -185,7 +270,9 @@ def list_events():
                 "opportunity_id": opp.id,
                 "contact_id": opp.contact_id,
                 "is_all_day": False,
-                "color": user.calendar_color if user else "#e11d48"
+                # Virtual follow-up reminders use the fixed reminder colour.
+                "color": REMINDER_COLOR,
+                "is_reminder": True,
             })
 
     return jsonify(out_list), 200
@@ -244,6 +331,14 @@ def create_event():
     if priority not in ("LOW", "NORMAL", "HIGH"):
         return jsonify({"error": "Invalid priority (LOW/NORMAL/HIGH)"}), 400
 
+    # Reminder: explicit null = no reminder; omitted = default 30 min before.
+    if "reminder_minutes" in data:
+        reminder_minutes, rem_err = _parse_reminder_minutes(data.get("reminder_minutes"))
+        if rem_err:
+            return jsonify({"error": rem_err}), 400
+    else:
+        reminder_minutes = 30
+
     event = Event(
         title=data["title"],
         description=data.get("description"),
@@ -254,6 +349,8 @@ def create_event():
         location=data.get("location"),
         status=status,
         priority=priority,
+        reminder_minutes=reminder_minutes,
+        reminder_sent=False,
         created_by_id=user_id,
         lead_id=lead.id if lead else None,
         owner_id=owner_id,
@@ -310,9 +407,21 @@ def update_event(event_id):
     if "is_all_day" in data:
         event.is_all_day = data["is_all_day"]
     if "start_datetime" in data:
-        event.start_datetime = datetime.fromisoformat(data["start_datetime"])
+        new_start = datetime.fromisoformat(data["start_datetime"])
+        if new_start != event.start_datetime:
+            # Time moved — the reminder must fire again at the new time.
+            event.reminder_sent = False
+        event.start_datetime = new_start
     if "end_datetime" in data:
         event.end_datetime = datetime.fromisoformat(data["end_datetime"]) if data["end_datetime"] else (event.start_datetime + timedelta(hours=1))
+    if "reminder_minutes" in data:
+        reminder_minutes, rem_err = _parse_reminder_minutes(data.get("reminder_minutes"))
+        if rem_err:
+            return jsonify({"error": rem_err}), 400
+        if reminder_minutes != event.reminder_minutes:
+            # Reminder setting changed — re-arm it.
+            event.reminder_sent = False
+        event.reminder_minutes = reminder_minutes
 
     # Re-link / un-link the event
     if "lead_id" in data:

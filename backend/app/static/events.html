@@ -121,6 +121,11 @@
       <!-- Owner colour legend + lead filter -->
       <div class="mb-4 flex flex-wrap items-center gap-3">
         <div id="owner-legend" class="flex flex-wrap items-center gap-2"></div>
+        <div id="type-legend" class="flex flex-wrap items-center gap-3 text-[11px] text-slate-400 font-semibold">
+          <span class="flex items-center gap-1.5"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#6366f1"></span>Event — lead owner's colour</span>
+          <span class="flex items-center gap-1.5"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f59e0b"></span>Reminder — amber</span>
+          <span class="flex items-center gap-1.5"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981"></span>Appointment — green / owner colour</span>
+        </div>
         <div class="ml-auto flex items-center gap-2">
           <label for="leadFilter" class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Lead</label>
           <select id="leadFilter" class="bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-teal-500 transition-all max-w-[240px]">
@@ -185,6 +190,17 @@
               <option value="HIGH">High</option>
             </select>
           </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-2 tracking-wide uppercase">Reminder</label>
+          <select id="eventReminder" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+            <option value="">No reminder</option>
+            <option value="15">15 minutes before</option>
+            <option value="30" selected>30 minutes before</option>
+            <option value="60">1 hour before</option>
+            <option value="1440">1 day before</option>
+          </select>
+          <p class="mt-1.5 text-[11px] text-slate-500">You will get an in-app notification, and the reminder shows on the calendar in amber.</p>
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-400 mb-2 tracking-wide uppercase flex items-center justify-between">
@@ -267,7 +283,8 @@
           </div>
         </div>
         <span id="detailOwnerBadge" class="owner-chip" style="display:none"></span>
-        <div class="pt-4 flex justify-end">
+        <div class="pt-4 flex justify-end gap-3">
+          <button id="detailEventBtn" class="hidden px-5 py-2.5 rounded-xl text-sm font-semibold text-amber-300 transition-all" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.4);">View Event →</button>
           <button onclick="document.getElementById('eventDetailsModal').classList.add('hidden')" class="btn-gradient px-6 py-2.5 rounded-xl text-sm font-semibold text-white">Close</button>
         </div>
       </div>
@@ -276,6 +293,7 @@
 
   <div id="toast-container"></div>
   <script src="/assets/js/sidebar.js"></script>
+  <script src="/assets/js/notifications.js?v=1"></script>
   <script type="module" src="/assets/js/app.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
@@ -343,6 +361,82 @@
       await loadLeads();
       populateLeadPickers();
       renderLegend();
+
+      /* ------------------------------------------------------------------
+         Event details modal — shared by calendar clicks and by the
+         "View Event" button on reminder entries (which fetches the
+         parent event and shows it in the same modal).
+      ------------------------------------------------------------------ */
+      function showEventDetails(d) {
+        document.getElementById('detailTitle').textContent = d.title;
+        document.getElementById('detailDescription').textContent = d.description || 'No additional details.';
+        document.getElementById('detailType').textContent =
+          (d.type || 'General').replace(/_/g, ' ');
+
+        let timeStr = d.start
+          ? new Date(d.start).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
+          : 'N/A';
+        if (d.end) {
+          timeStr += ' – ' + new Date(d.end).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+        }
+        document.getElementById('detailTime').textContent = timeStr;
+        document.getElementById('detailLocation').textContent = d.location || '—';
+        document.getElementById('detailStatus').textContent =
+          (d.status || 'SCHEDULED') + ' · ' + (d.priority || 'NORMAL');
+
+        // owner colour badge
+        const badge = document.getElementById('detailOwnerBadge');
+        if (badge) {
+          if (d.owner_name) {
+            badge.style.display = '';
+            badge.className = 'owner-chip mt-2';
+            badge.style.setProperty('--chip-color', d.color || '#14B8A6');
+            badge.innerHTML = `<span class="owner-dot" style="--chip-color:${esc(d.color || '#14B8A6')}"></span>${esc(d.owner_name)}`;
+          } else {
+            badge.style.display = 'none';
+          }
+        }
+
+        const leadContainer = document.getElementById('detailLeadContainer');
+        if (d.lead_id) {
+          leadContainer.classList.remove('hidden');
+          document.getElementById('detailLeadName').textContent = d.lead_name || ('Lead #' + d.lead_id);
+          document.getElementById('detailLeadLink').href = `/lead-details.html?id=${d.lead_id}`;
+          const stageEl = document.getElementById('detailLeadStage');
+          if (stageEl) stageEl.textContent = d.lead_stage ? d.lead_stage.replace(/_/g, ' ') : '';
+        } else {
+          leadContainer.classList.add('hidden');
+        }
+
+        // Reminder entries link back to the event they remind about.
+        const eventBtn = document.getElementById('detailEventBtn');
+        if (eventBtn) {
+          if (d.is_reminder && d.event_id) {
+            eventBtn.classList.remove('hidden');
+            eventBtn.onclick = async () => {
+              try {
+                const res = await fetch(`/api/events/${d.event_id}`, { headers: authHeaders });
+                if (!res.ok) throw new Error('Event not found');
+                const ev = await res.json();
+                showEventDetails({
+                  title: ev.title, start: ev.start, end: ev.end,
+                  description: ev.description, type: ev.event_type, location: ev.location,
+                  status: ev.status, priority: ev.priority, owner_name: ev.owner_name,
+                  color: ev.color, lead_id: ev.lead_id, lead_name: ev.lead_name,
+                  lead_stage: ev.lead_stage, event_id: ev.id, is_reminder: false
+                });
+              } catch (err) {
+                if (window.showToast) window.showToast('Could not open the linked event', 'error');
+              }
+            };
+          } else {
+            eventBtn.classList.add('hidden');
+            eventBtn.onclick = null;
+          }
+        }
+
+        document.getElementById('eventDetailsModal').classList.remove('hidden');
+      }
 
       /* ------------------------------------------------------------------
          Calendar
@@ -424,7 +518,10 @@
                 owner_id: ev.owner_id,
                 color: ev.color,
                 opportunity_id: ev.opportunity_id,
-                contact_id: ev.contact_id
+                contact_id: ev.contact_id,
+                event_id: ev.event_id || null,
+                is_reminder: !!ev.is_reminder,
+                reminder_minutes: ev.reminder_minutes
               }
             }));
             successCallback(events);
@@ -436,48 +533,13 @@
         eventClick: function (info) {
           const ev = info.event;
           const p = ev.extendedProps || {};
-
-          document.getElementById('detailTitle').textContent = ev.title;
-          document.getElementById('detailDescription').textContent = p.description || 'No additional details.';
-          document.getElementById('detailType').textContent =
-            (p.type || 'General').replace(/_/g, ' ');
-
-          let timeStr = ev.start
-            ? new Date(ev.start).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
-            : 'N/A';
-          if (ev.end) {
-            timeStr += ' – ' + new Date(ev.end).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
-          }
-          document.getElementById('detailTime').textContent = timeStr;
-          document.getElementById('detailLocation').textContent = p.location || '—';
-          document.getElementById('detailStatus').textContent =
-            (p.status || 'SCHEDULED') + ' · ' + (p.priority || 'NORMAL');
-
-          // owner colour badge
-          const badge = document.getElementById('detailOwnerBadge');
-          if (badge) {
-            if (p.owner_name) {
-              badge.style.display = '';
-              badge.className = 'owner-chip mt-2';
-              badge.style.setProperty('--chip-color', p.color || '#14B8A6');
-              badge.innerHTML = `<span class="owner-dot" style="--chip-color:${esc(p.color || '#14B8A6')}"></span>${esc(p.owner_name)}`;
-            } else {
-              badge.style.display = 'none';
-            }
-          }
-
-          const leadContainer = document.getElementById('detailLeadContainer');
-          if (p.lead_id) {
-            leadContainer.classList.remove('hidden');
-            document.getElementById('detailLeadName').textContent = p.lead_name || ('Lead #' + p.lead_id);
-            document.getElementById('detailLeadLink').href = `/lead-details.html?id=${p.lead_id}`;
-            const stageEl = document.getElementById('detailLeadStage');
-            if (stageEl) stageEl.textContent = p.lead_stage ? p.lead_stage.replace(/_/g, ' ') : '';
-          } else {
-            leadContainer.classList.add('hidden');
-          }
-
-          document.getElementById('eventDetailsModal').classList.remove('hidden');
+          showEventDetails({
+            title: ev.title, start: ev.start, end: ev.end,
+            description: p.description, type: p.type, location: p.location,
+            status: p.status, priority: p.priority, owner_name: p.owner_name,
+            color: p.color, lead_id: p.lead_id, lead_name: p.lead_name,
+            lead_stage: p.lead_stage, event_id: p.event_id, is_reminder: p.is_reminder
+          });
         }
       });
       calendar.render();
@@ -505,7 +567,8 @@
           end_datetime: null,
           location: document.getElementById('eventLocation').value.trim() || null,
           status: document.getElementById('eventStatus').value,
-          priority: document.getElementById('eventPriority').value
+          priority: document.getElementById('eventPriority').value,
+          reminder_minutes: document.getElementById('eventReminder').value === '' ? null : parseInt(document.getElementById('eventReminder').value, 10)
         };
         if (leadId) payload.lead_id = parseInt(leadId, 10);
 
