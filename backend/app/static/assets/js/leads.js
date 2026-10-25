@@ -861,7 +861,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <div class="text-xs text-slate-400 mb-1">Status: <span class="${item.connected ? 'text-emerald-400' : 'text-rose-400'}">${item.connected ? 'Connected' : 'Not Connected'}</span></div>
                     ${item.notes ? `<div class="text-xs text-slate-300 bg-slate-800/50 p-2 rounded border border-slate-700/50 mt-1">${item.notes}</div>` : ''}
-                    ${item.recording_url ? `<a href="${item.recording_url}" target="_blank" class="inline-flex items-center gap-1 text-[10px] text-indigo-400 hover:text-indigo-300 mt-2 bg-indigo-500/10 px-2 py-1 rounded-full"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg> Play Recording</a>` : ''}
+                    ${item.recording_url ? `<div class="mt-2 space-y-1.5"><div class="text-[10px] text-slate-400 truncate" title="${item.recording_filename || 'Call Recording'}">🎧 ${item.recording_filename || 'Call Recording'}</div><audio controls preload="none" src="${item.recording_url}" class="w-full h-8"></audio><a href="${item.recording_url}" target="_blank" class="inline-flex items-center gap-1 text-[10px] text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 px-2 py-1 rounded-full"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg> Play / Download Recording</a></div>` : ''}
                 `;
                 
                 // 2. Populate Files Tab
@@ -878,7 +878,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
                                 </div>
                                 <div>
-                                    <div class="text-xs font-semibold text-slate-200">Call Recording</div>
+                                    <div class="text-xs font-semibold text-slate-200">${item.recording_filename || 'Call Recording'}</div>
                                     <div class="text-[10px] text-slate-500">${formatDate(item.date)}</div>
                                 </div>
                             </div>

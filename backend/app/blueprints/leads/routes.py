@@ -258,10 +258,14 @@ def get_lead_profile(id):
     # Consolidate Timeline
     timeline_items = []
     
-    # Calls
-    can_access_recordings = role in ('ADMIN', 'MANAGER', 'GM', 'CEO')
-    def format_rec_url(fname):
-        if not fname or not can_access_recordings: return None
+    # Calls — recordings are visible to managers, and to the lead owner /
+    # the person who logged the call for their own calls. Without this,
+    # a Lead Owner who uploads a recording can never see or play it back
+    # in their own lead history.
+    def format_rec_url(fname, logged_by_id=None):
+        if not fname: return None
+        can_access = role in ('ADMIN', 'MANAGER', 'GM', 'CEO') or logged_by_id == user_id or lead.assigned_to_id == user_id
+        if not can_access: return None
         # If it is a full URL or stored filename in B2
         if fname.startswith('http'):
             # If it's a backblazeb2 URL, refresh with fresh signature if possible
@@ -280,12 +284,17 @@ def get_lead_profile(id):
         return f"/uploads/recordings/{urllib.parse.quote(fname)}"
         
     for c in call_logs:
+        _rec_name = None
+        if c.recording_filename:
+            import urllib.parse as _up
+            _rec_name = _up.unquote(_up.urlparse(c.recording_filename).path.rstrip('/').split('/')[-1]) if c.recording_filename.startswith('http') else c.recording_filename
         timeline_items.append({
             "type": "CALL",
             "date": c.created_at.isoformat() if c.created_at else None,
             "connected": c.connected,
             "notes": c.notes,
-            "recording_url": format_rec_url(c.recording_filename),
+            "recording_url": format_rec_url(c.recording_filename, c.logged_by_id),
+            "recording_filename": _rec_name if format_rec_url(c.recording_filename, c.logged_by_id) else None,
         })
         
     # Notes
@@ -357,7 +366,7 @@ def get_lead_profile(id):
         "outcome": c.outcome.value if c.outcome else None,
         "activity_label": c.activity_label,
         "created_at": c.created_at.isoformat() if c.created_at else None,
-        "recording_url": format_rec_url(c.recording_filename),
+        "recording_url": format_rec_url(c.recording_filename, c.logged_by_id),
     } for c in call_logs]
     profile["appointments"] = [{
         "id": a.id,
