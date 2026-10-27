@@ -655,6 +655,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const openApptModal = () => {
         if (!currentLeadId) return;
         document.getElementById('appt-form').reset();
+        if (window.prefillDateTime) window.prefillDateTime(document.getElementById('appt-datetime'));
         apptModal.classList.remove('hidden');
         requestAnimationFrame(() => {
             apptModal.classList.remove('opacity-0');
@@ -682,6 +683,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const openSetEventModal = () => {
         if (!currentLeadId) return;
         document.getElementById('set-event-form').reset();
+        if (window.prefillDateTime) window.prefillDateTime(document.getElementById('set-event-datetime'));
         setEventModal.classList.remove('hidden');
         requestAnimationFrame(() => {
             setEventModal.classList.remove('opacity-0');
@@ -703,7 +705,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const btn = document.getElementById('save-set-event-btn');
         const title = document.getElementById('set-event-title').value.trim();
         const dt = document.getElementById('set-event-datetime').value;
-        if (!title || !dt) return;
+        if (!title) { if (window.showToast) window.showToast('Please enter an event title.', 'error'); document.getElementById('set-event-title').focus(); return; }
+        if (window.requireDateTime && !window.requireDateTime(document.getElementById('set-event-datetime'))) return;
         btn.disabled = true;
         btn.textContent = 'Saving...';
         try {
@@ -746,6 +749,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const saveBtn = document.getElementById('save-appt-btn');
         const dt = document.getElementById('appt-datetime').value;
         const loc = document.getElementById('appt-location').value;
+        if (window.requireDateTime && !window.requireDateTime(document.getElementById('appt-datetime'))) return;
         const startIso = new Date(dt).toISOString();
         
         saveBtn.disabled = true;
@@ -2118,6 +2122,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.openDebriefModal = function(apptId) {
         document.getElementById('debrief-appt-id').value = apptId;
         document.getElementById('debrief-form').reset();
+        if (window.prefillDateTime) window.prefillDateTime(document.getElementById('debrief-next-action-deadline'));
         const modal = document.getElementById('debrief-modal');
         const content = document.getElementById('debrief-modal-content');
         modal.classList.remove('hidden');
@@ -2163,6 +2168,7 @@ document.addEventListener('DOMContentLoaded', () => {
         debriefForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const apptId = document.getElementById('debrief-appt-id').value;
+            if (window.requireDateTime && !window.requireDateTime(document.getElementById('debrief-next-action-deadline'))) return;
             const payload = {
                 notes: document.getElementById('debrief-notes').value,
                 principal_objection: document.getElementById('debrief-objection-code').value || undefined,

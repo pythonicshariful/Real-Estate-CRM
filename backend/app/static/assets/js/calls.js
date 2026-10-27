@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Function to show modal
     window.showCallModal = function(leadId) {
         document.getElementById('call-lead-id').value = leadId;
+        if (window.prefillDateTime) window.prefillDateTime(document.getElementById('next-action-deadline'));
         callModal.classList.remove('hidden');
         // Small delay to allow display:block to apply before animating opacity
         setTimeout(() => {
@@ -135,6 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const labelText = document.getElementById('disposition-label-text');
         if (labelText) labelText.textContent = label;
         if (dispositionForm) dispositionForm.reset();
+        if (window.prefillDateTime) window.prefillDateTime(document.getElementById('disposition-next-date'));
         const activityType = document.getElementById('disposition-activity-type');
         if (activityType) activityType.value = 'Follow-up';
         dispositionModal.classList.remove('hidden');
@@ -164,10 +166,11 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const leadId = document.getElementById('call-lead-id') ? document.getElementById('call-lead-id').value : '';
             const notes = document.getElementById('disposition-notes').value.trim();
-            const nextDate = document.getElementById('disposition-next-date').value;
+            const nextDateInput = document.getElementById('disposition-next-date');
             const activityType = document.getElementById('disposition-activity-type').value;
             if (!leadId) { window.showToast("No lead selected.", "error"); return; }
-            if (!nextDate) { window.showToast("Next follow-up date is required.", "error"); return; }
+            if (window.requireDateTime && !window.requireDateTime(nextDateInput)) return;
+            const nextDate = nextDateInput.value;
             try {
                 const token = localStorage.getItem('crm_token');
                 const res = await fetch(`/api/leads/${leadId}/calls`, {

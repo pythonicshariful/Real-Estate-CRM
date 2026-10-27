@@ -81,7 +81,7 @@
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
-      <form id="task-form" class="p-6 space-y-4">
+      <form id="task-form" novalidate class="p-6 space-y-4">
         <input type="hidden" id="task-id">
         <div>
           <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Title</label>
@@ -95,6 +95,7 @@
           <div>
             <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Due Date</label>
             <input type="datetime-local" id="task-due-date" required class="w-full input-glass px-3 py-2 rounded-xl text-sm">
+            <p class="text-xs text-slate-500 mt-1">Pick a date and a time — time defaults to 10:00 AM.</p>
           </div>
           <div>
             <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Priority</label>
@@ -134,7 +135,7 @@
 
   <div id="toast-container"></div>
   <script src="/assets/js/sidebar.js"></script>
-  <script type="module" src="/assets/js/app.js"></script>
+  <script type="module" src="/assets/js/app.js?v=1"></script>
   
   <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -230,6 +231,7 @@
     window.openTaskModal = function() {
       document.getElementById('task-form').reset();
       document.getElementById('task-id').value = '';
+      if (window.prefillDateTime) window.prefillDateTime(document.getElementById('task-due-date'));
       document.getElementById('modal-title').textContent = 'New Task';
       
       const modal = document.getElementById('task-modal');
@@ -272,8 +274,12 @@
 
     async function saveTask() {
       const id = document.getElementById('task-id').value;
+      const title = document.getElementById('task-title').value.trim();
+      if (!title) { if (window.showToast) window.showToast('Please enter a task title.', 'error'); document.getElementById('task-title').focus(); return; }
+      if (window.requireDateTime && !window.requireDateTime(document.getElementById('task-due-date'))) return;
+      if (!document.getElementById('task-assignee').value) { if (window.showToast) window.showToast('Please choose who this task is assigned to.', 'error'); document.getElementById('task-assignee').focus(); return; }
       const data = {
-        title: document.getElementById('task-title').value,
+        title: title,
         description: document.getElementById('task-description').value,
         due_date: new Date(document.getElementById('task-due-date').value).toISOString(),
         priority: document.getElementById('task-priority').value,

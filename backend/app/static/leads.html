@@ -326,6 +326,7 @@
         <div>
           <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Set Calendar Follow-up Reminder</label>
           <input type="datetime-local" name="next_action_deadline" id="next-action-deadline" style="color-scheme: dark;" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+          <p class="text-xs text-slate-500 mt-1">Pick a date and a time — time defaults to 10:00 AM.</p>
         </div>
         
         <div>
@@ -390,7 +391,7 @@
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
-      <form id="disposition-form" class="p-6 space-y-4">
+      <form id="disposition-form" novalidate class="p-6 space-y-4">
         <div>
           <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Customer Notes / Remarks</label>
           <textarea id="disposition-notes" rows="3" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500" placeholder="What did the customer say?"></textarea>
@@ -398,6 +399,7 @@
         <div>
           <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Next Follow-up Date *</label>
           <input type="datetime-local" id="disposition-next-date" required style="color-scheme: dark;" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+          <p class="text-xs text-slate-500 mt-1">Pick a date and a time — time defaults to 10:00 AM.</p>
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Activity Type *</label>
@@ -428,10 +430,11 @@
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
-      <form id="appt-form" class="p-6 space-y-4">
+      <form id="appt-form" novalidate class="p-6 space-y-4">
         <div>
           <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Date & Time</label>
           <input type="datetime-local" id="appt-datetime" required class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+          <p class="text-xs text-slate-500 mt-1">Pick a date and a time — time defaults to 10:00 AM.</p>
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Location / Meeting Link</label>
@@ -460,7 +463,7 @@
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
-      <form id="set-event-form" class="p-6 space-y-4">
+      <form id="set-event-form" novalidate class="p-6 space-y-4">
         <div>
           <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Event Title *</label>
           <input type="text" id="set-event-title" required placeholder="e.g. Site visit — Block C" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-teal-500">
@@ -469,6 +472,7 @@
           <div>
             <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Date &amp; Time *</label>
             <input type="datetime-local" id="set-event-datetime" required style="color-scheme: dark;" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-teal-500">
+            <p class="text-xs text-slate-500 mt-1">Pick a date and a time — time defaults to 10:00 AM.</p>
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Type</label>
@@ -878,7 +882,7 @@
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
-      <form id="debrief-form" class="p-6 space-y-4">
+      <form id="debrief-form" novalidate class="p-6 space-y-4">
         <input type="hidden" id="debrief-appt-id">
         <div>
           <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Debrief Notes <span class="text-rose-500">*</span></label>
@@ -932,6 +936,7 @@
           <div>
             <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Next Action Deadline <span class="text-rose-500">*</span></label>
             <input type="datetime-local" id="debrief-next-action-deadline" required style="color-scheme: dark;" class="w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+            <p class="text-xs text-slate-500 mt-1">Pick a date and a time — time defaults to 10:00 AM.</p>
           </div>
         </div>
         <div class="pt-4 flex justify-end gap-3 border-t border-slate-800">
@@ -1217,9 +1222,9 @@
   </div>
 
   <script src="/assets/js/sidebar.js"></script>
-  <script type="module" src="/assets/js/app.js"></script>
-  <script src="/assets/js/leads.js?v=26"></script>
-  <script src="/assets/js/calls.js?v=5"></script>
+  <script type="module" src="/assets/js/app.js?v=1"></script>
+  <script src="/assets/js/leads.js?v=27"></script>
+  <script src="/assets/js/calls.js?v=6"></script>
   <script src="/assets/js/notifications.js?v=1"></script>
 
   <!-- Dedicated Lead Details Navigation Script -->
