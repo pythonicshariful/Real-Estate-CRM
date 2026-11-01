@@ -2235,7 +2235,10 @@ def _parse_import_file(f):
             import openpyxl
         except ImportError:
             raise ValueError("Excel support requires openpyxl (see requirements.txt)")
-        wb = openpyxl.load_workbook(f, data_only=True, read_only=True)
+        try:
+            wb = openpyxl.load_workbook(f, data_only=True, read_only=True)
+        except Exception as e:
+            raise ValueError(f"Could not read the Excel file: {e}")
         ws = wb.active
         rows_iter = ws.iter_rows(values_only=True)
         try:
@@ -2254,18 +2257,42 @@ def _parse_import_file(f):
             rows.append(row)
         return headers, rows
     if filename.endswith('.csv'):
-        content = f.read().decode('utf-8-sig', errors='replace')
-        reader = _csv.DictReader(_io.StringIO(content))
-        headers = [str(h).strip() for h in (reader.fieldnames or []) if h]
-        rows = []
-        for r in reader:
-            row = {}
-            for k, v in r.items():
-                if k is None:
-                    continue
-                row[str(k).strip()] = '' if v is None else str(v).strip()
-            if any(row.values()):
-                rows.append(row)
+        import codecs as _codecs
+        raw = f.read()
+        # Facebook/Meta lead exports come in two shapes: plain UTF-8 CSV and
+        # UTF-16 (BOM-marked, usually tab-separated). Sniff the BOM so both
+        # decode correctly instead of producing garbage headers.
+        if raw.startswith((_codecs.BOM_UTF16_LE, _codecs.BOM_UTF16_BE)):
+            content = raw.decode('utf-16', errors='replace')
+        else:
+            content = raw.decode('utf-8-sig', errors='replace')
+        # newline='' leaves \r / \n / \r\n handling to the csv parser, as
+        # its docs require; the default StringIO newline translation made a
+        # bare \r inside a line raise
+        # "_csv.Error: new-line character seen in unquoted field" (live 500
+        # on a Meta seminar-leads export, 2026-11-01). The delimiter is
+        # sniffed because Meta/Excel exports may be tab- or
+        # semicolon-separated, not just comma-separated.
+        try:
+            dialect = _csv.Sniffer().sniff(content[:8192], delimiters=',\t;|')
+        except _csv.Error:
+            dialect = _csv.excel
+        # Long form answers must not trip the default 128 KB field limit.
+        _csv.field_size_limit(10 * 1024 * 1024)
+        reader = _csv.DictReader(_io.StringIO(content, newline=''), dialect=dialect)
+        try:
+            headers = [str(h).strip() for h in (reader.fieldnames or []) if h]
+            rows = []
+            for r in reader:
+                row = {}
+                for k, v in r.items():
+                    if k is None:
+                        continue
+                    row[str(k).strip()] = '' if v is None else str(v).strip()
+                if any(row.values()):
+                    rows.append(row)
+        except _csv.Error as e:
+            raise ValueError(f"Could not parse the CSV file: {e}")
         return headers, rows
     raise ValueError("Unsupported file type. Upload a .csv or .xlsx file.")
 
@@ -2390,7 +2417,7 @@ def import_leads():
     for idx, row in enumerate(rows, 1):
         try:
             full_name = get_val(row, 'Full Name', 'Name', 'Customer Name', 'full_name')
-            phone_raw = get_val(row, 'Phone Number', 'Phone', 'Mobile', 'Contact Number', 'phone', 'phone_raw')
+            phone_raw = get_val(row, 'Phone Number', 'Phone', 'Mobile', 'Contact Number', 'phone', 'phone_raw', 'phone_number')
             email = get_val(row, 'Email', 'Email Address', 'email')
             profession = get_val(row, 'Profession', 'Occupation', 'Job', 'profession')
             service_type = get_val(row, 'Service Type', 'Service', 'Property Type', 'service_type')
