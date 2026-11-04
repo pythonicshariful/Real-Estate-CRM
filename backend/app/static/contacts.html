@@ -8,6 +8,31 @@
   <link rel="stylesheet" href="/assets/css/main.css">
   <link rel="stylesheet" href="/assets/css/theme.css">
   <script src="/assets/js/theme.js"></script>
+  <style>
+    .stats-wrap { padding: 1rem 1rem 0 1rem; display: flex; flex-direction: column; gap: 1rem; }
+    .kpi-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+    @media (min-width: 768px) { .kpi-row { grid-template-columns: repeat(4, 1fr); } }
+    .kpi-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(148,163,184,0.15); border-radius: 0.75rem; padding: 0.9rem 1rem; }
+    .kpi-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em; margin-bottom: 0.25rem; }
+    .kpi-value { font-size: 1.5rem; font-weight: 700; color: #fff; line-height: 1.1; }
+    .kpi-sub { font-size: 11px; color: #64748b; margin-top: 0.25rem; }
+    .chart-row { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+    @media (min-width: 1024px) { .chart-row { grid-template-columns: repeat(3, 1fr); } }
+    .chart-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(148,163,184,0.15); border-radius: 0.75rem; padding: 0.9rem 1rem; }
+    .chart-title { font-size: 0.85rem; font-weight: 600; color: #fff; }
+    .chart-subtitle { font-size: 11px; color: #64748b; margin-bottom: 0.6rem; }
+    .bar-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.45rem; font-size: 11px; }
+    .bar-label { width: 38%; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bar-track { flex: 1; height: 8px; background: rgba(148,163,184,0.15); border-radius: 999px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 999px; background: #6366f1; }
+    .bar-count { width: 2rem; text-align: right; color: #94a3b8; }
+    .growth-wrap { display: flex; align-items: flex-end; gap: 0.5rem; height: 96px; padding-top: 0.5rem; }
+    .growth-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.3rem; height: 100%; justify-content: flex-end; }
+    .growth-bar { width: 100%; max-width: 34px; background: #6366f1; border-radius: 4px 4px 0 0; min-height: 2px; }
+    .growth-num { font-size: 10px; color: #cbd5e1; }
+    .growth-lab { font-size: 10px; color: #64748b; }
+    .stats-empty { font-size: 11px; color: #64748b; padding: 0.5rem 0; }
+  </style>
 </head>
 <body class="flex h-screen overflow-hidden text-slate-100 bg-[#0a0a14]">
   <div id="sidebar-container"></div>
@@ -34,7 +59,21 @@
       </select>
     </div>
 
-    <div class="flex-1 overflow-y-auto p-4">
+    <div class="flex-1 overflow-y-auto">
+      <div class="stats-wrap">
+        <div class="kpi-row">
+          <div class="kpi-card"><div class="kpi-label">Total Clients</div><div class="kpi-value" id="kpi-total">—</div><div class="kpi-sub">All registered clients</div></div>
+          <div class="kpi-card"><div class="kpi-label">New This Month</div><div class="kpi-value" id="kpi-month">—</div><div class="kpi-sub">Added in the current month</div></div>
+          <div class="kpi-card"><div class="kpi-label">With Phone</div><div class="kpi-value" id="kpi-phone">—</div><div class="kpi-sub">Clients with a phone number</div></div>
+          <div class="kpi-card"><div class="kpi-label">Districts Covered</div><div class="kpi-value" id="kpi-districts">—</div><div class="kpi-sub">Distinct districts / cities</div></div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-card"><div class="chart-title">Clients by Source</div><div class="chart-subtitle">Where clients came from</div><div id="chart-source"><div class="stats-empty">Loading…</div></div></div>
+          <div class="chart-card"><div class="chart-title">Clients by District</div><div class="chart-subtitle">Geographic distribution</div><div id="chart-district"><div class="stats-empty">Loading…</div></div></div>
+          <div class="chart-card"><div class="chart-title">Growth Trend</div><div class="chart-subtitle">New clients, last 6 months</div><div id="chart-growth"><div class="stats-empty">Loading…</div></div></div>
+        </div>
+      </div>
+      <div class="p-4">
       <div class="glass rounded-xl overflow-hidden overflow-x-auto">
         <div class="overflow-x-auto w-full">
 <table class="w-full text-left text-sm crm-table">
@@ -53,6 +92,7 @@
           </tbody>
         </table>
 </div>
+      </div>
       </div>
     </div>
   </main>
@@ -136,6 +176,7 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       fetchClients();
+      loadClientStats();
       
       document.getElementById('client-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -187,6 +228,81 @@
         `;
         tbody.appendChild(row);
       });
+    }
+
+    function escHtml(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    }
+
+    function renderBars(elId, entries) {
+      const el = document.getElementById(elId);
+      if (!el) return;
+      if (!entries.length) { el.innerHTML = '<div class="stats-empty">No data yet.</div>'; return; }
+      const max = Math.max(...entries.map(e => e[1]), 1);
+      el.innerHTML = entries.map(([label, count]) => `
+        <div class="bar-row">
+          <div class="bar-label" title="${escHtml(label)}">${escHtml(label)}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${Math.round(count / max * 100)}%"></div></div>
+          <div class="bar-count">${count}</div>
+        </div>`).join('');
+    }
+
+    async function loadClientStats() {
+      try {
+        const res = await fetch('/api/contacts/', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('crm_token')}` }
+        });
+        if (!res.ok) throw new Error('Failed to load client stats');
+        const clients = await res.json();
+
+        const now = new Date();
+        const newThisMonth = clients.filter(c => {
+          if (!c.created_at) return false;
+          const d = new Date(c.created_at);
+          return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+        }).length;
+        const withPhone = clients.filter(c => c.phone_raw && String(c.phone_raw).trim()).length;
+
+        const districtCounts = {};
+        clients.forEach(c => {
+          const d = (c.district || c.city || '').trim();
+          if (d) districtCounts[d] = (districtCounts[d] || 0) + 1;
+        });
+        const sourceCounts = {};
+        clients.forEach(c => {
+          const s = (c.source || 'Manual').trim() || 'Manual';
+          sourceCounts[s] = (sourceCounts[s] || 0) + 1;
+        });
+
+        document.getElementById('kpi-total').textContent = clients.length;
+        document.getElementById('kpi-month').textContent = newThisMonth;
+        document.getElementById('kpi-phone').textContent = withPhone;
+        document.getElementById('kpi-districts').textContent = Object.keys(districtCounts).length;
+
+        renderBars('chart-source', Object.entries(sourceCounts).sort((a, b) => b[1] - a[1]).slice(0, 6));
+        renderBars('chart-district', Object.entries(districtCounts).sort((a, b) => b[1] - a[1]).slice(0, 6));
+
+        const growthEl = document.getElementById('chart-growth');
+        const months = [];
+        for (let i = 5; i >= 0; i--) {
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          const count = clients.filter(c => {
+            if (!c.created_at) return false;
+            const cd = new Date(c.created_at);
+            return cd.getFullYear() === d.getFullYear() && cd.getMonth() === d.getMonth();
+          }).length;
+          months.push({ label: d.toLocaleString('en', { month: 'short' }), count });
+        }
+        const gMax = Math.max(...months.map(m => m.count), 1);
+        growthEl.innerHTML = '<div class="growth-wrap">' + months.map(m => `
+          <div class="growth-col">
+            <div class="growth-num">${m.count}</div>
+            <div class="growth-bar" style="height:${Math.max(Math.round(m.count / gMax * 56), 2)}px"></div>
+            <div class="growth-lab">${m.label}</div>
+          </div>`).join('') + '</div>';
+      } catch (err) {
+        console.error(err);
+      }
     }
 
     window.openClientModal = function() {
@@ -255,6 +371,7 @@
         if (window.showToast) window.showToast('Client saved successfully!', 'success');
         closeClientModal();
         fetchClients();
+        loadClientStats();
       } catch (err) {
         if (window.showToast) window.showToast(err.message, 'error');
       }
@@ -270,6 +387,7 @@
         if (!res.ok) throw new Error('Failed to delete client');
         if (window.showToast) window.showToast('Client deleted', 'success');
         fetchClients();
+        loadClientStats();
       } catch (err) {
         if (window.showToast) window.showToast(err.message, 'error');
       }
