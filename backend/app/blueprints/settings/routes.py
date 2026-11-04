@@ -555,10 +555,14 @@ def create_questionnaire_question():
     if not text or not key:
         return jsonify({'error': 'Question text and key are required'}), 400
 
+    # The Settings UI sends the type as 'question_type' (TEXT/SELECT/...);
+    # accept both key names and store lowercase like the seeded defaults.
+    sent_type = data.get('field_type') or data.get('question_type')
     existing = LeadQuestionnaireQuestion.query.filter_by(question_key=key).first()
     if existing:
         existing.question_text = text
-        existing.field_type = data.get('field_type', existing.field_type)
+        if sent_type:
+            existing.field_type = str(sent_type).lower()
         existing.options = data.get('options', existing.options)
         existing.is_required = bool(data.get('is_required', existing.is_required))
         existing.is_active = True
@@ -569,7 +573,7 @@ def create_questionnaire_question():
     q = LeadQuestionnaireQuestion(
         question_key=key,
         question_text=text,
-        field_type=data.get('field_type', 'text'),
+        field_type=str(sent_type).lower() if sent_type else 'text',
         options=data.get('options', []),
         order_index=data.get('order_index', max_order + 1),
         is_required=bool(data.get('is_required', False)),
@@ -588,8 +592,8 @@ def update_questionnaire_question(id):
     data = request.json or {}
     if 'question_text' in data and data['question_text'].strip():
         q.question_text = data['question_text'].strip()
-    if 'field_type' in data:
-        q.field_type = data['field_type']
+    if 'field_type' in data or 'question_type' in data:
+        q.field_type = str(data.get('field_type') or data.get('question_type')).lower()
     if 'options' in data:
         q.options = data['options']
     if 'order_index' in data:

@@ -1,6 +1,6 @@
 from flask import request, jsonify
 from app.blueprints.contacts import contacts_bp
-from app.models import Contact, db
+from app.models import Contact, db, clean_phone_str, utc_iso
 from flask_jwt_extended import jwt_required
 from datetime import datetime, timezone
 
@@ -9,7 +9,7 @@ def contact_to_dict(contact):
         "id": contact.id,
         "full_name": contact.full_name,
         "email": contact.email,
-        "phone_raw": contact.phone_raw,
+        "phone_raw": clean_phone_str(contact.phone_raw),
         "phone_normalized": contact.phone_normalized,
         "gender": contact.gender,
         "address": contact.address,
@@ -20,7 +20,7 @@ def contact_to_dict(contact):
         "is_duplicate": contact.is_duplicate,
         "duplicate_of_id": contact.duplicate_of_id,
         "notes": contact.notes,
-        "created_at": contact.created_at.isoformat() if contact.created_at else None
+        "created_at": utc_iso(contact.created_at)
     }
 
 @contacts_bp.route('/', methods=['GET'])

@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 
 from . import events_bp
 from ...extensions import db
-from ...models import Event, User, Appointment, Task, Contact, Opportunity, dhaka_iso
+from ...models import Event, User, Appointment, Task, Contact, Opportunity, dhaka_iso, parse_input_datetime
 from ...utils.rbac import get_current_user_role, require_min_role
 
 # Fallback colour for a reminder entry when its owner has no calendar
@@ -309,14 +309,14 @@ def create_event():
         return jsonify({"error": "'start_datetime' is required"}), 400
 
     try:
-        start_dt = datetime.fromisoformat(data["start_datetime"])
+        start_dt = parse_input_datetime(data["start_datetime"])
     except ValueError:
         return jsonify({"error": "Invalid start_datetime (ISO 8601 required)"}), 400
 
     end_dt = None
     if data.get("end_datetime"):
         try:
-            end_dt = datetime.fromisoformat(data["end_datetime"])
+            end_dt = parse_input_datetime(data["end_datetime"])
         except ValueError:
             return jsonify({"error": "Invalid end_datetime (ISO 8601 required)"}), 400
     if not end_dt:
@@ -419,13 +419,13 @@ def update_event(event_id):
     if "is_all_day" in data:
         event.is_all_day = data["is_all_day"]
     if "start_datetime" in data:
-        new_start = datetime.fromisoformat(data["start_datetime"])
+        new_start = parse_input_datetime(data["start_datetime"])
         if new_start != event.start_datetime:
             # Time moved — the reminder must fire again at the new time.
             event.reminder_sent = False
         event.start_datetime = new_start
     if "end_datetime" in data:
-        event.end_datetime = datetime.fromisoformat(data["end_datetime"]) if data["end_datetime"] else (event.start_datetime + timedelta(hours=1))
+        event.end_datetime = parse_input_datetime(data["end_datetime"]) if data["end_datetime"] else (event.start_datetime + timedelta(hours=1))
     if "reminder_minutes" in data:
         reminder_minutes, rem_err = _parse_reminder_minutes(data.get("reminder_minutes"))
         if rem_err:

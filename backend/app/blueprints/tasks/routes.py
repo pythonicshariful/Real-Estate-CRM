@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
 from . import tasks_bp
 from ...extensions import db
-from ...models import Task, TaskPriority, TaskStatus, User, UserRole, Opportunity
+from ...models import Task, TaskPriority, TaskStatus, User, UserRole, Opportunity, dhaka_iso, utc_iso, parse_input_datetime
 from ...utils.rbac import get_current_user_role
 
 def task_to_dict(task):
@@ -21,11 +21,11 @@ def task_to_dict(task):
         "created_by_name": creator.full_name if creator else "Unknown",
         "opportunity_id": task.opportunity_id,
         "opportunity_name": opportunity.project.name if (opportunity and opportunity.project) else None,
-        "due_date": task.due_date.isoformat() if task.due_date else None,
+        "due_date": utc_iso(task.due_date),
         "priority": task.priority.value if task.priority else "MEDIUM",
         "status": task.status.value if task.status else "PENDING",
-        "created_at": task.created_at.isoformat() if task.created_at else None,
-        "updated_at": task.updated_at.isoformat() if task.updated_at else None
+        "created_at": utc_iso(task.created_at),
+        "updated_at": utc_iso(task.updated_at)
     }
 
 @tasks_bp.route("/", methods=["GET"])
@@ -64,7 +64,7 @@ def create_task():
         return jsonify({"error": "'title' and 'due_date' are required"}), 400
         
     try:
-        due_date = datetime.fromisoformat(data["due_date"].replace('Z', ''))
+        due_date = parse_input_datetime(data["due_date"])
     except ValueError:
         return jsonify({"error": "Invalid due_date format (ISO 8601 expected)"}), 400
         
@@ -108,7 +108,7 @@ def update_task(task_id):
         task.description = data["description"]
     if "due_date" in data:
         try:
-            task.due_date = datetime.fromisoformat(data["due_date"].replace('Z', ''))
+            task.due_date = parse_input_datetime(data["due_date"])
         except ValueError:
             return jsonify({"error": "Invalid due_date format"}), 400
     if "priority" in data:

@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="/assets/css/tailwind.css">
   <link rel="stylesheet" href="/assets/css/main.css">
   <link rel="stylesheet" href="/assets/css/theme.css">
-  
+
   <script src="/assets/js/theme.js"></script>
 </head>
 <body class="flex h-screen overflow-hidden text-slate-100 bg-[#0a0a14]">
@@ -16,33 +16,33 @@
     <header class="glass-dark border-b border-slate-800/60 min-h-14 py-2 md:py-0 flex items-center justify-between px-4 md:px-6 flex-shrink-0 flex-wrap gap-2">
       <div><div class="text-sm font-bold text-white">Clients & Contacts</div><div class="text-xs text-slate-500">Client database, contracts and relationship management</div></div>
       <div class="flex gap-2">
-        <input type="text" placeholder="Search clients..." class="input-glass px-3 py-1.5 rounded-lg text-xs w-48">
-        <button class="btn-gradient px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5">
+        <input id="client-search" type="text" placeholder="Search clients..." class="input-glass px-3 py-1.5 rounded-lg text-xs w-48">
+        <button id="add-client-btn" class="btn-gradient px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg> Add Client
         </button>
       </div>
     </header>
     <div class="flex-1 overflow-y-auto p-5 space-y-5">
-      <!-- KPIs -->
+      <!-- KPIs (live from /api/contacts/) -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Total Clients</div><div class="kpi-value text-indigo-400">284</div><div class="trend-up">↑ 12 this month</div></div>
-        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Active</div><div class="kpi-value text-emerald-400">198</div><div class="trend-up">69.7% of total</div></div>
-        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">VIP Clients</div><div class="kpi-value text-amber-400">24</div><div class="trend-up">High value</div></div>
-        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Churned</div><div class="kpi-value text-rose-400">18</div><div class="trend-down">↑ 2 this quarter</div></div>
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Total Clients</div><div class="kpi-value text-indigo-400" id="kpi-total">—</div><div class="trend-up" id="kpi-total-sub"></div></div>
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">New This Month</div><div class="kpi-value text-emerald-400" id="kpi-new-month">—</div><div class="trend-up" id="kpi-new-month-sub"></div></div>
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">With Phone</div><div class="kpi-value text-amber-400" id="kpi-with-phone">—</div><div class="trend-up" id="kpi-with-phone-sub"></div></div>
+        <div class="kpi-card"><div class="text-[10px] text-slate-500 uppercase font-semibold mb-1">Districts Covered</div><div class="kpi-value text-cyan-400" id="kpi-districts">—</div><div class="trend-up" id="kpi-districts-sub"></div></div>
       </div>
-      <!-- Charts -->
+      <!-- Charts (live data, CSS bars) -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div class="chart-card">
-          <div class="chart-title">Client Status</div><div class="chart-subtitle">Active vs inactive vs prospect</div>
-          
+          <div class="chart-title">Clients by Source</div><div class="chart-subtitle">Where clients came from</div>
+          <div id="chart-source" class="mt-4 space-y-3"></div>
         </div>
         <div class="chart-card">
           <div class="chart-title">Clients by District</div><div class="chart-subtitle">Geographic distribution</div>
-          
+          <div id="chart-district" class="mt-4 space-y-3"></div>
         </div>
         <div class="chart-card">
           <div class="chart-title">Growth Trend</div><div class="chart-subtitle">New clients per month</div>
-          
+          <div id="chart-growth" class="mt-4"></div>
         </div>
       </div>
       <!-- Client Table -->
@@ -50,20 +50,16 @@
         <div class="flex items-center justify-between mb-4">
           <div class="chart-title">Client Directory</div>
           <div class="flex gap-2">
-            <select class="input-glass px-2 py-1.5 rounded-lg text-xs">
-              <option>All Status</option><option>Active</option><option>VIP</option><option>Churned</option>
+            <select id="client-source-filter" class="input-glass px-2 py-1.5 rounded-lg text-xs">
+              <option value="">All Sources</option>
             </select>
           </div>
         </div>
         <div class="overflow-x-auto w-full">
 <table class="crm-table">
-          <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Unit</th><th>Value</th><th>Status</th><th></th></tr></thead>
-          <tbody>
-            <tr><td class="font-medium text-white">Md. Akter Rahman</td><td>01711000001</td><td>akter@email.com</td><td>Block A, 3F</td><td class="text-emerald-400 font-semibold">৳8.5M</td><td><span class="badge badge-active">Active</span></td><td><button class="btn-ghost px-2 py-1 rounded text-xs">View</button></td></tr>
-            <tr><td class="font-medium text-white">Nasrin Begum</td><td>01812000002</td><td>nasrin@email.com</td><td>Block C, 2B</td><td class="text-emerald-400 font-semibold">৳12.2M</td><td><span class="badge badge-new">VIP</span></td><td><button class="btn-ghost px-2 py-1 rounded text-xs">View</button></td></tr>
-            <tr><td class="font-medium text-white">Engr. Rafiqul Islam</td><td>01611223344</td><td>rafiq@email.com</td><td>Block B, 5A</td><td class="text-amber-400 font-semibold">৳6.8M</td><td><span class="badge badge-active">Active</span></td><td><button class="btn-ghost px-2 py-1 rounded text-xs">View</button></td></tr>
-            <tr><td class="font-medium text-white">Sultana Khanam</td><td>01987654321</td><td>sultana@email.com</td><td>Block D, 1C</td><td class="text-slate-400">৳4.2M</td><td><span class="badge badge-pending">Prospect</span></td><td><button class="btn-ghost px-2 py-1 rounded text-xs">View</button></td></tr>
-            <tr><td class="font-medium text-white">Kamal Uddin</td><td>01811000005</td><td>kamal@email.com</td><td>Block A, 6D</td><td class="text-emerald-400 font-semibold">৳9.1M</td><td><span class="badge badge-active">Active</span></td><td><button class="btn-ghost px-2 py-1 rounded text-xs">View</button></td></tr>
+          <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>District</th><th>Source</th><th>Client Since</th></tr></thead>
+          <tbody id="clients-tbody">
+            <tr><td colspan="6" class="text-center text-slate-500 py-6">Loading clients…</td></tr>
           </tbody>
         </table>
 </div>
@@ -73,6 +69,161 @@
   <div id="toast-container"></div>
   <script src="/assets/js/sidebar.js"></script>
   <script type="module" src="/assets/js/app.js"></script>
-  
+  <script>
+    // Clients page — wired to the real contacts API (this page used to be a
+    // static mock with hard-coded numbers and permanently empty chart
+    // cards; QA 2026-11-04).
+    (function () {
+      var token = localStorage.getItem('crm_token');
+      if (!token) { window.location.href = '/index.html'; return; }
+      var COLORS = ['#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#64748b'];
+      var allContacts = [];
+
+      function esc(v) {
+        return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      }
+      function phone(c) { return c.phone_raw || c.phone_normalized || ''; }
+
+      function barChart(el, counts, limit) {
+        var entries = Object.entries(counts).sort(function (a, b) { return b[1] - a[1]; });
+        if (limit) entries = entries.slice(0, limit);
+        if (!entries.length) { el.innerHTML = '<div class="text-xs text-slate-500">No data yet.</div>'; return; }
+        var max = entries[0][1];
+        el.innerHTML = entries.map(function (e, i) {
+          var pct = Math.max(4, Math.round(e[1] / max * 100));
+          return '<div>' +
+            '<div class="flex justify-between text-xs mb-1"><span class="text-slate-300">' + esc(e[0]) + '</span><span class="text-slate-400 font-semibold">' + e[1] + '</span></div>' +
+            '<div style="height:8px;border-radius:9999px;background:rgba(148,163,184,0.15);overflow:hidden;"><div style="height:100%;width:' + pct + '%;border-radius:9999px;background:' + COLORS[i % COLORS.length] + ';"></div></div>' +
+          '</div>';
+        }).join('');
+      }
+
+      function renderKPIs(list) {
+        var now = new Date();
+        var newThisMonth = list.filter(function (c) {
+          if (!c.created_at) return false;
+          var d = new Date(c.created_at);
+          return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+        }).length;
+        var withPhone = list.filter(function (c) { return !!phone(c); }).length;
+        var districts = {};
+        list.forEach(function (c) { var d = (c.district || c.city || '').trim(); if (d) districts[d] = 1; });
+        document.getElementById('kpi-total').textContent = list.length;
+        document.getElementById('kpi-total-sub').textContent = 'in the directory';
+        document.getElementById('kpi-new-month').textContent = newThisMonth;
+        document.getElementById('kpi-new-month-sub').textContent = 'added in ' + now.toLocaleString([], { month: 'long' });
+        document.getElementById('kpi-with-phone').textContent = withPhone;
+        document.getElementById('kpi-with-phone-sub').textContent = list.length ? Math.round(withPhone / list.length * 100) + '% of total' : '';
+        document.getElementById('kpi-districts').textContent = Object.keys(districts).length;
+        document.getElementById('kpi-districts-sub').textContent = 'areas represented';
+      }
+
+      function renderCharts(list) {
+        var bySource = {}, byDistrict = {};
+        list.forEach(function (c) {
+          var s = (c.source || c.utm_source || 'Direct').trim() || 'Direct';
+          bySource[s] = (bySource[s] || 0) + 1;
+          var d = (c.district || c.city || 'Unknown').trim() || 'Unknown';
+          byDistrict[d] = (byDistrict[d] || 0) + 1;
+        });
+        barChart(document.getElementById('chart-source'), bySource, 6);
+        barChart(document.getElementById('chart-district'), byDistrict, 6);
+
+        // Growth: last 6 months, oldest → newest
+        var months = [], counts = [], labels = [];
+        var base = new Date(); base.setDate(1);
+        for (var i = 5; i >= 0; i--) {
+          var d = new Date(base.getFullYear(), base.getMonth() - i, 1);
+          months.push(d.getFullYear() * 12 + d.getMonth());
+          labels.push(d.toLocaleString([], { month: 'short' }));
+          counts.push(0);
+        }
+        list.forEach(function (c) {
+          if (!c.created_at) return;
+          var d = new Date(c.created_at);
+          var idx = months.indexOf(d.getFullYear() * 12 + d.getMonth());
+          if (idx >= 0) counts[idx]++;
+        });
+        var max = Math.max.apply(null, counts.concat([1]));
+        var cols = counts.map(function (n, i) {
+          var h = Math.max(4, Math.round(n / max * 100));
+          return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;">' +
+            '<div class="text-xs font-semibold text-slate-300">' + n + '</div>' +
+            '<div style="width:60%;max-width:38px;height:110px;display:flex;align-items:flex-end;"><div style="width:100%;height:' + h + '%;border-radius:6px 6px 0 0;background:#6366f1;"></div></div>' +
+            '<div class="text-[10px] text-slate-500">' + labels[i] + '</div></div>';
+        }).join('');
+        document.getElementById('chart-growth').innerHTML = '<div style="display:flex;align-items:flex-end;gap:8px;">' + cols + '</div>';
+      }
+
+      function renderTable(list) {
+        var tbody = document.getElementById('clients-tbody');
+        if (!list.length) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center text-slate-500 py-6">No clients match.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = list.map(function (c) {
+          var since = c.created_at ? new Date(c.created_at).toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
+          return '<tr><td class="font-medium text-white">' + esc(c.full_name || 'Unknown') + '</td>' +
+            '<td>' + esc(phone(c) || '—') + '</td><td>' + esc(c.email || '—') + '</td>' +
+            '<td>' + esc(c.district || c.city || '—') + '</td>' +
+            '<td>' + esc(c.source || c.utm_source || 'Direct') + '</td><td>' + esc(since) + '</td></tr>';
+        }).join('');
+      }
+
+      function applyFilters() {
+        var q = (document.getElementById('client-search').value || '').toLowerCase();
+        var src = document.getElementById('client-source-filter').value;
+        var list = allContacts.filter(function (c) {
+          if (src && (c.source || c.utm_source || 'Direct') !== src) return false;
+          if (!q) return true;
+          return (c.full_name || '').toLowerCase().includes(q) ||
+                 phone(c).toLowerCase().includes(q) ||
+                 (c.email || '').toLowerCase().includes(q);
+        });
+        renderTable(list);
+      }
+
+      async function load() {
+        try {
+          var res = await fetch('/api/contacts/', { headers: { Authorization: 'Bearer ' + token } });
+          if (!res.ok) throw new Error('API ' + res.status);
+          allContacts = await res.json();
+        } catch (e) {
+          document.getElementById('clients-tbody').innerHTML = '<tr><td colspan="6" class="text-center text-rose-400 py-6">Could not load clients.</td></tr>';
+          return;
+        }
+        renderKPIs(allContacts);
+        renderCharts(allContacts);
+        var sel = document.getElementById('client-source-filter');
+        var sources = Array.from(new Set(allContacts.map(function (c) { return c.source || c.utm_source || 'Direct'; }))).sort();
+        sel.innerHTML = '<option value="">All Sources</option>' + sources.map(function (s) { return '<option>' + esc(s) + '</option>'; }).join('');
+        renderTable(allContacts);
+      }
+
+      document.getElementById('client-search').addEventListener('input', applyFilters);
+      document.getElementById('client-source-filter').addEventListener('change', applyFilters);
+      document.getElementById('add-client-btn').addEventListener('click', async function () {
+        var name = prompt('Client name:');
+        if (!name) return;
+        var ph = prompt('Phone number:') || '';
+        var em = prompt('Email (optional):') || '';
+        try {
+          var res = await fetch('/api/contacts/', {
+            method: 'POST',
+            headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ full_name: name.trim(), phone_raw: ph.trim(), email: em.trim() })
+          });
+          if (!res.ok) throw new Error('API ' + res.status);
+          if (window.showToast) window.showToast('Client added', 'success');
+          load();
+        } catch (e) {
+          if (window.showToast) window.showToast('Could not add client', 'error');
+        }
+      });
+
+      load();
+    })();
+  </script>
 </body>
 </html>

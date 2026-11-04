@@ -226,7 +226,7 @@ def sla_overdue():
     overdue_leads = q.order_by(Opportunity.next_action_deadline.asc()).limit(limit).all()
     result = []
     for opp, contact, owner in overdue_leads:
-        minutes_late = int((datetime.now(timezone.utc) - opp.next_action_deadline).total_seconds() / 60) if opp.next_action_deadline else 0
+        minutes_late = int((datetime.now(timezone.utc).replace(tzinfo=None) - opp.next_action_deadline).total_seconds() / 60) if opp.next_action_deadline else 0
         result.append({
             "id": opp.id,
             "lead_name": contact.full_name if contact else "Unknown",

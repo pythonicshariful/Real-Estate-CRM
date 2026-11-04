@@ -308,7 +308,7 @@
   <div id="toast-container" class="fixed bottom-5 right-5 z-[100000] flex flex-col gap-2"></div>
 
   <script src="/assets/js/sidebar.js"></script>
-  <script src="/assets/js/notifications.js?v=1"></script>
+  <script src="/assets/js/notifications.js?v=2"></script>
   <script type="module" src="/assets/js/app.js?v=1"></script>
 
   <script>
@@ -472,7 +472,13 @@
 
         let inputHtml = '';
         if (type === 'SELECT' && opts.length) {
-          const optHtml = opts.map(opt => `<option value="${opt}" ${String(val) === String(opt) ? 'selected' : ''}>${opt}</option>`).join('');
+          // A stored answer that is not one of the configured options
+          // (e.g. typed as free text before the dropdown fix) used to be
+          // invisible here — keep it as a selected "(custom)" option so
+          // it is shown and not lost on save.
+          const optList = (val && !opts.some(o => String(o) === String(val)))
+            ? opts.concat([val]) : opts;
+          const optHtml = optList.map(opt => `<option value="${opt}" ${String(val) === String(opt) ? 'selected' : ''}>${opt}${optList.length > opts.length && String(opt) === String(val) ? ' (custom)' : ''}</option>`).join('');
           inputHtml = `
             <select name="${key}" class="w-full bg-[#181b2e] border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
               <option value="">-- Select Option --</option>

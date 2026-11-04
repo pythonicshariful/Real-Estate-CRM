@@ -124,14 +124,18 @@
       '</div>';
     }).join('');
     list.querySelectorAll('.crm-notif-item').forEach(function (el) {
-      el.addEventListener('click', function () {
+      el.addEventListener('click', async function () {
         var id = el.getAttribute('data-id');
         var leadId = el.getAttribute('data-lead');
         var eventId = el.getAttribute('data-event');
-        api('/api/notifications/' + id + '/read', { method: 'POST' }).catch(function () {});
+        // Await the mark-read POST before navigating — firing it and
+        // immediately unloading the page could cancel the request, so the
+        // notification stayed unread and the badge never cleared.
+        try { await api('/api/notifications/' + id + '/read', { method: 'POST' }); } catch (e) {}
         closePanel();
         if (leadId) window.location.href = '/lead-details.html?id=' + leadId;
         else if (eventId) window.location.href = '/events.html';
+        else refresh(false);
       });
     });
   }
@@ -154,6 +158,14 @@
     if (!data) return;
     updateBadge(data.unread_count || 0);
     if (render || panelOpen) renderList(data.notifications || []);
+  }
+
+  // "Mark all read" — this function was called by the panel button but
+  // never defined, so the button silently threw and did nothing
+  // (QA 2026-11-04: badge stayed at 1 after clicking it).
+  async function markAllRead() {
+    var res = await api('/api/notifications/read-all', { method: 'POST' });
+    if (res) refresh(true);
   }
 
   function start() {

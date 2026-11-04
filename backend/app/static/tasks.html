@@ -281,6 +281,10 @@
       const data = {
         title: title,
         description: document.getElementById('task-description').value,
+        // Storage is naive UTC end to end; the API serialises due_date
+        // with a UTC offset, so the list/edit views render the right
+        // local time. (A raw local string is also accepted — the API
+        // interprets it as Dhaka wall time.)
         due_date: new Date(document.getElementById('task-due-date').value).toISOString(),
         priority: document.getElementById('task-priority').value,
         status: document.getElementById('task-status').value,

@@ -1,6 +1,6 @@
 from flask import request, jsonify, current_app
 from app.blueprints.leads import leads_bp
-from app.models import Opportunity, Contact, CallLog, Appointment, PipelineStage, AppointmentStatus, Objection, ObjectionCategory, Reservation, Note, PipelineHistory, db, UserRole, AuditLog, User, DurationBand, ActivityOutcome, ActivityType, Inquiry, Plot, PlotStatus, Installment, CancellationRequest, PaymentMethod, InstallmentStatus, CancellationStatus, CoachingLog, Event, utc_iso, get_temperature_options
+from app.models import Opportunity, Contact, CallLog, Appointment, PipelineStage, AppointmentStatus, Objection, ObjectionCategory, Reservation, Note, PipelineHistory, db, UserRole, AuditLog, User, DurationBand, ActivityOutcome, ActivityType, Inquiry, Plot, PlotStatus, Installment, CancellationRequest, PaymentMethod, InstallmentStatus, CancellationStatus, CoachingLog, Event, utc_iso, get_temperature_options, clean_phone_str, FinalResult, parse_input_datetime
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from datetime import datetime, timezone, timedelta
 from decimal import Decimal
@@ -78,6 +78,8 @@ def get_leads():
     # (Dhaka); upcoming = deadline after today.
     followup = (request.args.get('followup') or '').strip().lower()
     if followup in ('overdue', 'today', 'upcoming'):
+        # Deadlines are stored as naive UTC (see parse_input_datetime);
+        # the day buckets are Dhaka calendar days expressed in UTC.
         _now_utc = datetime.now(timezone.utc)
         _today_dhaka = _now_utc.astimezone(_dhaka).date()
         _day_start = datetime(_today_dhaka.year, _today_dhaka.month, _today_dhaka.day, tzinfo=_dhaka)
@@ -105,7 +107,7 @@ def get_leads():
             data["contact"] = {
                 "full_name": contact.full_name,
                 "email": contact.email,
-                "phone": contact.phone_raw,
+                "phone": clean_phone_str(contact.phone_raw),
                 "source": contact.source,
                 "job_title": contact.job_title,
                 "profession": contact.profession or lead.questionnaire_answers.get('profession') if lead.questionnaire_answers else contact.profession,
@@ -169,7 +171,7 @@ def create_lead():
                     "contact_id": contact.id,
                     "opportunity_id": active_opp.id,
                     "contact_name": contact.full_name,
-                    "phone": contact.phone_raw or contact.phone_normalized,
+                    "phone": clean_phone_str(contact.phone_raw) or contact.phone_normalized,
                     "stage": stage_str,
                     "assigned_to": assigned_name
                 }
@@ -263,7 +265,7 @@ def create_lead():
     result["contact"] = {
         "full_name": contact.full_name,
         "email": contact.email,
-        "phone": contact.phone_raw,
+        "phone": clean_phone_str(contact.phone_raw),
         "source": contact.source,
         "profession": contact.profession,
         "service_type": contact.service_type or opp.service_type,
@@ -398,7 +400,7 @@ def get_lead_profile(id):
         profile["contact"] = {
             "full_name": contact.full_name,
             "email": contact.email,
-            "phone": contact.phone_raw,
+            "phone": clean_phone_str(contact.phone_raw),
             "source": contact.source,
             "profession": contact.profession,
             "service_type": contact.service_type or lead.service_type,
@@ -630,7 +632,7 @@ def update_lead(id):
         try:
             old_deadline = lead.next_action_deadline.isoformat() if lead.next_action_deadline else None
             new_deadline = data['next_action_deadline']
-            lead.next_action_deadline = datetime.fromisoformat(new_deadline)
+            lead.next_action_deadline = parse_input_datetime(new_deadline)
             
             audit = AuditLog(
                 user_id=user_id,
@@ -679,7 +681,10 @@ def exit_lead(id):
         return jsonify({"error": "Access denied"}), 403
 
     data = request.get_json() or {}
-    exit_stage_str = data.get('exit_stage')
+    # The web UI (leads drawer + lead-details) sends 'target_stage'; accept
+    # both key names — reading only 'exit_stage' made every exit fail with
+    # "Invalid exit stage" (QA 2026-11-04).
+    exit_stage_str = data.get('exit_stage') or data.get('target_stage')
     if exit_stage_str not in ('NURTURE', 'CLOSED_LOST', 'INVALID', 'BOUGHT_ELSEWHERE', 'UNREACHABLE'):
         return jsonify({"error": "Invalid exit stage"}), 400
 
@@ -701,7 +706,7 @@ def exit_lead(id):
         lead.final_result = FinalResult.NURTURE
         if follow_up_date:
             try:
-                lead.next_action_deadline = datetime.fromisoformat(follow_up_date)
+                lead.next_action_deadline = parse_input_datetime(follow_up_date)
                 lead.next_action_type = ActivityType.CALL
             except ValueError:
                 pass
@@ -942,7 +947,7 @@ def log_call(id):
     deadline_dt = None
     if next_deadline:
         try:
-            deadline_dt = datetime.fromisoformat(next_deadline)
+            deadline_dt = parse_input_datetime(next_deadline)
         except ValueError:
             deadline_dt = None
 
@@ -1138,7 +1143,7 @@ def book_appointment(id):
         return jsonify({"error": "appointment_datetime is required"}), 400
     
     try:
-        appt_dt = datetime.fromisoformat(appt_dt_str)
+        appt_dt = parse_input_datetime(appt_dt_str)
     except ValueError:
         return jsonify({"error": "Invalid datetime format"}), 400
     
@@ -1283,7 +1288,7 @@ def reschedule_appointment(appt_id):
         return jsonify({"error": "new appointment_datetime is required"}), 400
 
     try:
-        new_dt = datetime.fromisoformat(new_dt_str)
+        new_dt = parse_input_datetime(new_dt_str)
     except ValueError:
         return jsonify({"error": "Invalid datetime format"}), 400
 
@@ -1376,7 +1381,7 @@ def debrief_appointment(appt_id):
             pass
     if data.get('next_action_deadline'):
         try:
-            lead.next_action_deadline = datetime.fromisoformat(data['next_action_deadline'])
+            lead.next_action_deadline = parse_input_datetime(data['next_action_deadline'])
         except ValueError:
             pass
 
@@ -2010,7 +2015,7 @@ def check_lead_duplicate():
         "is_duplicate": True,
         "contact_id": contact.id,
         "contact_name": contact.full_name,
-        "phone": contact.phone_raw,
+        "phone": clean_phone_str(contact.phone_raw),
         "email": contact.email,
         "has_active_lead": bool(active_opp),
         "opportunity_id": active_opp.id if active_opp else None,
@@ -2253,7 +2258,15 @@ def _parse_import_file(f):
             row = {}
             for h, v in zip(headers, values):
                 if h:
-                    row[h] = '' if v is None else str(v).strip()
+                    # Numeric cells come back as floats — an integral float
+                    # is really an int (phone numbers!): plain str() left a
+                    # trailing '.0' on every phone in the file.
+                    if v is None:
+                        row[h] = ''
+                    elif isinstance(v, float) and v.is_integer():
+                        row[h] = str(int(v))
+                    else:
+                        row[h] = str(v).strip()
             rows.append(row)
         return headers, rows
     if filename.endswith('.csv'):
@@ -2417,7 +2430,7 @@ def import_leads():
     for idx, row in enumerate(rows, 1):
         try:
             full_name = get_val(row, 'Full Name', 'Name', 'Customer Name', 'full_name')
-            phone_raw = get_val(row, 'Phone Number', 'Phone', 'Mobile', 'Contact Number', 'phone', 'phone_raw', 'phone_number')
+            phone_raw = clean_phone_str(get_val(row, 'Phone Number', 'Phone', 'Mobile', 'Contact Number', 'phone', 'phone_raw', 'phone_number'))
             email = get_val(row, 'Email', 'Email Address', 'email')
             profession = get_val(row, 'Profession', 'Occupation', 'Job', 'profession')
             service_type = get_val(row, 'Service Type', 'Service', 'Property Type', 'service_type')

@@ -43,6 +43,45 @@ def utc_iso(dt):
         dt = dt.replace(tzinfo=timezone.utc)
     return dt.astimezone(timezone.utc).isoformat()
 
+
+def parse_input_datetime(value):
+    """Parse a user-entered datetime into the storage convention.
+
+    All datetimes are stored as naive UTC. Aware input (``...Z`` /
+    offset-bearing, e.g. from ``new Date(...).toISOString()``) is
+    converted to UTC; naive input is a ``datetime-local`` value, i.e.
+    Asia/Dhaka wall time, and is converted to UTC from Dhaka.
+
+    Before this helper existed, the raw-string paths (Disposition /
+    Log Call follow-ups) stored Dhaka wall time into UTC-convention
+    columns, so those entries rendered 6 hours late (QA 2026-11-04).
+    """
+    if value is None or value == '':
+        return None
+    if isinstance(value, datetime):
+        dt = value
+    else:
+        dt = datetime.fromisoformat(str(value).replace('Z', '+00:00'))
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=DHAKA_TZ)
+    return dt.astimezone(timezone.utc).replace(tzinfo=None)
+
+
+def clean_phone_str(v):
+    """Strip a trailing '.0' from a phone string.
+
+    Spreadsheet imports turned phone numbers into floats (a numeric cell
+    8801712345678 read back as '8801712345678.0'), and some stored
+    phone_raw values still carry that suffix — they rendered as
+    '88017000000.0' in the leads list (QA 2026-11-04). Only a pure-digit
+    string ending in exactly '.0' is touched.
+    """
+    if isinstance(v, str):
+        s = v.strip()
+        if s.endswith('.0') and s[:-2].isdigit():
+            return s[:-2]
+    return v
+
 class PipelineStage(PyEnum):
     NEW = "NEW"
     ASSIGNED = "ASSIGNED"
@@ -549,12 +588,15 @@ class Opportunity(db.Model, SoftDeleteMixin):
             "pipeline_stage": self.pipeline_stage.value if self.pipeline_stage else None,
             "last_activity_type": self.last_activity_type.value if self.last_activity_type else None,
             "last_activity_outcome": self.last_activity_outcome.value if self.last_activity_outcome else None,
-            "last_activity_at": self.last_activity_at.isoformat() if self.last_activity_at else None,
+            "last_activity_at": utc_iso(self.last_activity_at),
             "appointment_status": self.appointment_status.value if self.appointment_status else None,
             "lead_temperature": (self.lead_temperature.value if hasattr(self.lead_temperature, 'value') else self.lead_temperature),
             "priority": self.priority.value if self.priority else "MEDIUM",
             "next_action_type": self.next_action_type.value if self.next_action_type else None,
-            "next_action_deadline": self.next_action_deadline.isoformat() if self.next_action_deadline else None,
+            # Stored as naive UTC (parse_input_datetime); dhaka_iso
+            # expresses the same instant with a +06:00 offset. A plain
+            # .isoformat() made browsers misread it (QA 2026-11-04).
+            "next_action_deadline": dhaka_iso(self.next_action_deadline),
             "manager_assessment": self.manager_assessment,
             "manager_label": self.manager_label,
             "final_result": self.final_result.value if self.final_result else None,
@@ -564,8 +606,10 @@ class Opportunity(db.Model, SoftDeleteMixin):
             "service_type": self.service_type,
             "activity_label": self.activity_label,
             "questionnaire_answers": self.questionnaire_answers or {},
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            # Server stamps are UTC; naive .isoformat() made Dhaka browsers
+            # read them as local time (new lead showed "Lead Age 6h").
+            "created_at": utc_iso(self.created_at),
+            "updated_at": utc_iso(self.updated_at),
             "is_overdue": self.is_overdue
         }
 
@@ -680,17 +724,17 @@ class Appointment(db.Model, SoftDeleteMixin):
             'opportunity_id': self.opportunity_id,
             'contact_id': self.contact_id,
             'scheduled_by_id': self.scheduled_by_id,
-            'appointment_datetime': self.appointment_datetime.isoformat() if self.appointment_datetime else None,
+            'appointment_datetime': dhaka_iso(self.appointment_datetime),
             'location': self.location,
             'project_id': self.project_id,
             'status': self.status.value if self.status else 'SCHEDULED',
-            'confirmed_at': self.confirmed_at.isoformat() if self.confirmed_at else None,
-            'completed_at': self.completed_at.isoformat() if self.completed_at else None,
+            'confirmed_at': utc_iso(self.confirmed_at),
+            'completed_at': utc_iso(self.completed_at),
             'debrief_submitted': self.debrief_submitted,
             'debrief_notes': self.debrief_notes,
             'no_show_reason': self.no_show_reason,
             'rescheduled_from_id': self.rescheduled_from_id,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'created_at': utc_iso(self.created_at)
         }
 
 
@@ -962,8 +1006,13 @@ class Event(db.Model):
             "title": self.title,
             "description": self.description,
             "event_type": self.event_type,
-            "start": utc_iso(self.start_datetime),
-            "end": utc_iso(self.end_datetime) if self.end_datetime else None,
+            # Stored as naive UTC; dhaka_iso expresses the same instant
+            # with a +06:00 offset, matching the calendar feed. (The old
+            # code was fine for UTC-stored events, but the details panel
+            # and the feed disagreed for events written by the raw-string
+            # follow-up path — see parse_input_datetime.)
+            "start": dhaka_iso(self.start_datetime),
+            "end": dhaka_iso(self.end_datetime) if self.end_datetime else None,
             "created_by_id": self.created_by_id,
             "created_by_name": self.created_by.full_name if self.created_by else None,
             "is_all_day": self.is_all_day,
@@ -978,7 +1027,7 @@ class Event(db.Model):
             # lead linkage
             "lead_id": self.lead_id,
             "lead_name": lead_contact.full_name if lead_contact else None,
-            "lead_phone": (lead_contact.phone_raw or lead_contact.phone_normalized) if lead_contact else None,
+            "lead_phone": (clean_phone_str(lead_contact.phone_raw) or lead_contact.phone_normalized) if lead_contact else None,
             "lead_stage": (self.lead.pipeline_stage.value
                            if self.lead is not None and self.lead.pipeline_stage else None),
         }
@@ -1023,7 +1072,7 @@ class Notification(db.Model):
             "event_id": self.event_id,
             "lead_id": self.lead_id,
             "is_read": self.is_read,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "created_at": utc_iso(self.created_at),
         }
 
 
@@ -1593,6 +1642,10 @@ class LeadQuestionnaireQuestion(db.Model):
             'question_key': self.question_key,
             'question_text': self.question_text,
             'field_type': self.field_type or 'text',
+            # The Settings UI calls this 'question_type' (uppercase values);
+            # without the alias its TYPE column rendered "undefined" and the
+            # edit modal could not preselect the type (QA 2026-11-04).
+            'question_type': (self.field_type or 'text').upper(),
             'options': self.options or [],
             'order_index': self.order_index,
             'is_required': self.is_required,

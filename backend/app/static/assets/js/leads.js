@@ -206,7 +206,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const fromEl = document.getElementById('filter-created-from');
         const toEl = document.getElementById('filter-created-to');
         const followupEl = document.getElementById('filter-followup');
+        const searchEl = document.getElementById('filter-search');
 
+        const search = searchEl ? searchEl.value.trim().toLowerCase() : '';
+        const searchDigits = search.replace(/\D/g, '');
         const stage = stageEl ? stageEl.value : '';
         const temp = tempEl ? tempEl.value : '';
         const starred = starredEl ? starredEl.checked : false;
@@ -219,6 +222,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const todayDhaka = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Dhaka' });
 
         filteredLeadsData = allLeadsData.filter(lead => {
+            if (search) {
+                const name = (lead.contact?.full_name || '').toLowerCase();
+                const email = (lead.contact?.email || '').toLowerCase();
+                const phone = (lead.contact?.phone || '');
+                const project = (lead.project_name || '').toLowerCase();
+                const phoneDigits = phone.replace(/\D/g, '');
+                const hit = name.includes(search) || email.includes(search) ||
+                    project.includes(search) || phone.toLowerCase().includes(search) ||
+                    (searchDigits.length >= 3 && phoneDigits.includes(searchDigits));
+                if (!hit) return false;
+            }
             if (stage && lead.pipeline_stage !== stage) return false;
             if (temp && lead.lead_temperature !== temp) return false;
             if (starred && !lead.is_starred) return false;
@@ -398,6 +412,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (toFilter) toFilter.value = '';
             const followupFilter = document.getElementById('filter-followup');
             if (followupFilter) followupFilter.value = '';
+            const searchFilter = document.getElementById('filter-search');
+            if (searchFilter) searchFilter.value = '';
         });
 
         filterForm.addEventListener('submit', (e) => {
@@ -405,6 +421,13 @@ document.addEventListener('DOMContentLoaded', () => {
             applyFilters();
             hideFilterModal();
         });
+    }
+
+    // Leads search (name / phone / email / project) — live as you type.
+    // The page had no text search at all before (QA 2026-11-04).
+    const searchInput = document.getElementById('filter-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', () => applyFilters());
     }
 
     // Export functionality
@@ -1184,15 +1207,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 const fieldDiv = document.createElement('div');
                 fieldDiv.className = 'space-y-1';
                 let inputHtml = '';
-                if (q.question_type === 'select' && q.options) {
-                    const opts = q.options.split(',').map(o => o.trim()).filter(Boolean);
+                // The settings API returns field_type ('select'/'text'/...)
+                // and options as a LIST. This code used to read
+                // q.question_type (undefined) and call q.options.split()
+                // (not a function on a list), so dropdown questions silently
+                // rendered as free-text inputs and their answers never
+                // matched an option on the details page (QA 2026-11-04).
+                const qType = (q.field_type || q.question_type || 'text').toLowerCase();
+                if (qType === 'select' && q.options) {
+                    const opts = (Array.isArray(q.options) ? q.options : String(q.options).split(',')).map(o => String(o).trim()).filter(Boolean);
                     inputHtml = `
                         <select data-custom-key="${q.question_key}" class="custom-field-input w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
                             <option value="">-- Select ${q.question_text} --</option>
                             ${opts.map(o => `<option value="${o}" ${val === o ? 'selected' : ''}>${o}</option>`).join('')}
                         </select>
                     `;
-                } else if (q.question_type === 'number') {
+                } else if (qType === 'number') {
                     inputHtml = `
                         <input type="number" data-custom-key="${q.question_key}" value="${val}" class="custom-field-input w-full bg-[#161825] border border-slate-700 rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 placeholder-slate-600" placeholder="e.g. 5000000">
                     `;
