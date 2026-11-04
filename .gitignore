@@ -43,3 +43,9 @@ backend/recordings/
 node_modules/
 dist/
 build/
+
+# Generated test output
+backend/smoke_test_results.json
+
+# Server-local deploy backups
+*.deploy-bak-*
