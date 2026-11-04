@@ -412,7 +412,7 @@
               <div class="text-slate-300">${n.content}</div>
               <div class="text-[10px] text-slate-500 mt-1 flex justify-between">
                 <span>${n.created_by_name || 'User'}</span>
-                <span>${n.created_at ? new Date(n.created_at).toLocaleDateString() : ''}</span>
+                <span>${n.created_at ? new Date(n.created_at).toLocaleDateString([], { timeZone: 'Asia/Dhaka' }) : ''}</span>
               </div>
             </div>
           `;
@@ -434,7 +434,7 @@
               <div class="flex-1">
                 <div class="flex items-center justify-between">
                   <span class="font-bold text-white">${item.type}</span>
-                  <span class="text-[10px] text-slate-500">${item.date ? new Date(item.date).toLocaleString() : ''}</span>
+                  <span class="text-[10px] text-slate-500">${item.date ? new Date(item.date).toLocaleString([], { timeZone: 'Asia/Dhaka' }) : ''}</span>
                 </div>
                 <div class="text-slate-300 mt-1">${item.notes || 'Activity recorded'}</div>
                 ${item.recording_url ? `<div class="mt-2 space-y-1.5"><div class="text-[11px] text-slate-400 truncate" title="${item.recording_filename || 'Call Recording'}">🎧 ${item.recording_filename || 'Call Recording'}</div><audio controls preload="metadata" src="${item.recording_url}" class="w-full h-8"></audio><a href="${item.recording_url}" target="_blank" class="text-[11px] font-semibold text-indigo-400 hover:text-indigo-300">Play / Download Recording</a></div>` : ''}
@@ -644,7 +644,7 @@
           <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3 space-y-1.5 text-xs">
             <div class="flex items-center justify-between">
               <span class="font-bold text-white">Score: <strong class="text-amber-400 text-sm">${c.score}/10</strong></span>
-              <span class="text-[10px] text-slate-500">${c.session_date ? new Date(c.session_date).toLocaleDateString() : ''}</span>
+              <span class="text-[10px] text-slate-500">${c.session_date ? new Date(c.session_date).toLocaleDateString([], { timeZone: 'Asia/Dhaka' }) : ''}</span>
             </div>
             ${c.strengths ? `<div class="text-emerald-400 bg-emerald-500/10 p-2 rounded border border-emerald-500/20"><strong>Strengths:</strong> ${c.strengths}</div>` : ''}
             ${c.areas_for_improvement ? `<div class="text-amber-300 bg-amber-500/10 p-2 rounded border border-amber-500/20"><strong>Improvement:</strong> ${c.areas_for_improvement}</div>` : ''}
@@ -821,7 +821,7 @@
           const end = ev.end ? new Date(ev.end) : null;
           const past = end ? end < now : start < now;
           const color = ev.color || '#14B8A6';
-          const dt = start.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+          const dt = start.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Dhaka' });
           const typeLabel = (ev.event_type || 'GENERAL').replace(/_/g, ' ');
           return `
             <div class="flex items-start gap-3 p-3.5 rounded-xl border transition-colors ${past ? 'opacity-60' : ''}"

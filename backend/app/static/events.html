@@ -384,10 +384,10 @@
           (d.type || 'General').replace(/_/g, ' ');
 
         let timeStr = d.start
-          ? new Date(d.start).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
+          ? new Date(d.start).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Dhaka' })
           : 'N/A';
         if (d.end) {
-          timeStr += ' – ' + new Date(d.end).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+          timeStr += ' – ' + new Date(d.end).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Dhaka' });
         }
         document.getElementById('detailTime').textContent = timeStr;
         document.getElementById('detailLocation').textContent = d.location || '—';
