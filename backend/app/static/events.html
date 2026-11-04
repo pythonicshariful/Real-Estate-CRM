@@ -547,7 +547,12 @@
           const ev = info.event;
           const p = ev.extendedProps || {};
           showEventDetails({
-            title: ev.title, start: ev.start, end: ev.end,
+            // startStr/endStr are ISO strings in the calendar's timezone
+            // (Asia/Dhaka) with the correct offset. ev.start/ev.end are
+            // FullCalendar marker Dates whose UTC wall time equals the
+            // zoned wall time — formatting those in Asia/Dhaka would
+            // shift the displayed time by the zone offset (+6h).
+            title: ev.title, start: ev.startStr, end: ev.endStr,
             description: p.description, type: p.type, location: p.location,
             status: p.status, priority: p.priority, owner_name: p.owner_name,
             color: p.color, lead_id: p.lead_id, lead_name: p.lead_name,
