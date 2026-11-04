@@ -200,18 +200,16 @@ def facebook_oauth_callback():
 
         user_token = payload['access_token']
 
-        # 2. list pages the admin manages
-        pr = requests.get(f"{GRAPH}/me/accounts", params={
-            'access_token': user_token,
-            'fields': 'id,name,access_token',
-        }, timeout=20).json()
-
-        pages = pr.get('data', [])
+        # 2. list pages the admin manages (direct + via Business Manager)
+        pages, fetch_debug = _fetch_user_pages(user_token)
+        current_app.logger.info(
+            f"FB OAuth: page fetch returned {len(pages)} page(s); {fetch_debug}"
+        )
         if not pages:
             return _callback_html(
                 False,
-                'No Facebook Page found for this account. '
-                'You need to be an admin of at least one Page.'
+                'এই Facebook অ্যাকাউন্টে কোনো Page পাওয়া যায়নি।',
+                hint_html=_NO_PAGES_HINT,
             )
 
         configured_page = _get('page_id')
@@ -237,6 +235,78 @@ def facebook_oauth_callback():
     except Exception as exc:  # noqa: BLE001
         current_app.logger.error(f'FB OAuth error: {exc}')
         return _callback_html(False, f"Unexpected error: {exc}")
+
+
+_NO_PAGES_HINT = """
+<div style="text-align:left;font-size:13px;line-height:1.7;color:#cbd5e1;">
+  <p style="margin:0 0 8px;">এর মানে হলো — Facebook এই অ্যাকাউন্টের জন্য কোনো Page-এর অনুমতি দেয়নি। সাধারণত দুটো কারণে এমন হয়:</p>
+  <ol style="margin:0 0 12px;padding-left:20px;">
+    <li>Connect করার সময় Facebook-এর স্ক্রিনে <strong>Page বাছাইয়ের ধাপে</strong> আপনার Page-টা টিক দেওয়া হয়নি, অথবা Business বাছাইয়ের স্ক্রিন স্কিপ করা হয়েছে।</li>
+    <li>যে Facebook অ্যাকাউন্ট দিয়ে লগইন করেছেন, সেটি কোনো Page-এর <strong>সরাসরি Admin নয়</strong> (শুধু Business Manager দিয়ে access থাকলেও এমন হতে পারে — আমরা সেটাও খুঁজে দেখেছি, পাইনি)।</li>
+  </ol>
+  <p style="margin:0;"><strong>আবার চেষ্টা করুন:</strong> Settings-এ ফিরে আবার <em>Connect with Facebook</em> চাপুন → Page-এর Admin অ্যাকাউন্ট দিয়ে লগইন করুন → যে স্ক্রিনে Page-এর তালিকা আসবে, সেখানে <strong>আপনার Page-টা টিক দিন</strong> → সব permission <strong>Allow</strong> করুন।</p>
+</div>
+"""
+
+
+def _fetch_user_pages(user_token):
+    """List every Page this user can manage, with a debug trail (no tokens).
+
+    Primary source: GET /me/accounts (pages the user directly admins).
+    Fallback: pages reachable through a Business — GET /me/businesses, then
+    each business's owned_pages + client_pages. Business-owned Pages often
+    do NOT appear in /me/accounts for people whose access comes through
+    Meta Business Settings, which used to end in a misleading
+    "No Facebook Page found" failure (2026-11-04 live report).
+
+    Returns (pages, debug): pages have id/name/access_token; debug holds
+    only counts and Graph error messages — safe to log.
+    """
+    debug = {}
+    pages = []
+    try:
+        pr = requests.get(f"{GRAPH}/me/accounts", params={
+            'access_token': user_token,
+            'fields': 'id,name,access_token',
+        }, timeout=20).json()
+    except Exception as exc:  # noqa: BLE001
+        pr = {}
+        debug['me_accounts_exception'] = str(exc)
+    if 'error' in pr:
+        debug['me_accounts_error'] = (pr.get('error') or {}).get('message', 'unknown')
+    pages = [p for p in (pr.get('data') or []) if p.get('id')]
+    debug['me_accounts_count'] = len(pages)
+    if pages:
+        return pages, debug
+
+    # Fallback — Business Manager pages.
+    try:
+        br = requests.get(f"{GRAPH}/me/businesses", params={
+            'access_token': user_token,
+            'fields': 'id,name',
+        }, timeout=20).json()
+        if 'error' in br:
+            debug['businesses_error'] = (br.get('error') or {}).get('message', 'unknown')
+        businesses = br.get('data') or []
+        debug['business_count'] = len(businesses)
+        seen = set()
+        for biz in businesses:
+            for edge in ('owned_pages', 'client_pages'):
+                er = requests.get(f"{GRAPH}/{biz['id']}/{edge}", params={
+                    'access_token': user_token,
+                    'fields': 'id,name,access_token',
+                }, timeout=20).json()
+                if 'error' in er:
+                    debug[f"{edge}_error"] = (er.get('error') or {}).get('message', 'unknown')
+                for p in er.get('data') or []:
+                    # Only pages that come WITH a page token are manageable.
+                    if p.get('id') and p.get('access_token') and p['id'] not in seen:
+                        seen.add(p['id'])
+                        pages.append(p)
+        debug['business_pages_count'] = len(pages)
+    except Exception as exc:  # noqa: BLE001
+        debug['business_fallback_exception'] = str(exc)
+    return pages, debug
 
 
 def _now():
@@ -517,11 +587,11 @@ def facebook_import_form(form_id):
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _callback_html(success, message):
+def _callback_html(success, message, hint_html=''):
     """Small landing page for the OAuth popup/redirect."""
     colour = '#10b981' if success else '#ef4444'
     icon = '✓' if success else '✕'
-    title = 'Facebook connected' if success else 'Connection failed'
+    title = 'Facebook connected' if success else 'কানেক্ট হয়নি'
     html = f"""<!doctype html>
 <html><head><meta charset="utf-8"><title>{title}</title>
 <style>
@@ -540,12 +610,13 @@ def _callback_html(success, message):
   <div class="badge">{icon}</div>
   <h1>{title}</h1>
   <p>{message}</p>
-  <a href="/settings.html#meta">Back to Settings</a>
+  {hint_html}
+  <a href="/settings.html#meta" style="margin-top:20px;">Back to Settings</a>
 </div>
 <script>
   try {{ if (window.opener) {{ window.opener.postMessage({{type:'facebook-connected'}}, '*'); }} }}
   catch (e) {{}}
-  setTimeout(function () {{ location.href = '/settings.html#meta'; }}, 2600);
+  {'setTimeout(function () { location.href = \'/settings.html#meta\'; }, 2600);' if success else '// Failure pages stay open so the user can read the guidance.'}
 </script>
 </body></html>"""
     return html, (200 if success else 400), {'Content-Type': 'text/html; charset=utf-8'}
