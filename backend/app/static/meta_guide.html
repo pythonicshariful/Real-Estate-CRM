@@ -5,7 +5,7 @@
   <link rel="stylesheet" href="/assets/css/theme.css">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Facebook (Meta) Lead Ads Connect & Testing Guide — বাংলা গাইড</title>
+  <title>Facebook (Meta) Lead Ads Connect Guide — সহজ বাংলা গাইড (A–Z)</title>
   <link rel="stylesheet" href="/assets/css/tailwind.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,14 +20,27 @@
       background: #0f1122;
       border: 1px solid rgba(255, 255, 255, 0.08);
     }
-    .btn-gradient {
-      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-      color: #fff;
-    }
-    .btn-gradient:hover { filter: brightness(1.1); }
     .step-number {
       background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
     }
+    .mini-code {
+      background: #0b0d1d;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 0.5rem;
+      padding: 0.15rem 0.45rem;
+      color: #7dd3fc;
+      font-size: 11px;
+      word-break: break-all;
+    }
+    table.guide-table { width: 100%; border-collapse: collapse; }
+    table.guide-table th, table.guide-table td {
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 0.5rem 0.6rem;
+      text-align: left;
+      vertical-align: top;
+      font-size: 12px;
+    }
+    table.guide-table th { color: #fff; background: rgba(255,255,255,0.04); }
   </style>
   <script src="/assets/js/theme.js"></script>
 </head>
@@ -36,407 +49,247 @@
   <!-- Header Banner -->
   <div class="glass-card rounded-2xl p-6 border-indigo-500/30 relative overflow-hidden">
     <div class="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-      <div class="space-y-1">
-        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-          <span>🚀 Meta Lead Ads Integration</span>
-        </div>
-        <h1 class="text-2xl font-black text-white">কিভাবে ফেসবুক (Meta) লিড অ্যাড কানেক্ট ও টেস্ট করবেন</h1>
-        <p class="text-xs text-slate-400">ফেসবুক বা ইনস্টাগ্রাম বিজ্ঞাপনের Instant Form সাবমিট হওয়া মাত্রই রিয়েল-টাইমে সিআরএম-এ লিড চলে আসার পূর্ণাঙ্গ নির্দেশিকা।</p>
+    <div class="space-y-1">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+        <span>🚀 Meta Lead Ads Integration</span>
       </div>
-
-      <!-- Language Switcher -->
-      <div class="flex items-center bg-slate-900/80 p-1 rounded-xl border border-slate-800 shrink-0">
-        <button id="btn-lang-bn" onclick="switchLanguage('bn')" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white transition-all">বাংলা গাইড</button>
-        <button id="btn-lang-en" onclick="switchLanguage('en')" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition-all">English</button>
-      </div>
+      <h1 class="text-2xl font-black text-white">Facebook (Meta) Lead Ads কানেক্ট গাইড — একদম শুরু থেকে শেষ</h1>
+      <p class="text-xs text-slate-400">কোনো টেকনিক্যাল জ্ঞান ছাড়াই — শুধু ক্লিক, কপি আর পেস্ট। ধাপগুলো একে একে অনুসরণ করলেই Facebook Page-এর লিড সরাসরি CRM-এ চলে আসবে। সময় লাগবে প্রায় ২০–৩০ মিনিট। কাজটা কম্পিউটার/ল্যাপটপে করুন।</p>
     </div>
   </div>
 
-  <!-- BENGALI CONTENT -->
-  <div id="content-bn" class="space-y-6">
-
-    <!-- Quick Highlights -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div class="glass-card rounded-xl p-4 border-slate-800">
-        <div class="text-2xl mb-2">⚡</div>
-        <h3 class="text-sm font-bold text-white mb-1">রিয়েল-টাইম লিড ইনজেকশন</h3>
-        <p class="text-xs text-slate-400">কাস্টমার ফেসবুকে ফরম পূরণ করার সাথে সাথে সিআরএম-এ চলে আসে এবং ৫ মিনিটের SLA টাইমার শুরু হয়।</p>
-      </div>
-      <div class="glass-card rounded-xl p-4 border-slate-800">
-        <div class="text-2xl mb-2">🔑</div>
-        <h3 class="text-sm font-bold text-white mb-1">স্থায়ী (Never Expire) টোকেন</h3>
-        <p class="text-xs text-slate-400">টোকেন বারবার এক্সপায়ার হবে না। আজীবন চলবে এমন পার্মানেন্ট সিস্টেম ইউজার টোকেন সেটআপ।</p>
-      </div>
-      <div class="glass-card rounded-xl p-4 border-slate-800">
-        <div class="text-2xl mb-2">🧪</div>
-        <h3 class="text-sm font-bold text-white mb-1">১-ক্লিক টেস্টিং টুল</h3>
-        <p class="text-xs text-slate-400">ফেসবুকের অফিসিয়াল টুল ও সিআরএম-এর ইন-অ্যাপ সিমুলেটর দিয়ে যেকোনো সময় টেস্ট করতে পারবেন।</p>
-      </div>
-    </div>
-
-    <!-- Current Status -->
-    <div class="glass-card rounded-2xl p-5 border-emerald-500/40 bg-emerald-950/10 space-y-2">
-      <h3 class="text-sm font-bold text-emerald-300">✅ বর্তমান অবস্থা — অ্যাপ PUBLISHED ও LIVE</h3>
-      <ul class="text-xs text-slate-300 list-disc list-inside space-y-1">
-        <li>Meta App <strong class="text-white">"Southeast Landmark CRM"</strong> (App ID: <strong class="text-white">988028163659869</strong>) এখন <strong class="text-emerald-300">Published</strong> এবং CRM-এ <strong class="text-emerald-300">LIVE কানেক্টেড</strong> — টেস্ট পেজ <strong class="text-white">"Pythonic Shariful"</strong> (Page ID: 609852418868032), <strong class="text-white">৩টি lead form</strong> sync হয়েছে। নতুন অ্যাপ বানানোর দরকার নেই।</li>
-        <li>Privacy Policy URL লাইভ: <a href="https://southeastlandmark.pythonicshariful.tech/privacy-policy.html" target="_blank" class="text-indigo-400 underline">https://southeastlandmark.pythonicshariful.tech/privacy-policy.html</a> — Data Deletion: একই URL + <code class="text-sky-300">#data-deletion</code>।</li>
-        <li><strong class="text-rose-300">⚠️ https://www.southeastlandmark.com কখনো ব্যবহার করবেন না</strong> — ওই ডোমেইন এখন থাই জুয়ার (gambling) সাইট দেখায়। Meta-র কোনো URL-এ এটি দেবেন না।</li>
-      </ul>
-    </div>
-
-    <!-- Step 1: App (already created & published) -->
-    <div class="glass-card rounded-2xl p-6 border-slate-800 space-y-3">
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-xl step-number flex items-center justify-center text-white font-black text-sm shrink-0">১</div>
-        <div>
-          <h2 class="text-base font-bold text-white">Meta App — ইতিমধ্যে তৈরি ও Published (নতুন অ্যাপ বানাবেন না)</h2>
-          <p class="text-xs text-slate-400">অ্যাপ <strong class="text-white">"Southeast Landmark CRM"</strong> (App ID: <strong class="text-white">988028163659869</strong>) ইতিমধ্যে তৈরি, <strong class="text-emerald-300">Published</strong> এবং CRM-এ LIVE কানেক্টেড। এই ধাপটি শুধু জানার জন্য — নতুন করে অ্যাপ বানালে কানেকশন ভেঙে যাবে।</p>
-        </div>
-      </div>
-      <div class="text-xs text-slate-300 space-y-2 pl-11">
-        <ol class="list-decimal list-inside space-y-1.5 text-slate-400">
-          <li>অ্যাপ ড্যাশবোর্ড: <a href="https://developers.facebook.com/apps/988028163659869/dashboard/" target="_blank" class="text-indigo-400 font-bold hover:underline">developers.facebook.com/apps/988028163659869/dashboard</a></li>
-          <li>Use Case: <strong>Business</strong> — "Capture &amp; manage ad leads with Marketing API" এবং "Manage everything on your Page"।</li>
-          <li>Permissions (সবগুলো "Ready for testing"): <code class="text-sky-300 bg-slate-900 px-1.5 py-0.5 rounded font-mono">leads_retrieval</code>, <code class="text-sky-300 bg-slate-900 px-1.5 py-0.5 rounded font-mono">pages_manage_ads</code>, <code class="text-sky-300 bg-slate-900 px-1.5 py-0.5 rounded font-mono">pages_read_engagement</code>, <code class="text-sky-300 bg-slate-900 px-1.5 py-0.5 rounded font-mono">pages_show_list</code>, <code class="text-sky-300 bg-slate-900 px-1.5 py-0.5 rounded font-mono">business_management</code>।</li>
-          <li>Privacy Policy URL ও Data Deletion URL: <strong class="text-white">https://southeastlandmark.pythonicshariful.tech/privacy-policy.html</strong> (Data Deletion: একই URL + <code class="text-sky-300">#data-deletion</code>)। App Icon (1024×1024) আপলোড করা আছে।</li>
-          <li>আগের ভুল অ্যাপ (App ID: 1803115624293156, Facebook Login use case) ব্যবহার করা হয় না — ওটার দিকে তাকাবেন না।</li>
-        </ol>
-      </div>
-    </div>
-
-    <!-- Step 2: Callback URL & Verify Token (DYNAMIC ACTUAL URL) -->
-    <div class="glass-card rounded-2xl p-6 border-indigo-500/40 bg-indigo-950/10 space-y-3">
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-xl step-number flex items-center justify-center text-white font-black text-sm shrink-0">২</div>
-        <div>
-          <h2 class="text-base font-bold text-white">সিআরএম-এর সাথে Webhook ভেরিফাই ও কানেক্ট করুন</h2>
-          <p class="text-xs text-slate-400">ফেসবুক এই নির্দিষ্ট ঠিকানায় আপনার বিজ্ঞাপন থেকে পাওয়া লিডগুলো পুশ করবে।</p>
-        </div>
-      </div>
-      <div class="text-xs text-slate-300 space-y-3 pl-11">
-        <p>Meta Developer Portal-এ <strong>Webhooks</strong> মেনুতে যান &gt; ড্রপডাউনে <strong>"Page"</strong> নির্বাচন করুন &gt; <strong>"Subscribe to this object"</strong> এ ক্লিক করুন:</p>
-
-        <div class="space-y-4 bg-[#0a0c18] p-4 rounded-xl border border-slate-800">
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">ক) আপনার বর্তমান Callback URL (নিচেরটি সরাসরি কপি করুন):</label>
-              <span class="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">✓ Actual CRM URL</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <input type="text" id="guide-cb-url-bn" readonly value="" class="w-full bg-slate-900 border border-indigo-500/50 rounded-lg px-3.5 py-2 text-xs text-indigo-300 font-mono font-semibold focus:outline-none">
-              <button onclick="copyActualUrl('guide-cb-url-bn')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold shrink-0 flex items-center gap-1 shadow-md shadow-indigo-600/30">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/></svg>
-                <span>কপি করুন</span>
-              </button>
-            </div>
-            <div class="mt-2 text-[11px] text-slate-400 bg-slate-900/60 p-2.5 rounded-lg border border-slate-800 space-y-1">
-              <p class="text-amber-300 font-semibold">💡 লাইভ ফেসবুক অ্যাড এর জন্য জরুরি তথ্য:</p>
-              <p>• ফেসবুকের রুলস অনুযায়ী Webhook শুধুমাত্র <strong>HTTPS</strong> এ কাজ করে।</p>
-              <p>• লোকালহোস্টে টেস্ট করতে চাইলে <strong>Ngrok</strong> (যেমন: <code class="text-sky-300 bg-black/40 px-1 py-0.5 rounded">ngrok http 5000</code>) বা ক্লাউড সার্ভার ডোমেইন ব্যবহার করুন।</p>
-            </div>
-          </div>
-
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">খ) Verify Token (সিআরএম সিক্রেট টোকেন):</label>
-            </div>
-            <div class="flex items-center gap-2">
-              <input type="text" id="guide-vt-bn" readonly value="sl_crm_secure_webhook_token_2025" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2 text-xs text-emerald-300 font-mono font-semibold">
-              <button onclick="copyActualUrl('guide-vt-bn')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shrink-0 flex items-center gap-1 shadow-md shadow-emerald-600/30">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/></svg>
-                <span>কপি করুন</span>
-              </button>
-            </div>
-            <p class="text-[10px] text-slate-500 mt-1">ফেসবুকে এই টোকেনটি পেস্ট করবেন। দুটি মান পেস্ট করে ফেসবুকে <strong>"Verify and Save"</strong> চাপুন।</p>
-          </div>
-        </div>
-
-        <p class="text-slate-300">✅ ভেরিফাই সেভ হওয়ার পর, নিচে সাবস্ক্রিপশন তালিকায় <strong>`leadgen`</strong> ফিল্ডের পাশে <strong>Subscribe</strong> বাটনে ক্লিক করে দিন।</p>
-      </div>
-    </div>
-
-    <!-- Step 3: NEVER EXPIRING TOKEN (USER REQUESTED FEATURE) -->
-    <div class="glass-card rounded-2xl p-6 border-purple-500/40 bg-purple-950/15 space-y-4">
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-xl bg-purple-600 flex items-center justify-center text-white font-black text-sm shrink-0">৩</div>
-        <div>
-          <h2 class="text-base font-bold text-purple-300">Never-Expiring (স্থায়ী) Facebook Page Access Token তৈরি করার নিয়ম</h2>
-          <p class="text-xs text-slate-300">সাধারণ টোকেন ১ ঘণ্টা বা ৬০ দিনে নষ্ট হয়ে যায়। এই পদ্ধতিতে আপনার টোকেন আজীবন সচল থাকবে!</p>
-        </div>
-      </div>
-
-      <div class="pl-11 space-y-4 text-xs">
-        
-        <!-- Method 1: System User (Official & Best) -->
-        <div class="bg-[#0b0c1b] border border-purple-500/30 rounded-xl p-5 space-y-3 shadow-lg">
-          <div class="flex items-center justify-between">
-            <h3 class="text-sm font-bold text-white flex items-center gap-2">
-              <span class="text-emerald-400">★ পদ্ধতি ১: Meta Business System User (অফিসিয়াল ও সেরা পদ্ধতি)</span>
-            </h3>
-            <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2.5 py-0.5 rounded-full font-bold border border-emerald-500/40">Expires: Never</span>
-          </div>
-          
-          <ol class="list-decimal list-inside space-y-2 text-slate-300">
-            <li>ব্রাউজারে মেটা বিজনেস সেটিংসে যান: <a href="https://business.facebook.com/settings/system-users" target="_blank" class="text-purple-400 font-bold underline hover:text-purple-300">business.facebook.com/settings/system-users</a></li>
-            <li>বামের মেনু থেকে <strong>Users &gt; System Users</strong> এ যান।</li>
-            <li><strong>Add</strong> বাটনে ক্লিক করুন:
-              <ul class="list-disc list-inside pl-5 mt-1 text-slate-400 space-y-0.5">
-                <li>System Username: <code class="text-purple-300 bg-slate-900 px-1 py-0.5 rounded">CRM Lead Automation</code></li>
-                <li>System User Role: <strong>Admin</strong> সিলেক্ট করে Create এ চাপুন।</li>
-              </ul>
-            </li>
-            <li>System User তৈরি হলে <strong>"Assign Assets"</strong> বাটনে ক্লিক করুন:
-              <ul class="list-disc list-inside pl-5 mt-1 text-slate-400 space-y-0.5">
-                <li>বাম থেকে <strong>Pages</strong> সিলেক্ট করে আপনার বিজ্ঞাপন চলা ফেসবুক পেজটি টিক দিন।</li>
-                <li>নিচে <strong>"Full Control" (Manage Page)</strong> টগল অন করে <strong>Save Changes</strong> চাপুন।</li>
-              </ul>
-            </li>
-            <li>এবার <strong>"Generate New Token"</strong> বাটনে ক্লিক করুন:
-              <ul class="list-disc list-inside pl-5 mt-1 text-slate-400 space-y-0.5">
-                <li>Select App: আপনার তৈরি করা CRM App টি বেছে নিন।</li>
-                <li><strong>Token Expiration:</strong> ড্রপডাউন থেকে নির্বাচন করুন <strong class="text-emerald-400">"Never"</strong> (স্থায়ী)।</li>
-                <li><strong>Available Permissions</strong> তালিকায় এই পারমিশনগুলোতে টিক দিন:
-                  <div class="flex flex-wrap gap-1.5 mt-1 font-mono text-[11px]">
-                    <span class="bg-purple-900/60 text-purple-200 border border-purple-500/40 px-2 py-0.5 rounded">leads_retrieval</span>
-                    <span class="bg-purple-900/60 text-purple-200 border border-purple-500/40 px-2 py-0.5 rounded">pages_manage_ads</span>
-                    <span class="bg-purple-900/60 text-purple-200 border border-purple-500/40 px-2 py-0.5 rounded">pages_read_engagement</span>
-                    <span class="bg-purple-900/60 text-purple-200 border border-purple-500/40 px-2 py-0.5 rounded">pages_show_list</span>
-                  </div>
-                </li>
-              </ul>
-            </li>
-            <li>নিচে <strong>"Generate Token"</strong> এ চাপুন। স্ক্রিনে একটি বিশাল টোকেন কোড আসবে (<code class="text-sky-300">EAAB...</code>)।</li>
-            <li>টোকেনটি কপি করে আপনার সিআরএম-এর <strong>Settings &gt; Meta Webhook &gt; Page Access Token</strong> বক্সে পেস্ট করে দিন!</li>
-          </ol>
-        </div>
-
-        <!-- Method 2: Graph API Explorer Token Extension -->
-        <div class="bg-[#0b0c1b] border border-slate-800 rounded-xl p-5 space-y-2">
-          <div class="flex items-center justify-between">
-            <h4 class="text-xs font-bold text-slate-200">বিকল্প পদ্ধতি ২: Graph API Explorer এর মাধ্যমে পার্মানেন্ট পেজ টোকেন</h4>
-            <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded">বিকল্প</span>
-          </div>
-          <ol class="list-decimal list-inside space-y-1.5 text-slate-400">
-            <li>যান: <a href="https://developers.facebook.com/tools/explorer" target="_blank" class="text-indigo-400 underline">Graph API Explorer</a> &gt; Permissions এ <code class="text-slate-300">leads_retrieval, pages_manage_ads, pages_read_engagement</code> যোগ করে User Token তৈরি করুন।</li>
-            <li>টোকেনটি নিয়ে যান: <a href="https://developers.facebook.com/tools/debug/accesstoken" target="_blank" class="text-indigo-400 underline">Token Debugger Tool</a> &gt; <strong>Debug</strong> চেপে নিচে <strong>"Extend Access Token"</strong> বাটনে ক্লিক করে ৬০ দিনের টোকেন বানান।</li>
-            <li>পুনরায় Graph API Explorer এ এই টোকেন পেস্ট করে GET ফিল্ডে লিখুন: <code class="text-sky-300 font-mono">me/accounts?fields=name,access_token</code> এবং <strong>Submit</strong> চাপুন।</li>
-            <li>আপনার ফেসবুক পেজের নামের নিচে যে <code class="text-emerald-300">access_token</code> পাবেন, সেটি সারাজীবন কখনোই এক্সপায়ার হবে না!</li>
-          </ol>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- Step 4: App Secret & Page Subscribe -->
-    <div class="glass-card rounded-2xl p-6 border-slate-800 space-y-3">
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-xl step-number flex items-center justify-center text-white font-black text-sm shrink-0">৪</div>
-        <div>
-          <h2 class="text-base font-bold text-white">App Secret ও পেজ সাবস্ক্রিপশন কনফার্ম করুন</h2>
-          <p class="text-xs text-slate-400">ফেসবুকের পাঠানো তথ্যের নিরাপত্তা যাচাই ও পেজের সাথে লিংক নিশ্চিত করা।</p>
-        </div>
-      </div>
-      <div class="text-xs text-slate-300 space-y-2 pl-11">
-        <div class="bg-rose-500/10 border border-rose-500/40 rounded-xl p-3.5 space-y-1.5">
-          <p class="text-rose-300 font-bold">⚠️ App Secret অবশ্যই মিলতে হবে — না মিললে লিড আসবে না!</p>
-          <p class="text-slate-300">CRM-এ সেভ করা App Secret আর Meta ড্যাশবোর্ডের <strong>বর্তমান</strong> secret না মিললে CRM প্রতিটি webhook <strong>403 "Invalid signature. The App Secret does not match."</strong> দিয়ে ফিরিয়ে দেয়, আর Meta-র Testing Tool-এ দেখায় <strong>"Failure — Failure in webhook integration" / webhooks.delivery.rejected</strong>।</p>
-          <p class="text-slate-300"><strong>ঠিক করতে:</strong> Meta ড্যাশবোর্ড → <strong>App Settings → Basic</strong> → App Secret-এর পাশে <strong>Show</strong> (পাসওয়ার্ড দিয়ে দেখুন) → কপি করে CRM <strong>Settings → Meta</strong>-তে App Secret বক্সে পেস্ট করে <strong>Save</strong> করুন → তারপর নতুন টেস্ট লিড পাঠিয়ে যাচাই করুন।</p>
-        </div>
-        <ol class="list-decimal list-inside space-y-1.5 text-slate-400">
-          <li>মেটা ডেভেলপার পোর্টালে <strong>App settings &gt; Basic</strong>-এ গিয়ে <strong>App Secret</strong> কপি করে সিআরএম-এর Settings-এ সেভ করুন।</li>
-          <li>পেজ সাবস্ক্রিপশন এখন <strong>স্বয়ংক্রিয়</strong>: CRM-এ "Connect with Facebook" করলেই OAuth callback পেজটিকে <code class="text-sky-300">leadgen</code> webhook-এ সাবস্ক্রাইব করে দেয়। হাতে করতে চাইলে Graph API Explorer-এ POST রিকোয়েস্ট পাঠান (অথবা টার্মিনালে রান করুন):
-            <div class="bg-slate-900 border border-slate-800 rounded-lg p-2.5 mt-1 font-mono text-[11px] text-sky-300 overflow-x-auto">
-              curl -X POST "https://graph.facebook.com/v19.0/{PAGE_ID}/subscribed_apps?subscribed_fields=leadgen&access_token={PAGE_ACCESS_TOKEN}"
-            </div>
-          </li>
-          <li>যাচাই: Meta ড্যাশবোর্ড → <strong>Webhooks → Page</strong>-এ Callback URL সেভ আছে এবং <code class="text-sky-300">leadgen</code> ফিল্ডে <strong>Subscribed</strong> দেখাচ্ছে কিনা দেখুন।</li>
-        </ol>
-      </div>
-    </div>
-
-    <!-- Step 5: TESTING (HOW TO TEST) -->
-    <div class="glass-card rounded-2xl p-6 border-emerald-500/40 bg-emerald-950/15 space-y-4">
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-black text-sm shrink-0">৫</div>
-        <div>
-          <h2 class="text-base font-bold text-emerald-300">কানেকশন টেস্ট ও লিড আসার প্রমাণ পরীক্ষা করুন</h2>
-          <p class="text-xs text-slate-300">আপনার ফেসবুক লিড ইন্টিগ্রেশন ঠিকমতো কাজ করছে কিনা তা এই দুটি উপায়ে এখনই যাচাই করুন।</p>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pl-11">
-        
-        <!-- Method A -->
-        <div class="bg-[#0b0f1d] border border-emerald-500/30 rounded-xl p-4 space-y-3">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-emerald-400">পদ্ধতি ১: সফটওয়্যারের ইন-অ্যাপ টেস্ট সিমুলেশন</span>
-            <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold">ইনস্ট্যান্ট</span>
-          </div>
-          <p class="text-xs text-slate-300">ফেসবুকে কোনো বিজ্ঞাপন রান না করেই সিআরএম নিজেই সম্পূর্ণ মেটা Webhook এর অনুরূপ ডাটা তৈরি করে লিড পরীক্ষা করতে পারে:</p>
-          <ol class="list-decimal list-inside text-xs text-slate-400 space-y-1">
-            <li>সিআরএম-এর <strong>Settings &gt; Meta Webhook</strong> ট্যাবে স্ক্রল করে নিচে নামুন।</li>
-            <li><strong>"Simulate Meta Lead (Webhook Test)"</strong> বক্সের ফরমটি পূরণ করুন।</li>
-            <li>সবুজ <strong>"Simulate Lead Now"</strong> বাটনে ক্লিক করুন।</li>
-            <li>সরাসরি <strong>Leads</strong> পেজে গিয়ে দেখুন লিডটি তৈরি হয়ে সেলস টিমের কাছে পৌঁছে গেছে এবং ৫ মিনিটের SLA কাউন্টডাউন শুরু হয়ে গেছে!</li>
-          </ol>
-        </div>
-
-        <!-- Method B -->
-        <div class="bg-[#0b0f1d] border border-indigo-500/30 rounded-xl p-4 space-y-3">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-indigo-400">পদ্ধতি ২: ফেসবুকের অফিসিয়াল Lead Ads Testing Tool</span>
-            <span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full font-bold">লাইভ মেটা টেস্ট</span>
-          </div>
-          <p class="text-xs text-slate-300">মেটার নিজস্ব সার্ভার থেকে আপনার সিআরএম সিস্টেমে লাইভ টেস্ট লিড পাঠান:</p>
-          <ol class="list-decimal list-inside text-xs text-slate-400 space-y-1">
-            <li>ফেসবুকের এই লিংকে যান: <a href="https://developers.facebook.com/tools/lead-ads-testing" target="_blank" class="text-indigo-400 font-bold underline">Lead Ads Testing Tool</a></li>
-            <li>আপনার <strong>Page</strong> এবং তৈরি করা <strong>Lead Form</strong> সিলেক্ট করুন।</li>
-            <li>আগের কোনো টেস্ট লিড আটকে ("Pending") থাকলে সেটি <strong>আগে ডিলিট করুন</strong> — নইলে নতুন লিড বানাতে দেবে না।</li>
-            <li><strong>"Create Lead"</strong> বাটনে চাপ দিন — একবারে <strong>একটিই</strong> নতুন টেস্ট লিড পাঠান।</li>
-            <li>RTU Status-এ <strong class="text-emerald-300">"Success — Successful webhook integration"</strong> দেখা গেলেই বুঝবেন লিড CRM-এ পৌঁছেছে। তারপর CRM-এর <strong>Leads</strong> পেজে দেখুন (Source: "Meta Lead Ads")।</li>
-            <li class="text-amber-300">নোট: Meta-র টেস্ট লিডে <strong>ডামি ডেটা</strong> থাকে — নাম "Meta Test Lead" আর ইমেইল test@meta.com দেখাবে। আসল লিডে আসল নাম ও তথ্য আসবে।</li>
-          </ol>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- Step 6: Switch to the client's REAL page later -->
-    <div class="glass-card rounded-2xl p-6 border-slate-800 space-y-3">
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-xl step-number flex items-center justify-center text-white font-black text-sm shrink-0">৬</div>
-        <div>
-          <h2 class="text-base font-bold text-white">পরে ক্লায়েন্টের আসল পেজে কানেক্ট করা</h2>
-          <p class="text-xs text-slate-400">টেস্ট শেষ হলে একই অ্যাপ দিয়ে আসল পেজে বদলাতে পারবেন — নতুন অ্যাপ লাগবে না।</p>
-        </div>
-      </div>
-      <div class="text-xs text-slate-300 space-y-2 pl-11">
-        <ol class="list-decimal list-inside space-y-1.5 text-slate-400">
-          <li>CRM-এ <strong>Settings → Meta</strong> ট্যাবে গিয়ে <strong>Disconnect</strong> চাপুন।</li>
-          <li><strong>"Connect with Facebook"</strong> চাপুন — OAuth ডায়ালগে ক্লায়েন্টের আসল পেজটি বেছে নিন। <strong>যে অ্যাকাউন্ট দিয়ে লগইন করবেন, সেটি ওই পেজের অ্যাডমিন হতে হবে।</strong></li>
-          <li>কানেক্ট হলে <strong>"Sync Forms"</strong> চাপুন — আসল পেজের lead form-গুলো sync হবে।</li>
-          <li>বদলের পর Lead Ads Testing Tool দিয়ে একটি <strong>নতুন টেস্ট লিড</strong> পাঠিয়ে আবার যাচাই করুন (RTU Status "Success" হতে হবে)।</li>
-          <li>নোট: আসল পেজের ফর্মের প্রশ্নের নাম Meta-র <strong>Standard Full Name / Phone Number</strong> হলে নাম-ফোন সরাসরি প্রোফাইলে ম্যাপ হবে; অন্য নাম হলে উত্তরগুলো লিডের <strong>"Custom Lead Form Answers"</strong>-এ দেখাবে।</li>
-        </ol>
-      </div>
-    </div>
-
-    <!-- Troubleshooting -->
-    <div class="glass-card rounded-2xl p-5 border-amber-500/30 bg-amber-500/5 space-y-2">
-      <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-        প্রয়োজনীয় টিপস ও সাধারণ সমস্যা সমাধান
-      </h3>
-      <ul class="text-xs text-slate-300 list-disc list-inside space-y-1">
-        <li><strong>Webhook Verify না হলে:</strong> নিশ্চিত করুন আপনার সিআরএম সার্ভারে বৈধ <code>HTTPS</code> চালু রয়েছে এবং Verify Token হুবহু মিলেছে।</li>
-        <li><strong>টোকেন ভ্যালিড কিনা দেখার উপায়:</strong> যেকোনো সময় <a href="https://developers.facebook.com/tools/debug/accesstoken" target="_blank" class="text-indigo-400 underline">Access Token Debugger</a> এ পেস্ট করে দেখুন Expire ডেট <strong>Never</strong> লেখা আছে কিনা।</li>
-        <li><strong>প্রশ্নোত্তরের উত্তর কোথায় দেখাবে:</strong> যেকোনো লিডের পাশে <strong>View Profile →</strong> ক্লিক করলে ডেডিকেটেড পেজে ক্যাম্পেইনের সব প্রশ্নের উত্তর সুন্দরভাবে প্রদর্শিত হবে।</li>
-      </ul>
-    </div>
-
-    <!-- FAQ -->
-    <div class="glass-card rounded-2xl p-6 border-slate-800 space-y-4">
-      <h2 class="text-base font-bold text-white">❓ সচরাচর জিজ্ঞাসা (FAQ)</h2>
-      <div class="space-y-3 text-xs">
-        <div>
-          <p class="font-bold text-white">১. টেস্ট লিড "Pending — Lead publish in progress"-এ আটকে আছে, আসছে না কেন?</p>
-          <p class="text-slate-400">এটা Meta-র দিকের সমস্যা — লিডটি Meta-র সার্ভারেই publish হতে দেরি হচ্ছে, CRM-এ এখনো পাঠানোই হয়নি। অ্যাপ Unpublished থাকলে শুধু টেস্ট webhook আসে। কিছুক্ষণ অপেক্ষা করুন; না এলে Testing Tool-এ পুরনো লিডটি ডিলিট করে একটি নতুন টেস্ট লিড পাঠান।</p>
-        </div>
-        <div>
-          <p class="font-bold text-white">২. RTU Status-এ "Failure — Failure in webhook integration / webhooks.delivery.rejected" দেখাচ্ছে কেন?</p>
-          <p class="text-slate-400">CRM-এ সেভ করা App Secret আর Meta ড্যাশবোর্ডের বর্তমান secret মিলছে না — তাই CRM webhook 403 "Invalid signature" দিয়ে ফিরিয়ে দিচ্ছে। ধাপ ৪ দেখে Meta ড্যাশবোর্ড (App Settings → Basic) থেকে বর্তমান secret নিয়ে CRM Settings → Meta-তে সেভ করুন, তারপর নতুন টেস্ট লিড পাঠান।</p>
-        </div>
-        <div>
-          <p class="font-bold text-white">৩. লিডের নাম ফাঁকা বা "Meta Test Lead" দেখাচ্ছে কেন?</p>
-          <p class="text-slate-400">Meta-র টেস্ট লিডে ডামি ডেটা থাকে — নাম <code class="text-sky-300">&lt;test lead: dummy data for full_name&gt;</code>, ইমেইল test@meta.com। এটা টেস্টের স্বাভাবিক আচরণ; আসল বিজ্ঞাপনের লিডে কাস্টমারের আসল নাম ও তথ্য আসবে।</p>
-        </div>
-        <div>
-          <p class="font-bold text-white">৪. Sarah শুধু নিজের লিড দেখে, Admin সব লিড দেখে কেন?</p>
-          <p class="text-slate-400">এটাই নিয়ম: Lead Owner শুধু নিজের assigned লিড দেখতে পারে, আর Admin সব লিড দেখতে পারে। এতে প্রত্যেকের কাজ আলাদা থাকে।</p>
-        </div>
-        <div>
-          <p class="font-bold text-white">৫. ক্যালেন্ডারের ইভেন্টের রং কে সেট করে?</p>
-          <p class="text-slate-400">শুধু <strong>Admin</strong>। Admin Team পেজ থেকে প্রত্যেক Lead Owner-এর রং সেট করেন; Lead Owner নিজের রং বদলাতে পারে না। এতে Admin ক্যালেন্ডারে রং দেখেই বুঝতে পারেন কোন ইভেন্ট কার।</p>
-        </div>
-        <div>
-          <p class="font-bold text-white">৬. SLA ব্যানারে "৫ মিনিটে breach" বলছে কেন?</p>
-          <p class="text-slate-400">লিড assign হওয়ার ৫ মিনিটের মধ্যে প্রথম কল না করলে SLA breach ধরা হয়। লিড পাওয়ার সাথে সাথে কল করলেই SLA resolved হয়ে যায়।</p>
-        </div>
-        <div>
-          <p class="font-bold text-white">৭. Settings-এ "Last payload received" মানে কী?</p>
-          <p class="text-slate-400">এটি শেষ Meta Inquiry (লিড) তৈরি হওয়ার সময় — শেষ webhook POST আসার সময় নয়। তাই নতুন লিড না এলে এই সময় বদলাবে না।</p>
-        </div>
-        <div>
-          <p class="font-bold text-white">৮. ফর্মের কাস্টম প্রশ্নগুলোর জন্য কি CRM-এ কিছু সেটআপ করতে হবে?</p>
-          <p class="text-slate-400">না। প্রতিটি প্রশ্নের উত্তর নিজে থেকেই চলে আসে। Standard ফিল্ড (নাম, ইমেইল, ফোন, পেশা, সার্ভিস, প্রজেক্ট) সরাসরি প্রোফাইলে ম্যাপ হয়, বাকি সব উত্তর লিডের <strong>"Custom Lead Form Answers"</strong>-এ দেখায়। তবে নাম/ফোন ম্যাপ হতে ফর্মে Meta-র Standard <strong>Full Name / Phone Number</strong> প্রশ্ন থাকতে হবে — অন্য নামে প্রশ্ন করলে উত্তরটি Custom Answers-এ যাবে।</p>
-        </div>
-        <div>
-          <p class="font-bold text-white">৯. CRM সেশন expire হয়ে গেলে কী করব?</p>
-          <p class="text-slate-400">আবার Admin হিসেবে লগইন করুন। ব্রাউজারের লগইন প্রতি ব্রাউজারে আলাদা — এক ব্রাউজারে লগইন থাকলেও অন্য ব্রাউজারে আবার লগইন করতে হবে।</p>
-        </div>
-        <div>
-          <p class="font-bold text-white">১০. লিড আসছে না — প্রথমে কী কী চেক করব?</p>
-          <p class="text-slate-400">(ক) Settings → Meta-তে <strong>LIVE</strong> ব্যাজ আছে কিনা, (খ) App Secret বর্তমান secret-এর সাথে মিলছে কিনা, (গ) Meta ড্যাশবোর্ডে Webhook → Page-এ <code class="text-sky-300">leadgen</code> <strong>Subscribed</strong> কিনা, (ঘ) Testing Tool-এ RTU Status <strong>"Success"</strong> কিনা। RTU "Pending" থাকলে লিড Meta-র দিকেই আটকে আছে — CRM-এর দোষ নয়।</p>
-        </div>
-      </div>
-    </div>
-
+  <!-- Current Status -->
+  <div class="glass-card rounded-2xl p-5 border-emerald-500/40 bg-emerald-950/10 space-y-2">
+    <h3 class="text-sm font-bold text-emerald-300">⭐ এই CRM-এর জন্য সুখবর — বেশিরভাগ কাজ ইতিমধ্যে করা আছে</h3>
+    <ul class="text-xs text-slate-300 list-disc list-inside space-y-1">
+      <li>Meta App <strong class="text-white">"Southeast Landmark CRM"</strong> (App ID: <strong class="text-white">988028163659869</strong>) ইতিমধ্যে তৈরি ও <strong class="text-emerald-300">Published</strong>। তাই সাধারণত ধাপ ১–৮ করতে হবে না — শুধু <strong class="text-white">ধাপ ৯ (Connect)</strong> আর <strong class="text-white">ধাপ ১০ (টেস্ট)</strong> করলেই হবে। ধাপ ১–৮ রাখা হলো ভবিষ্যতে একদম নতুন করে সেটআপ করতে হলে যেন পারেন।</li>
+      <li>Privacy Policy URL লাইভ: <a href="https://southeastlandmark.pythonicshariful.tech/privacy-policy.html" target="_blank" class="text-indigo-400 underline">https://southeastlandmark.pythonicshariful.tech/privacy-policy.html</a> — Data Deletion: একই URL + <span class="mini-code">#data-deletion</span></li>
+      <li><strong class="text-rose-300">⚠️ southeastlandmark.com কখনো ব্যবহার করবেন না</strong> — ওই ডোমেইন এখন অন্যের দখলে (জুয়ার সাইট দেখায়)। Meta-র কোনো ঘরে ওই ডোমেইনের লিংক দিলে অ্যাপ ব্লক হতে পারে।</li>
+    </ul>
   </div>
 
-  <!-- ENGLISH CONTENT (Toggled via JS) -->
-  <div id="content-en" class="space-y-6 hidden">
-    <div class="glass-card rounded-2xl p-6 border-slate-800 space-y-4 text-xs">
-      <h2 class="text-base font-bold text-white">English Setup Summary</h2>
-      <p><strong class="text-emerald-300">Current status:</strong> the Meta App <strong>"Southeast Landmark CRM"</strong> (App ID 988028163659869) is <strong>Published</strong> and <strong>LIVE-connected</strong> in the CRM to the test page <strong>"Pythonic Shariful"</strong> (Page ID 609852418868032), with <strong>3 lead forms</strong> synced. Do not create a new app.</p>
-      <p>Privacy Policy URL: <a href="https://southeastlandmark.pythonicshariful.tech/privacy-policy.html" class="text-indigo-400 underline">https://southeastlandmark.pythonicshariful.tech/privacy-policy.html</a> (Data Deletion: same URL + #data-deletion). Never use https://www.southeastlandmark.com — that domain now serves gambling content.</p>
-      <p>1. Register a Meta Business App at <a href="https://developers.facebook.com" class="text-indigo-400 underline">developers.facebook.com</a> (already done — see above).</p>
-      <p>2. Set Callback URL to your active CRM domain + <code>/api/webhooks/meta</code> and enter the Verify Token from Settings.</p>
-      <p>3. Subscribe to the <code>leadgen</code> field under the <strong>Page</strong> object (automatic now: the OAuth callback subscribes the page).</p>
-      <p>4. Generate a <strong>Never-Expiring Page Access Token</strong> using Meta Business Settings &gt; System Users &gt; Generate Token &gt; Expiration: Never with <code>leads_retrieval, pages_manage_ads, pages_read_engagement</code>.</p>
-      <p>5. <strong>App Secret must match:</strong> if the secret stored in the CRM differs from the app's current secret, the CRM rejects every webhook with 403 "Invalid signature" and Meta shows "Failure / webhooks.delivery.rejected". Reveal the current secret in the Meta dashboard (App Settings &gt; Basic) and save it in CRM Settings &gt; Meta.</p>
-      <p>6. Test with either the In-App "Simulate Lead Now" button or Meta's <a href="https://developers.facebook.com/tools/lead-ads-testing" class="text-indigo-400 underline">Lead Ads Testing Tool</a> — delete any stuck test lead first, send ONE fresh test lead, and RTU status must show "Success — Successful webhook integration". Test leads carry dummy data (name "Meta Test Lead", email test@meta.com).</p>
-      <p>7. To switch to the client's real page later: Settings &gt; Meta &gt; Disconnect, then Connect with Facebook and pick the real page (the account must be a page admin), then re-test with a fresh test lead.</p>
+  <!-- Before you start -->
+  <div class="glass-card rounded-2xl p-6 border-slate-800 space-y-3">
+    <h2 class="text-base font-bold text-white">শুরু করার আগে — যা যা লাগবে</h2>
+    <ul class="text-xs text-slate-300 list-disc list-inside space-y-1.5">
+      <li>একটা <strong class="text-white">Facebook অ্যাকাউন্ট</strong>, যেটা কোম্পানির <strong class="text-white">Facebook Page-এর Admin</strong>। (Admin না হলে কানেক্ট হবে না।)</li>
+      <li>কোম্পানির <strong class="text-white">Facebook Page</strong> — যে পেজে বিজ্ঞাপন আর লিড ফর্ম চলবে।</li>
+      <li>CRM-এর <strong class="text-white">Admin লগইন</strong> — শুধু Admin-ই Meta কানেক্ট করতে পারবে।</li>
+      <li>কম্পিউটার ও ইন্টারনেট।</li>
+    </ul>
+    <p class="text-xs text-amber-300">🔒 App Secret আর Verify Token হলো পাসওয়ার্ডের মতো — কাউকে পাঠাবেন না, স্ক্রিনশটে শেয়ার করবেন না।</p>
+    <p class="text-xs text-slate-400"><strong class="text-white">এক নজরে পুরো কাজটা:</strong> Meta App তৈরি → দুটো Product যোগ → CRM থেকে ৩টা লিংক কপি → Meta App-এ বসানো → App Publish → CRM-এ App ID/Secret সেভ → Connect with Facebook → Page বাছাই → টেস্ট লিড → সম্পন্ন ✅</p>
+  </div>
+
+  <!-- Step 1 -->
+  <div class="glass-card rounded-2xl p-6 border-slate-800 space-y-3">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-xl step-number flex items-center justify-center text-white font-black text-sm shrink-0">১</div>
+      <h2 class="text-base font-bold text-white">Meta App তৈরি করা</h2>
+    </div>
+    <ol class="list-decimal list-inside space-y-1.5 text-xs text-slate-300 pl-11">
+      <li>ব্রাউজারে যান: <a href="https://developers.facebook.com" target="_blank" class="text-indigo-400 underline">developers.facebook.com</a> — নিজের Facebook অ্যাকাউন্ট দিয়ে লগইন করুন। (প্রথমবার হলে "Get Started" চেপে Developer হিসেবে রেজিস্টার করুন।)</li>
+      <li>ওপরে <strong class="text-white">My Apps</strong> → <strong class="text-white">Create App</strong> চাপুন।</li>
+      <li>"What do you want your app to do?" আসলে <strong class="text-white">Other</strong> বেছে নিন → <strong class="text-white">Next</strong>।</li>
+      <li>App type-এ <strong class="text-white">Business</strong> বেছে নিন → <strong class="text-white">Next</strong>।</li>
+      <li>অ্যাপের নাম দিন (যেমন: Southeast Landmark CRM), নিজের ইমেইল দিন → <strong class="text-white">Create App</strong>। Facebook পাসওয়ার্ড চাইলে দিন।</li>
+    </ol>
+    <p class="text-xs text-amber-300 pl-11">⚠️ অনেকের ভুল হয় এখানে: শুধু "Facebook Login" দিয়ে অ্যাপ বানালে পরে <strong>"Invalid Scopes"</strong> এরর আসে। তাই অবশ্যই <strong>Other → Business</strong> নিন।</p>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="glass-card rounded-2xl p-6 border-slate-800 space-y-3">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-xl step-number flex items-center justify-center text-white font-black text-sm shrink-0">২</div>
+      <h2 class="text-base font-bold text-white">অ্যাপে দুটো Product যোগ করা</h2>
+    </div>
+    <ol class="list-decimal list-inside space-y-1.5 text-xs text-slate-300 pl-11">
+      <li>অ্যাপের Dashboard-এ "Add products to your app" অংশে <strong class="text-white">Facebook Login</strong> খুঁজে <strong class="text-white">Set up</strong> চাপুন।</li>
+      <li>আবার Dashboard-এ ফিরে <strong class="text-white">Webhooks</strong> খুঁজে <strong class="text-white">Set up</strong> চাপুন।</li>
+    </ol>
+    <p class="text-xs text-slate-400 pl-11">দুটোই লাগবে: Facebook Login ছাড়া CRM-এর Connect বাটন কাজ করবে না, Webhooks ছাড়া লিড CRM-এ আসবে না।</p>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="glass-card rounded-2xl p-6 border-slate-800 space-y-3">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-xl step-number flex items-center justify-center text-white font-black text-sm shrink-0">৩</div>
+      <h2 class="text-base font-bold text-white">CRM থেকে ৩টা জিনিস কপি করে রাখা</h2>
+    </div>
+    <ol class="list-decimal list-inside space-y-1.5 text-xs text-slate-300 pl-11">
+      <li>CRM-এ <strong class="text-white">Admin</strong> দিয়ে লগইন করুন → <strong class="text-white">Settings → Meta</strong> ট্যাবে যান।</li>
+      <li><strong class="text-white">Callback Webhook URL</strong> আর <strong class="text-white">Verify Token</strong> — "Meta Webhook Configuration" কার্ডে পাবেন।</li>
+      <li><strong class="text-white">Redirect URI</strong> — ওপরের "Facebook App credentials" অংশ খুললেই পাবেন।</li>
+      <li>প্রতিটার পাশে <strong class="text-white">Copy</strong> বাটন আছে — হাতে লিখতে হবে না। এই ট্যাবটা ব্রাউজারে খোলা রাখুন।</li>
+    </ol>
+  </div>
+
+  <!-- Step 4 -->
+  <div class="glass-card rounded-2xl p-6 border-slate-800 space-y-3">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-xl step-number flex items-center justify-center text-white font-black text-sm shrink-0">৪</div>
+      <h2 class="text-base font-bold text-white">Facebook Login-এ Redirect URI বসানো</h2>
+    </div>
+    <ol class="list-decimal list-inside space-y-1.5 text-xs text-slate-300 pl-11">
+      <li>Meta App-এর বাম মেনুতে <strong class="text-white">Facebook Login → Settings</strong> যান।</li>
+      <li><strong class="text-white">Valid OAuth Redirect URIs</strong> বাক্সে CRM থেকে কপি করা <strong class="text-white">Redirect URI</strong> পেস্ট করুন।</li>
+      <li>নিচে <strong class="text-white">Save Changes</strong> চাপুন।</li>
+    </ol>
+  </div>
+
+  <!-- Step 5 -->
+  <div class="glass-card rounded-2xl p-6 border-slate-800 space-y-3">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-xl step-number flex items-center justify-center text-white font-black text-sm shrink-0">৫</div>
+      <h2 class="text-base font-bold text-white">Webhooks সেটআপ (লিড আসার রাস্তা)</h2>
+    </div>
+    <ol class="list-decimal list-inside space-y-1.5 text-xs text-slate-300 pl-11">
+      <li>Meta App-এর বাম মেনুতে <strong class="text-white">Webhooks</strong> যান।</li>
+      <li>ওপরের ড্রপডাউন থেকে <strong class="text-white">Page</strong> বেছে নিন।</li>
+      <li><strong class="text-white">Callback URL</strong>-এ CRM-এর Callback Webhook URL পেস্ট করুন।</li>
+      <li><strong class="text-white">Verify Token</strong>-এ CRM-এর Verify Token হুবহু পেস্ট করুন → <strong class="text-white">Verify and Save</strong> চাপুন। (ঠিকঠাক হলে এরর আসবে না।)</li>
+      <li>নিচের তালিকায় <strong class="text-white">leadgen</strong> খুঁজে <strong class="text-white">Subscribe</strong> চাপুন।</li>
+    </ol>
+    <p class="text-xs text-slate-400 pl-11">ℹ️ পেজের আসল সংযোগটা ধাপ ৯-এ Connect করার সময় CRM নিজে থেকেও চালু করে দেয় — তবু এখানে Subscribe করে রাখা নিরাপদ।</p>
+  </div>
+
+  <!-- Step 6 -->
+  <div class="glass-card rounded-2xl p-6 border-slate-800 space-y-3">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-xl step-number flex items-center justify-center text-white font-black text-sm shrink-0">৬</div>
+      <h2 class="text-base font-bold text-white">অ্যাপের Basic তথ্য (Publish-এর জন্য লাগবে)</h2>
+    </div>
+    <ol class="list-decimal list-inside space-y-1.5 text-xs text-slate-300 pl-11">
+      <li>বাম মেনুতে <strong class="text-white">Settings → Basic</strong> যান।</li>
+      <li><strong class="text-white">Privacy Policy URL</strong>-এ বসান: <span class="mini-code">https://southeastlandmark.pythonicshariful.tech/privacy-policy.html</span></li>
+      <li><strong class="text-white">User Data Deletion</strong>-এ (URL অপশন থাকলে) বসান: <span class="mini-code">https://southeastlandmark.pythonicshariful.tech/privacy-policy.html#data-deletion</span></li>
+      <li><strong class="text-white">Category</strong> বেছে দিন (যেমন Business) আর <strong class="text-white">App Icon</strong>-এ কোম্পানির লোগো আপলোড করুন।</li>
+      <li><strong class="text-white">Save Changes</strong> চাপুন। এই পেজেই ওপরে <strong class="text-white">App ID</strong> পাবেন; <strong class="text-white">App Secret</strong> দেখতে "Show" চেপে Facebook পাসওয়ার্ড দিতে হয় — দুটোই ধাপ ৭-এ লাগবে।</li>
+    </ol>
+  </div>
+
+  <!-- Step 7 -->
+  <div class="glass-card rounded-2xl p-6 border-slate-800 space-y-3">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-xl step-number flex items-center justify-center text-white font-black text-sm shrink-0">৭</div>
+      <h2 class="text-base font-bold text-white">App ID ও App Secret CRM-এ বসানো</h2>
+    </div>
+    <ol class="list-decimal list-inside space-y-1.5 text-xs text-slate-300 pl-11">
+      <li>CRM-এ ফিরে যান → <strong class="text-white">Settings → Meta</strong> → "Facebook App credentials" অংশ খুলুন।</li>
+      <li><strong class="text-white">App ID</strong> আর <strong class="text-white">App Secret</strong> পেস্ট করুন → <strong class="text-white">Save</strong> চাপুন।</li>
+      <li>"App credentials saved — click Connect with Facebook" মেসেজ এলেই সেভ হয়েছে।</li>
+    </ol>
+  </div>
+
+  <!-- Step 8 -->
+  <div class="glass-card rounded-2xl p-6 border-slate-800 space-y-3">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-xl step-number flex items-center justify-center text-white font-black text-sm shrink-0">৮</div>
+      <h2 class="text-base font-bold text-white">অ্যাপ Publish করা (Live করা)</h2>
+    </div>
+    <ol class="list-decimal list-inside space-y-1.5 text-xs text-slate-300 pl-11">
+      <li>Meta App-এর Dashboard-এ যান। অ্যাপ <strong class="text-white">Unpublished</strong> দেখালে ওপরে <strong class="text-white">Publish</strong> বাটন চাপুন।</li>
+      <li>Meta যা যা অসম্পূর্ণ দেখাবে (Privacy Policy, Icon, Category) পূরণ করে আবার <strong class="text-white">Publish</strong> চাপুন।</li>
+    </ol>
+    <p class="text-xs text-amber-300 pl-11">⚠️ Publish না করলে শুধু অ্যাপের Admin/Tester-দের টেস্ট লিড আসবে — আসল গ্রাহকের লিড আসবে না। এই ধাপ বাদ দেওয়া যাবে না।</p>
+  </div>
+
+  <!-- Step 9 -->
+  <div class="glass-card rounded-2xl p-6 border-teal-500/40 bg-teal-950/10 space-y-3">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-xl step-number flex items-center justify-center text-white font-black text-sm shrink-0">৯</div>
+      <h2 class="text-base font-bold text-white">CRM থেকে Connect করা ⭐ (সাধারণত এখান থেকেই শুরু)</h2>
+    </div>
+    <ol class="list-decimal list-inside space-y-1.5 text-xs text-slate-300 pl-11">
+      <li>CRM-এ <strong class="text-white">Admin</strong> লগইন → <strong class="text-white">Settings → Meta</strong> ট্যাব।</li>
+      <li>নীল <strong class="text-white">Connect with Facebook</strong> বাটন চাপুন।</li>
+      <li>Facebook উইন্ডো খুলবে — <strong class="text-white">যে অ্যাকাউন্ট Page-এর Admin</strong>, সেই অ্যাকাউন্ট দিয়ে লগইন করুন।</li>
+      <li>Page বাছাইয়ের স্ক্রিনে কোম্পানির <strong class="text-white">আসল Page-টিতে টিক</strong> দিন → <strong class="text-white">Continue / Next</strong>।</li>
+      <li>অনুমতি (Permission) চাইলে <strong class="text-white">সবগুলো Allow / OK</strong> করুন — একটা বাদ দিলেও লিড আসবে না।</li>
+      <li>সফল হলে CRM-এ ফিরে আসবেন: Connect কার্ডে সবুজ <strong class="text-emerald-300">LIVE</strong> ব্যাজ আর <strong class="text-white">"Connected to ‹Page-এর নাম›"</strong> দেখাবে, নিচে পেজের <strong class="text-white">Lead Form-গুলোর তালিকা</strong> চলে আসবে।</li>
+    </ol>
+  </div>
+
+  <!-- Step 10 -->
+  <div class="glass-card rounded-2xl p-6 border-teal-500/40 bg-teal-950/10 space-y-3">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-xl step-number flex items-center justify-center text-white font-black text-sm shrink-0">১০</div>
+      <h2 class="text-base font-bold text-white">টেস্ট লিড পাঠিয়ে পরীক্ষা ⭐ (সবচেয়ে গুরুত্বপূর্ণ)</h2>
+    </div>
+    <div class="text-xs text-slate-300 space-y-3 pl-11">
+      <p><strong class="text-white">পদ্ধতি A — Meta-র অফিসিয়াল টেস্ট টুল (আসল পরীক্ষা):</strong></p>
+      <ol class="list-decimal list-inside space-y-1.5">
+        <li>নতুন ট্যাবে যান: <a href="https://developers.facebook.com/tools/lead-ads-testing" target="_blank" class="text-indigo-400 underline">developers.facebook.com/tools/lead-ads-testing</a></li>
+        <li><strong class="text-white">Page</strong> ড্রপডাউনে আপনার Page বেছে নিন → নিচে <strong class="text-white">Form</strong> বেছে নিন।</li>
+        <li><strong class="text-white">Create lead</strong> চাপুন (প্রিভিউ এলে তথ্য রেখে <strong class="text-white">Submit</strong> করুন)।</li>
+        <li>CRM-এর <strong class="text-white">Leads</strong> পেজে যান → <strong class="text-white">১ মিনিটের মধ্যে</strong> নতুন লিড সবার ওপরে <strong class="text-white">NEW</strong> হিসেবে আসবে ✅ (নাম "Meta Test Lead" জাতীয় দেখাতে পারে — স্বাভাবিক)।</li>
+        <li>টেস্ট শেষে ওই টুলেই আগের টেস্ট লিডটা <strong class="text-white">Delete lead</strong> করে মুছে দিন — নাহলে পরেরবার একই ফর্মে আবার টেস্ট করা যাবে না।</li>
+      </ol>
+      <p><strong class="text-white">পদ্ধতি B — CRM-এর নিজের টেস্ট (সহজ):</strong> Settings → Meta-তে <strong class="text-white">"Simulate Meta Lead (Test Without Real Ads)"</strong> প্যানেলে <strong class="text-white">Simulate Lead Now</strong> চাপুন → Leads পেজে নমুনা লিড আসবে। এটা শুধু CRM-এর ভেতরের পরীক্ষা; Facebook থেকে সত্যিই লিড আসবে কিনা তার প্রমাণ শুধু পদ্ধতি A।</p>
     </div>
   </div>
 
-  <script>
-    function copyActualUrl(elementId) {
-      const input = document.getElementById(elementId);
-      if (!input) return;
-      input.select();
-      navigator.clipboard.writeText(input.value);
-      alert('সফলভাবে কপি হয়েছে: ' + input.value);
-    }
+  <!-- Step 11 -->
+  <div class="glass-card rounded-2xl p-6 border-slate-800 space-y-3">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-xl step-number flex items-center justify-center text-white font-black text-sm shrink-0">১১</div>
+      <h2 class="text-base font-bold text-white">আসল লিড এলে যা হবে + Page বদলানো</h2>
+    </div>
+    <ul class="text-xs text-slate-300 list-disc list-inside space-y-1.5 pl-11">
+      <li>কেউ Facebook বিজ্ঞাপনের ফর্ম পূরণ করলেই লিড <strong class="text-white">কয়েক সেকেন্ডের মধ্যে</strong> CRM-এর Leads পেজে <strong class="text-white">NEW</strong> হিসেবে চলে আসবে — কিছুই করতে হবে না।</li>
+      <li>সেট করা নিয়ম অনুযায়ী লিড <strong class="text-white">নিজে থেকেই</strong> টিমের একজনের কাছে assign হয়ে যাবে।</li>
+      <li>লিড খুললেই (Lead Details) ফর্মের সব উত্তর দেখা যাবে।</li>
+      <li><strong class="text-white">Page বদলাতে হলে:</strong> Settings → Meta → <strong class="text-white">Disconnect</strong> → ধাপ ৯ আবার করুন (নতুন Page বেছে) → ধাপ ১০ দিয়ে আবার টেস্ট করুন।</li>
+    </ul>
+  </div>
 
-    function switchLanguage(lang) {
-      const bnContent = document.getElementById('content-bn');
-      const enContent = document.getElementById('content-en');
-      const bnBtn = document.getElementById('btn-lang-bn');
-      const enBtn = document.getElementById('btn-lang-en');
+  <!-- Troubleshooting -->
+  <div class="glass-card rounded-2xl p-6 border-slate-800 space-y-3">
+    <h2 class="text-base font-bold text-white">সমস্যা হলে — সহজ সমাধান</h2>
+    <div class="overflow-x-auto">
+      <table class="guide-table">
+        <thead>
+          <tr><th style="width:32%">যা দেখছেন</th><th>কারণ ও সমাধান</th></tr>
+        </thead>
+        <tbody class="text-slate-300">
+          <tr>
+            <td><strong class="text-white">"Invalid Scopes"</strong> এরর</td>
+            <td>অ্যাপ ভুলভাবে তৈরি হয়েছে (শুধু Facebook Login দিয়ে)। ধাপ ১ অনুযায়ী <strong class="text-white">Other → Business</strong> দিয়ে অ্যাপ হতে হবে — আমাদের জানান।</td>
+          </tr>
+          <tr>
+            <td>Connect চাপলে <strong class="text-white">"Add your Facebook App ID and App Secret first"</strong></td>
+            <td>আগে ধাপ ৭ করুন — credentials সেভ করা হয়নি।</td>
+          </tr>
+          <tr>
+            <td>Connect সফল, কিন্তু <strong class="text-white">টেস্ট লিড আসছে না</strong></td>
+            <td>একে একে দেখুন: (ক) অ্যাপ <strong class="text-white">Publish</strong> হয়েছে তো? (ধাপ ৮) (খ) <strong class="text-white">ঠিক Page</strong>-টা বেছেছিলেন তো? (গ) Webhooks-এ <strong class="text-white">leadgen Subscribe</strong> আছে তো? (ধাপ ৫) — তারপর <strong class="text-white">Disconnect</strong> করে আবার <strong class="text-white">Connect</strong> করুন (ধাপ ৯) আর আবার টেস্ট করুন (ধাপ ১০)।</td>
+          </tr>
+          <tr>
+            <td>লিড আসছে কিন্তু <strong class="text-white">নাম "Unknown"</strong></td>
+            <td>Facebook ফর্মের প্রশ্নের নাম স্ট্যান্ডার্ডভাবে দেওয়া হয়নি। সব উত্তর Lead Details-এর <strong class="text-white">"Custom Lead Form Answers"</strong>-এ পাবেন। আমাদের জানালে মূল ঘরেও সাজিয়ে দেওয়া যাবে।</td>
+          </tr>
+          <tr>
+            <td><strong class="text-white">অন্যের অ্যাকাউন্ট</strong> দিয়ে Connect হচ্ছে না</td>
+            <td>শুধু <strong class="text-white">Page-এর Admin</strong> অ্যাকাউন্ট দিয়েই হবে, আর CRM-এ <strong class="text-white">Admin</strong> লগইন লাগবে।</td>
+          </tr>
+          <tr>
+            <td>কানেকশন <strong class="text-white">হঠাৎ ভেঙে গেছে</strong> মনে হচ্ছে</td>
+            <td>Page-এর Admin বদলালে বা Facebook পাসওয়ার্ড বদলালে এমন হতে পারে। <strong class="text-white">Disconnect</strong> করে আবার <strong class="text-white">Connect</strong> করুন।</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-      if (lang === 'bn') {
-        bnContent.classList.remove('hidden');
-        enContent.classList.add('hidden');
-        bnBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white transition-all';
-        enBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition-all';
-      } else {
-        enContent.classList.remove('hidden');
-        bnContent.classList.add('hidden');
-        enBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white transition-all';
-        bnBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition-all';
-      }
-    }
+  <!-- Final notes -->
+  <div class="glass-card rounded-2xl p-6 border-indigo-500/30 space-y-2">
+    <h2 class="text-base font-bold text-white">শেষ কথা — মনে রাখুন ৩টা জিনিস</h2>
+    <ol class="list-decimal list-inside space-y-1.5 text-xs text-slate-300">
+      <li>🔒 <strong class="text-white">App Secret / Verify Token</strong> কাউকে দেবেন না।</li>
+      <li>👀 মাঝে মাঝে <strong class="text-white">Settings → Meta</strong> কার্ডে সবুজ <strong class="text-emerald-300">LIVE</strong> ব্যাজটা দেখে নিন — থাকলেই সংযোগ ঠিক আছে।</li>
+      <li>🧪 Page বা ফর্ম বদলালেই <strong class="text-white">ধাপ ১০-এর টেস্ট</strong> আবার করুন — টেস্ট লিড এলেই নিশ্চিত।</li>
+    </ol>
+  </div>
 
-    // Set callback URL to ACTUAL CURRENT HOST
-    document.addEventListener('DOMContentLoaded', () => {
-      const currentOrigin = window.location.origin || 'http://127.0.0.1:5000';
-      const actualWebhookUrl = currentOrigin + '/api/webhooks/meta';
-      const urlInput = document.getElementById('guide-cb-url-bn');
-      if (urlInput) {
-        urlInput.value = actualWebhookUrl;
-      }
-    });
-  </script>
 </body>
 </html>
