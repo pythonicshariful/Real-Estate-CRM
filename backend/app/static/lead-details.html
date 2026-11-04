@@ -878,7 +878,7 @@
             location: document.getElementById('le-location').value.trim() || null,
             status: document.getElementById('le-status').value,
             priority: document.getElementById('le-priority').value,
-            start_datetime: new Date(start).toISOString()
+            start_datetime: start
           })
         });
         if (!res.ok) {

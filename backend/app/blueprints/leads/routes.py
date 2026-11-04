@@ -2417,6 +2417,46 @@ def import_leads():
                     return str(v).strip() if v is not None else ""
         return ""
 
+    # Name/phone/email are core profile fields (stored on the Contact and
+    # rendered from there), so they are excluded from questionnaire_answers.
+    # Profession/service_type/budget are likewise excluded under their raw
+    # header names: they are already stored (and rendered) under the
+    # canonical keys below, so a raw 'Profession' key would render the
+    # same value twice in the profile. Every OTHER non-empty column in
+    # the row is a form question the client expects to see in the lead
+    # profile's "Custom Lead Form Answers" — the same convention the Meta
+    # webhook path uses (app/tasks.py stores all non-core field_data into
+    # questionnaire_answers).
+    _CORE_IMPORT_KEYS = {
+        a.strip().lower() for a in (
+            'Full Name', 'Name', 'Customer Name', 'full_name',
+            'Phone Number', 'Phone', 'Mobile', 'Contact Number',
+            'phone', 'phone_raw', 'phone_number',
+            'Email', 'Email Address', 'email',
+            'Profession', 'Occupation', 'Job', 'profession',
+            'Service Type', 'Service', 'Property Type', 'service_type',
+            'Budget Range', 'Budget', 'budget',
+        )
+    }
+
+    def extra_answers(row):
+        out = {}
+        for k, v in row.items():
+            if not isinstance(k, str):
+                continue
+            key = k.strip()
+            if not key or key.lower() in _CORE_IMPORT_KEYS:
+                continue
+            val = str(v).strip() if v is not None else ""
+            if val:
+                out[key] = val
+        return out
+
+    def build_questionnaire_answers(row):
+        qa = {"profession": profession, "service_type": service_type, "budget": budget_str}
+        qa.update(extra_answers(row))
+        return qa
+
     total = len(rows)
     imported = 0
     duplicates_merged = 0
@@ -2512,7 +2552,7 @@ def import_leads():
                             assigned_date=datetime.now(timezone.utc) if assigned_id else None,
                             pipeline_stage=PipelineStage.NEW,
                             service_type=service_type,
-                            questionnaire_answers={"profession": profession, "service_type": service_type, "budget": budget_str}
+                            questionnaire_answers=build_questionnaire_answers(row)
                         )
                         db.session.add(new_opp)
                         if notes:
@@ -2556,7 +2596,7 @@ def import_leads():
                     assigned_date=datetime.now(timezone.utc) if assigned_id else None,
                     pipeline_stage=PipelineStage.NEW,
                     service_type=service_type,
-                    questionnaire_answers={"profession": profession, "service_type": service_type, "budget": budget_str}
+                    questionnaire_answers=build_questionnaire_answers(row)
                 )
                 db.session.add(opp)
                 if notes:

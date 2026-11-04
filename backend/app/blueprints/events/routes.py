@@ -161,7 +161,9 @@ def list_events():
                 "title": f"\U0001f514 Reminder: {ev.title}",
                 "description": (
                     f"Reminder for event '{ev.title}' — starts "
-                    f"{ev.start_datetime.strftime('%d %b %Y, %I:%M %p')}."
+                    # ev.start_datetime is naive UTC; render the start in
+                    # Asia/Dhaka wall time like the rest of the feed.
+                    f"{datetime.fromisoformat(dhaka_iso(ev.start_datetime)).strftime('%d %b %Y, %I:%M %p')}."
                     + (f" Lead: {d.get('lead_name')}." if d.get("lead_name") else "")
                 ),
                 "event_type": "EVENT_REMINDER",

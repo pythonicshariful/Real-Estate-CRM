@@ -739,7 +739,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({
                     title,
-                    start_datetime: new Date(dt).toISOString(),
+                    start_datetime: dt,
                     event_type: document.getElementById('set-event-type').value,
                     location: document.getElementById('set-event-location').value.trim() || null,
                     status: document.getElementById('set-event-status').value,
@@ -773,7 +773,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const dt = document.getElementById('appt-datetime').value;
         const loc = document.getElementById('appt-location').value;
         if (window.requireDateTime && !window.requireDateTime(document.getElementById('appt-datetime'))) return;
-        const startIso = new Date(dt).toISOString();
         
         saveBtn.disabled = true;
         saveBtn.innerHTML = 'Scheduling...';
@@ -783,7 +782,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch(`/api/leads/${currentLeadId}/appointment`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ appointment_datetime: startIso, location: loc })
+                body: JSON.stringify({ appointment_datetime: dt, location: loc })
             });
             if (!res.ok) throw new Error("Failed to book appointment");
             if (window.showToast) window.showToast("Appointment Booked!", "success");

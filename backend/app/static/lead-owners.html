@@ -47,7 +47,7 @@
               <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               Auto-Assignment Schedule Management (Meta Leads)
             </div>
-            <div class="text-xs text-slate-400 mt-0.5">Configure active date &amp; time windows for Lead Owners. Incoming Meta leads during a configured schedule route exclusively to that Lead Owner. Otherwise, leads divide equally (round-robin).</div>
+            <div class="text-xs text-slate-400 mt-0.5">Configure active date &amp; time windows for Lead Owners. Incoming leads during a configured window route only to the Lead Owner(s) currently in window. When nobody is in a window, leads follow the assignment rule set in Settings (lowest lead count, or round-robin).</div>
           </div>
         </div>
 
@@ -243,6 +243,45 @@
 
     let owners = [];
 
+    // Live schedule-window status, mirroring the backend auto-assignment
+    // rules (assign_lead_owner_auto in app/tasks.py): schedule dates and
+    // times are Asia/Dhaka wall clock; a window whose start is after its
+    // end wraps past midnight (overnight).
+    function scheduleWindowStatus(owner) {
+      const hasSchedule = owner.schedule_from_date || owner.schedule_to_date || owner.schedule_start_time || owner.schedule_end_time;
+      if (!hasSchedule) {
+        return { label: 'No schedule', bg: 'rgba(100,116,139,.15)', fg: '#94a3b8', bd: 'rgba(100,116,139,.35)' };
+      }
+      const nowDhaka = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Dhaka' }));
+      const pad = n => String(n).padStart(2, '0');
+      const today = `${nowDhaka.getFullYear()}-${pad(nowDhaka.getMonth() + 1)}-${pad(nowDhaka.getDate())}`;
+      if (owner.schedule_to_date && owner.schedule_to_date < today) {
+        return { label: 'Schedule expired', bg: 'rgba(239,68,68,.15)', fg: '#f87171', bd: 'rgba(239,68,68,.4)' };
+      }
+      let dateOk = true;
+      if (owner.schedule_from_date && today < owner.schedule_from_date) dateOk = false;
+      const cur = nowDhaka.getHours() * 60 + nowDhaka.getMinutes();
+      const toMin = t => { const p = String(t).split(':'); return Number(p[0]) * 60 + Number(p[1] || 0); };
+      let timeOk = true;
+      const s = owner.schedule_start_time, e = owner.schedule_end_time;
+      if (s && e) {
+        const sm = toMin(s), em = toMin(e);
+        timeOk = sm <= em ? (cur >= sm && cur <= em) : (cur >= sm || cur <= em);
+      } else if (s) {
+        timeOk = cur >= toMin(s);
+      } else if (e) {
+        timeOk = cur <= toMin(e);
+      }
+      return (dateOk && timeOk)
+        ? { label: 'In window now', bg: 'rgba(34,197,94,.15)', fg: '#4ade80', bd: 'rgba(34,197,94,.4)' }
+        : { label: 'Out of window', bg: 'rgba(100,116,139,.15)', fg: '#94a3b8', bd: 'rgba(100,116,139,.35)' };
+    }
+
+    function windowBadgeHtml(owner) {
+      const w = scheduleWindowStatus(owner);
+      return `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:${w.bg};color:${w.fg};border:1px solid ${w.bd}">${w.label}</span>`;
+    }
+
     async function loadOwners() {
       try {
         owners = await fetchAPI('/api/team/lead-owners');
@@ -270,9 +309,9 @@
         const color = owner.calendar_color || '#6366f1';
         const isActive = owner.is_active;
         const hasSchedule = owner.schedule_from_date || owner.schedule_to_date || owner.schedule_start_time || owner.schedule_end_time;
-        const scheduleBadgeText = hasSchedule ? 
+        const scheduleBadgeText = hasSchedule ?
           `Scheduled: ${owner.schedule_from_date || 'Any'} to ${owner.schedule_to_date || 'Any'} (${owner.schedule_start_time || '00:00'} - ${owner.schedule_end_time || '23:59'})` :
-          'Equal Round-Robin';
+          'No schedule set';
 
         return `
           <div class="glass-dark border rounded-2xl p-5 flex flex-col gap-3.5 hover:border-opacity-80 transition-all" style="border-color: ${color}40">
@@ -293,6 +332,7 @@
             <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 text-xs text-slate-300">
               <svg class="w-3.5 h-3.5 ${hasSchedule ? 'text-indigo-400' : 'text-slate-500'} flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               <span class="truncate text-[11px]">${scheduleBadgeText}</span>
+              ${hasSchedule ? `<span class="flex-shrink-0 ml-auto">${windowBadgeHtml(owner)}</span>` : ''}
             </div>
 
             <div class="flex gap-2 flex-wrap pt-1">
@@ -329,9 +369,11 @@
             <td class="py-3 px-4 font-mono text-slate-300">${owner.schedule_start_time || '<span class="text-slate-600">--</span>'}</td>
             <td class="py-3 px-4 font-mono text-slate-300">${owner.schedule_end_time || '<span class="text-slate-600">--</span>'}</td>
             <td class="py-3 px-4 text-center">
-              ${hasSchedule ? 
-                `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">Scheduled</span>` : 
-                `<span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-800 text-slate-400">Equal Round-Robin</span>`}
+              <div class="flex flex-col items-center gap-1">
+                ${hasSchedule ?
+                  `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">Scheduled</span>` : ''}
+                ${windowBadgeHtml(owner)}
+              </div>
             </td>
             <td class="py-3 px-4 text-right">
               <button onclick="openScheduleModal(${owner.id})" class="px-3 py-1 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 text-xs font-semibold">
