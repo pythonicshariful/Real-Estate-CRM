@@ -288,22 +288,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Attach to existing 'Log Activity' buttons in leads.html (Hack for static HTML showcase)
-    // In a dynamic app, these buttons would call showCallModal(lead.id) when rendering the list
-    setTimeout(() => {
-        // Simple manual attach for the hardcoded leads in leads.html
-        const leadCards = document.querySelectorAll('.chart-card');
-        leadCards.forEach((card, index) => {
-            const buttons = card.querySelectorAll('button');
-            buttons.forEach(btn => {
-                if(btn.textContent.includes('Log Activity') || btn.textContent.includes('Call Now')) {
-                    btn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        // Mock ID 1, 2, 3 based on index
-                        showCallModal(index + 1);
-                    });
-                }
-            });
-        });
-    }, 1000);
+    // NOTE (deploy 32, 2026-11-05): a leftover "static HTML showcase" hack
+    // used to live here — 1s after page load it attached an extra click
+    // handler to every 'Log Activity'/'Call Now' button inside .chart-card
+    // elements and opened this modal with a MOCK lead id (card index + 1).
+    // Because it was attached after leads.js's real handlers, its id won:
+    // the Log Call form then posted to /api/leads/<index+1>/calls — usually
+    // another owner's lead — so Lead Owners got "Access denied" on save
+    // (and could silently log calls on the wrong lead when the mock id was
+    // claimable). Removed: leads.js calls showCallModal(lead.id) with the
+    // real id, which is the only writer of #call-lead-id now.
 });
