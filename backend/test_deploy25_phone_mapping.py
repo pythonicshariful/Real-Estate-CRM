@@ -138,6 +138,38 @@ with app.app_context():
     check('idempotent (phone unchanged, not re-filled)',
           bc3.phone_normalized == '+8801788888888')
 
+    print('== backfill duplicate handling ==')
+    holder = Contact(full_name='Deploy25 Holder', email='holder@deploy25.test',
+                     phone_raw='01799999999', phone_normalized='+8801799999999',
+                     source='Meta Lead Ads', facebook_lead_id='D25_BF_3')
+    db.session.add(holder)
+    dup = Contact(full_name='Deploy25 Dup', email='dup@deploy25.test',
+                  phone_raw='', phone_normalized=None, source='Meta Lead Ads',
+                  facebook_lead_id='D25_BF_4')
+    db.session.add(dup)
+    db.session.flush()
+    do = Opportunity(contact_id=dup.id, pipeline_stage='NEW',
+                     questionnaire_answers={'whatsapp_number': '+8801799999999'})
+    db.session.add(do)
+    multi = Contact(full_name='Deploy25 Multi', email='multi@deploy25.test',
+                    phone_raw='', phone_normalized=None, source='Meta Lead Ads',
+                    facebook_lead_id='D25_BF_5')
+    db.session.add(multi)
+    db.session.flush()
+    mo = Opportunity(contact_id=multi.id, pipeline_stage='NEW',
+                     questionnaire_answers={'work_phone_number': '+8801799999999',
+                                            'whatsapp_number': '01766666666'})
+    db.session.add(mo)
+    db.session.commit()
+
+    result3 = backfill_contact_phones(app)
+    dup2 = Contact.query.filter_by(email='dup@deploy25.test').first()
+    check('duplicate-only contact left phoneless', not dup2.phone_normalized and not dup2.phone_raw)
+    check('duplicate counted as skipped', result3['skipped_duplicate'] >= 1)
+    multi2 = Contact.query.filter_by(email='multi@deploy25.test').first()
+    check('second candidate used when first is a duplicate',
+          multi2.phone_normalized == '+8801766666666')
+
     cleanup()
     print(f'\n{passed} passed, {failed} failed')
     sys.exit(1 if failed else 0)

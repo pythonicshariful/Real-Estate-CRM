@@ -372,15 +372,8 @@ _PHONE_EXACT_KEYS = ('phone_number', 'phone')
 _PHONE_KEY_HINTS = ('phone', 'whatsapp', 'mobile', 'cell', 'telephone', 'contact', 'ফোন')
 
 
-def extract_phone_from_answers(answers):
-    """Best phone from a Meta field_data / questionnaire dict.
-
-    Returns (raw, normalized_e164), or ('', None) when nothing in the
-    dict normalises to a valid phone number.
-    """
-    from app.utils.phone import normalize_phone
-    if not answers:
-        return '', None
+def _ordered_phone_keys(answers):
+    """Phone-ish keys of a field_data/questionnaire dict, best first."""
     ordered = [k for k in _PHONE_EXACT_KEYS if answers.get(k)]
     hinted = []
     for key in answers:
@@ -391,14 +384,35 @@ def extract_phone_from_answers(answers):
             hinted.append(key)
     # Prefer explicit phone-like keys over whatsapp/mobile variants.
     hinted.sort(key=lambda k: 0 if ('phone' in str(k).lower() or 'ফোন' in str(k)) else 1)
-    for key in ordered + hinted:
+    return ordered + hinted
+
+
+def _phone_candidates(answers):
+    """All valid (raw, normalized) phone candidates in the dict, best first."""
+    from app.utils.phone import normalize_phone
+    if not answers:
+        return []
+    out = []
+    seen = set()
+    for key in _ordered_phone_keys(answers):
         raw = str(answers[key]).strip()
         if not raw:
             continue
         norm = normalize_phone(raw)
-        if norm:
-            return raw, norm
-    return '', None
+        if norm and norm not in seen:
+            seen.add(norm)
+            out.append((raw, norm))
+    return out
+
+
+def extract_phone_from_answers(answers):
+    """Best phone from a Meta field_data / questionnaire dict.
+
+    Returns (raw, normalized_e164), or ('', None) when nothing in the
+    dict normalises to a valid phone number.
+    """
+    candidates = _phone_candidates(answers)
+    return candidates[0] if candidates else ('', None)
 
 
 def process_meta_webhook(payload_dict: dict, app=None):
@@ -605,33 +619,59 @@ def backfill_contact_phones(app=None):
     while the number sat in Opportunity.questionnaire_answers. For every
     contact that still has no phone at all, scan its opportunities'
     answers and fill phone_raw/phone_normalized from the first valid
-    number found. Idempotent.
+    number found. A candidate number that another contact already owns
+    (contacts.phone_normalized is unique) is skipped — the contact's next
+    candidate is tried instead — and counted as a skipped duplicate.
+    Idempotent.
 
-    Returns {'scanned': n, 'filled': n, 'still_missing': n}.
+    Returns {'scanned': n, 'filled': n, 'skipped_duplicate': n,
+    'still_missing': n}.
     """
     app = _get_app(app)
     with app.app_context():
         from app.extensions import db
         from app.models import Contact, Opportunity
+        from sqlalchemy.exc import IntegrityError
         phoneless = Contact.query.filter(
             db.or_(Contact.phone_raw.is_(None), Contact.phone_raw == ''),
             db.or_(Contact.phone_normalized.is_(None), Contact.phone_normalized == ''),
         ).all()
         filled = 0
+        skipped_duplicate = 0
         for contact in phoneless:
             opps = (Opportunity.query
                     .filter_by(contact_id=contact.id, is_deleted=False)
                     .order_by(Opportunity.id).all())
+            candidates = []
             for opp in opps:
-                raw, norm = extract_phone_from_answers(opp.questionnaire_answers or {})
-                if norm:
-                    contact.phone_raw = raw
-                    contact.phone_normalized = norm
-                    filled += 1
+                candidates.extend(_phone_candidates(opp.questionnaire_answers or {}))
+            assigned = False
+            saw_duplicate = False
+            for raw, norm in candidates:
+                holder = Contact.query.filter_by(phone_normalized=norm).first()
+                if holder is not None and holder.id != contact.id:
+                    saw_duplicate = True
+                    continue
+                try:
+                    with db.session.begin_nested():
+                        contact.phone_raw = raw
+                        contact.phone_normalized = norm
+                        db.session.flush()
+                    assigned = True
                     break
+                except IntegrityError:
+                    saw_duplicate = True
+                    contact.phone_raw = ''
+                    contact.phone_normalized = None
+                    continue
+            if assigned:
+                filled += 1
+            elif saw_duplicate:
+                skipped_duplicate += 1
         db.session.commit()
         return {'scanned': len(phoneless), 'filled': filled,
-                'still_missing': len(phoneless) - filled}
+                'skipped_duplicate': skipped_duplicate,
+                'still_missing': len(phoneless) - filled - skipped_duplicate}
 
 
 # ---------------------------------------------------------------------------
