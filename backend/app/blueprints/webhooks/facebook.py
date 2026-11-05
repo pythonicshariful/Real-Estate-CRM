@@ -396,12 +396,35 @@ def facebook_sync_forms():
                     'forms': json.loads(_get('forms') or '[]')}), 200
 
 
+@webhooks_bp.route('/facebook/poll-now', methods=['POST'])
+@jwt_required()
+@require_role(UserRole.ADMIN)
+def facebook_poll_now():
+    """Manually run one Meta lead poll (the scheduler also runs it every
+    5 minutes). Useful right after connecting, to pull in leads that
+    arrived before realtime webhook delivery was available."""
+    if not (_get('page_id') and _get('page_token')):
+        return jsonify({'success': False, 'message': 'Facebook Page is not connected yet.'}), 400
+    if _get('mode') == 'demo':
+        return jsonify({'success': True, 'message': 'Demo connection — nothing to poll.',
+                        'summary': {'forms_checked': 0, 'new_leads': 0, 'skipped_existing': 0}}), 200
+    from ...tasks import poll_facebook_leads
+    from flask import current_app
+    summary = poll_facebook_leads(app=current_app._get_current_object())
+    return jsonify({'success': True,
+                    'message': f"Poll complete: {summary['new_leads']} new lead(s) pulled in.",
+                    'summary': summary}), 200
+
+
 @webhooks_bp.route('/facebook/disconnect', methods=['POST'])
 @jwt_required()
 @require_role(UserRole.ADMIN)
 def facebook_disconnect():
     for k in ('page_token', 'page_id', 'page_name', 'connected_at', 'mode', 'forms', 'last_sync'):
         _set(k, '')
+    # Poll watermarks belong to the old connection — a future Page must
+    # start with a clean catch-up, not skip leads older than them.
+    SystemSetting.set('facebook_poll_state_json', '')
     return jsonify({'success': True, 'message': 'Facebook disconnected.'}), 200
 
 

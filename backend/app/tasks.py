@@ -554,6 +554,125 @@ def process_meta_webhook(payload_dict: dict, app=None):
 
 
 # ---------------------------------------------------------------------------
+# Meta Lead Polling — Graph API fallback while webhook delivery is gated
+# ---------------------------------------------------------------------------
+
+def poll_facebook_leads(app=None):
+    """
+    Pull new Meta Lead Ads leads through the Graph API and feed each one
+    through the exact webhook ingestion path (process_meta_webhook).
+
+    This is the fallback for as long as Meta withholds realtime leadgen
+    webhook delivery from the connected app (leads_retrieval Advanced
+    Access / App Review pending). Reading leads with the stored Page
+    token works at Standard Access, so polling keeps the CRM fed with a
+    few minutes' delay instead of losing leads entirely.
+
+    Incremental: a per-form watermark (the newest lead created_time fed
+    so far) is kept in the `facebook_poll_state_json` SystemSetting, so
+    each run only fetches leads newer than the watermark. Leads already
+    ingested by a real webhook (Contact.facebook_lead_id) are skipped.
+    The first run has no watermark and therefore performs the catch-up
+    pull of every retrievable lead (Graph keeps leads for ~90 days).
+
+    Returns a summary dict: {forms_checked, new_leads, skipped_existing}.
+    """
+    import json
+    import requests
+
+    app = _get_app(app)
+    summary = {'forms_checked': 0, 'new_leads': 0, 'skipped_existing': 0}
+    with app.app_context():
+        from app.models import SystemSetting, Contact
+
+        token = SystemSetting.get('facebook_page_access_token')
+        page_id = SystemSetting.get('facebook_page_id')
+        mode = SystemSetting.get('facebook_connection_mode')
+        if not token or not page_id or mode != 'live':
+            return summary
+
+        try:
+            forms = json.loads(SystemSetting.get('facebook_lead_forms_json') or '[]')
+        except (ValueError, TypeError):
+            forms = []
+        try:
+            state = json.loads(SystemSetting.get('facebook_poll_state_json') or '{}')
+        except (ValueError, TypeError):
+            state = {}
+
+        for form in forms:
+            form_id = form.get('id')
+            if not form_id:
+                continue
+            summary['forms_checked'] += 1
+            watermark = state.get(form_id)
+            try:
+                fresh = []  # leads newer than the watermark, newest first
+                url = f'https://graph.facebook.com/v19.0/{form_id}/leads'
+                params = {'access_token': token, 'fields': 'id,created_time', 'limit': 100}
+                for _page in range(10):  # catch-up cap: 1,000 leads per form per run
+                    resp = requests.get(url, params=params, timeout=20)
+                    data = resp.json()
+                    if 'error' in data:
+                        logger.error(
+                            f"FB lead poll: Graph error for form {form_id}: "
+                            f"{data['error'].get('message', 'unknown error')}"
+                        )
+                        fresh = []
+                        break
+                    reached_watermark = False
+                    for lead in data.get('data', []):
+                        created = lead.get('created_time') or ''
+                        if watermark and created and created <= watermark:
+                            reached_watermark = True
+                            break
+                        if Contact.query.filter_by(facebook_lead_id=lead.get('id')).first():
+                            summary['skipped_existing'] += 1
+                            continue
+                        fresh.append(lead)
+                    if reached_watermark:
+                        break
+                    url = (data.get('paging') or {}).get('next')
+                    params = None  # paging.next is a self-contained URL
+                    if not url:
+                        break
+
+                # Feed oldest first so CRM ordering and SLA chains make sense.
+                for lead in reversed(fresh):
+                    payload = {
+                        'object': 'page',
+                        'entry': [{
+                            'id': page_id,
+                            'time': int(datetime.now(timezone.utc).timestamp()),
+                            'changes': [{
+                                'field': 'leadgen',
+                                'value': {
+                                    'leadgen_id': lead.get('id'),
+                                    'form_id': form_id,
+                                    'page_id': page_id,
+                                    'created_time': lead.get('created_time'),
+                                },
+                            }],
+                        }],
+                    }
+                    process_meta_webhook(payload, app=app)
+                    summary['new_leads'] += 1
+
+                if fresh:
+                    state[form_id] = max((l.get('created_time') or '') for l in fresh)
+            except Exception as e:  # one bad form must not stop the others
+                logger.error(f'FB lead poll: form {form_id} failed: {e}')
+
+        SystemSetting.set('facebook_poll_state_json', json.dumps(state))
+        logger.info(
+            f"FB lead poll: {summary['new_leads']} new lead(s) ingested, "
+            f"{summary['skipped_existing']} already present, "
+            f"{summary['forms_checked']} form(s) checked"
+        )
+        return summary
+
+
+# ---------------------------------------------------------------------------
 # Call Recording — Local Filesystem Secure Links
 # ---------------------------------------------------------------------------
 

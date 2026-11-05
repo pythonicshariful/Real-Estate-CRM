@@ -282,7 +282,7 @@ def _auto_migrate_db(app):
 
 def _configure_scheduler(app):
     """Configure and start APScheduler with SQLAlchemy jobstore."""
-    from app.tasks import check_sla_compliance, send_daily_summary, check_appointment_reminders, check_event_reminders, retry_failed_webhooks, auto_update_scheduled_lead_statuses
+    from app.tasks import check_sla_compliance, send_daily_summary, check_appointment_reminders, check_event_reminders, retry_failed_webhooks, auto_update_scheduled_lead_statuses, poll_facebook_leads
     from filelock import FileLock, Timeout
 
     scheduler.app = app
@@ -349,6 +349,16 @@ def _configure_scheduler(app):
         trigger='interval',
         minutes=5,
         id='scheduled_lead_status_updates',
+        replace_existing=True
+    )
+
+    # Meta lead polling — Graph API fallback while webhook delivery is
+    # gated by Meta App Review; a no-op unless a Page is connected live.
+    scheduler.add_job(
+        func=poll_facebook_leads,
+        trigger='interval',
+        minutes=5,
+        id='facebook_lead_polling',
         replace_existing=True
     )
 
