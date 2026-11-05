@@ -1763,3 +1763,38 @@ class LeadQuestionnaireQuestion(db.Model):
             db.session.commit()
 
 
+
+
+def claim_lead_if_unclaimed(lead, user_id):
+    """Self-claim check for non-admin lead access (deploy 28, 2026-11-05).
+
+    Returns True when `user_id` may work on `lead`:
+    - the lead is already assigned to them, or
+    - the lead is unassigned, or held by an ADMIN account (a supervisor
+      bucket, not a salesperson — leads land there when an admin imports
+      while the auto-assign pool is exhausted) — in which case it is
+      claimed: assigned to the caller with the same fields a manual
+      reassignment sets (assigned_by_id, assigned_date), and committed.
+
+    Returns False when another non-admin user owns the lead — the caller
+    must not touch it. Before this, a Lead Owner opening an unassigned
+    lead from the Clients page (which lists every contact) got
+    'Access denied' on Log Call / Add Event for ~1,450 unassigned and
+    admin-held leads, even though working them was their job.
+    """
+    if lead is None or user_id is None:
+        return False
+    if lead.assigned_to_id == user_id:
+        return True
+    if lead.assigned_to_id is not None:
+        owner = User.query.get(lead.assigned_to_id)
+        if owner is not None:
+            role = owner.role
+            role_val = role.value if hasattr(role, 'value') else role
+            if str(role_val) != 'ADMIN':
+                return False
+    lead.assigned_to_id = user_id
+    lead.assigned_by_id = user_id
+    lead.assigned_date = datetime.now(timezone.utc)
+    db.session.commit()
+    return True

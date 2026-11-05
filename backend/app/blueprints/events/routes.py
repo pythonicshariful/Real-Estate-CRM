@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 
 from . import events_bp
 from ...extensions import db
-from ...models import Event, User, Appointment, Task, Contact, Opportunity, dhaka_iso, parse_input_datetime
+from ...models import Event, User, Appointment, Task, Contact, Opportunity, dhaka_iso, parse_input_datetime, claim_lead_if_unclaimed
 from ...utils.rbac import get_current_user_role, require_min_role
 
 # Fallback colour for a reminder entry when its owner has no calendar
@@ -333,7 +333,7 @@ def create_event():
             return jsonify({"error": f"Lead {lead_id} not found"}), 404
 
         user_role = get_current_user_role()
-        if user_role != "ADMIN" and lead.assigned_to_id != user_id:
+        if user_role != "ADMIN" and not claim_lead_if_unclaimed(lead, user_id):
             return jsonify({"error": "Access denied: you can only add events to your own leads"}), 403
 
     owner_id = (lead.assigned_to_id if lead and lead.assigned_to_id else user_id)
@@ -488,7 +488,7 @@ def list_lead_events(lead_id):
     lead = Opportunity.query.filter_by(id=lead_id, is_deleted=False).first()
     if not lead:
         return jsonify({"error": "Lead not found"}), 404
-    if user_role != "ADMIN" and lead.assigned_to_id != user_id:
+    if user_role != "ADMIN" and not claim_lead_if_unclaimed(lead, user_id):
         return jsonify({"error": "Access denied"}), 403
 
     events = (Event.query

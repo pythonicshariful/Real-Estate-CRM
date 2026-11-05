@@ -1,6 +1,6 @@
 from flask import request, jsonify, current_app
 from app.blueprints.leads import leads_bp
-from app.models import Opportunity, Contact, CallLog, Appointment, PipelineStage, AppointmentStatus, Objection, ObjectionCategory, Reservation, Note, PipelineHistory, db, UserRole, AuditLog, User, DurationBand, ActivityOutcome, ActivityType, Inquiry, Plot, PlotStatus, Installment, CancellationRequest, PaymentMethod, InstallmentStatus, CancellationStatus, CoachingLog, Event, utc_iso, get_temperature_options, clean_phone_str, FinalResult, parse_input_datetime
+from app.models import Opportunity, Contact, CallLog, Appointment, PipelineStage, AppointmentStatus, Objection, ObjectionCategory, Reservation, Note, PipelineHistory, db, UserRole, AuditLog, User, DurationBand, ActivityOutcome, ActivityType, Inquiry, Plot, PlotStatus, Installment, CancellationRequest, PaymentMethod, InstallmentStatus, CancellationStatus, CoachingLog, Event, utc_iso, get_temperature_options, clean_phone_str, FinalResult, parse_input_datetime, claim_lead_if_unclaimed
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from datetime import datetime, timezone, timedelta
 from decimal import Decimal
@@ -13,6 +13,21 @@ def _check_lead_access(lead, role, user_id):
     if is_admin(role):
         return True
     return lead.assigned_to_id == user_id
+
+
+def _ensure_lead_access(lead, role, user_id):
+    """Access check that self-claims unclaimed leads (deploy 28).
+
+    Like _check_lead_access, except a non-admin who reaches a lead that
+    is unassigned (or parked on an Admin account) claims it instead of
+    being denied — see claim_lead_if_unclaimed in app/models.py. Used by
+    the lead-detail reads and the everyday write actions (update, exit,
+    star, temperature, log call). Destructive actions (delete,
+    bulk-delete calls) keep the strict _check_lead_access.
+    """
+    if is_admin(role):
+        return True
+    return claim_lead_if_unclaimed(lead, user_id)
 
 @leads_bp.route('/', methods=['GET'])
 @jwt_required()
@@ -280,7 +295,7 @@ def get_lead(id):
     role = claims.get('role')
     user_id = int(get_jwt_identity())
     
-    if not _check_lead_access(lead, role, user_id):
+    if not _ensure_lead_access(lead, role, user_id):
         return jsonify({"error": "Access denied"}), 403
     
     return jsonify(lead.to_dict())
@@ -293,7 +308,7 @@ def get_lead_profile(id):
     role = claims.get('role')
     user_id = int(get_jwt_identity())
 
-    if not _check_lead_access(lead, role, user_id):
+    if not _ensure_lead_access(lead, role, user_id):
         return jsonify({"error": "Access denied"}), 403
 
     contact = Contact.query.get(lead.contact_id)
@@ -527,7 +542,7 @@ def update_lead(id):
     role = claims.get('role')
     user_id = int(get_jwt_identity())
     
-    if not _check_lead_access(lead, role, user_id):
+    if not _ensure_lead_access(lead, role, user_id):
         return jsonify({"error": "Access denied"}), 403
     
     data = request.json
@@ -677,7 +692,7 @@ def exit_lead(id):
     user_id = int(get_jwt_identity())
     claims = get_jwt()
     role = claims.get('role')
-    if not _check_lead_access(lead, role, user_id):
+    if not _ensure_lead_access(lead, role, user_id):
         return jsonify({"error": "Access denied"}), 403
 
     data = request.get_json() or {}
@@ -797,7 +812,7 @@ def toggle_star(id):
     role = claims.get('role')
     user_id = int(get_jwt_identity())
     
-    if not _check_lead_access(lead, role, user_id):
+    if not _ensure_lead_access(lead, role, user_id):
         return jsonify({"error": "Access denied"}), 403
     
     data = request.json
@@ -813,7 +828,7 @@ def update_temperature(id):
     role = claims.get('role')
     user_id = int(get_jwt_identity())
     
-    if not _check_lead_access(lead, role, user_id):
+    if not _ensure_lead_access(lead, role, user_id):
         return jsonify({"error": "Access denied"}), 403
     
     data = request.json or {}
@@ -873,7 +888,7 @@ def log_call(id):
     role = claims.get('role')
     user_id = int(get_jwt_identity())
     
-    if not _check_lead_access(lead, role, user_id):
+    if not _ensure_lead_access(lead, role, user_id):
         return jsonify({"error": "Access denied"}), 403
     
     from app.utils.security import sanitize_input
@@ -1120,7 +1135,7 @@ def get_call_log_status(log_id):
 def get_lead_appointments(id):
     lead = Opportunity.query.get_or_404(id)
     claims = get_jwt()
-    if not _check_lead_access(lead, claims.get('role'), int(get_jwt_identity())):
+    if not _ensure_lead_access(lead, claims.get('role'), int(get_jwt_identity())):
         return jsonify({"error": "Access denied"}), 403
     appointments = Appointment.query.filter_by(opportunity_id=id, is_deleted=False).order_by(Appointment.appointment_datetime.asc()).all()
     return jsonify([a.to_dict() for a in appointments]), 200
@@ -1134,7 +1149,7 @@ def book_appointment(id):
     role = claims.get('role')
     user_id = int(get_jwt_identity())
     
-    if not _check_lead_access(lead, role, user_id):
+    if not _ensure_lead_access(lead, role, user_id):
         return jsonify({"error": "Access denied"}), 403
     
     data = request.json or {}
@@ -1197,7 +1212,7 @@ def confirm_appointment(appt_id):
     lead = Opportunity.query.get_or_404(appt.opportunity_id)
     user_id = int(get_jwt_identity())
     claims = get_jwt()
-    if not _check_lead_access(lead, claims.get('role'), user_id):
+    if not _ensure_lead_access(lead, claims.get('role'), user_id):
         return jsonify({"error": "Access denied"}), 403
 
     appt.status = AppointmentStatus.CONFIRMED
@@ -1225,7 +1240,7 @@ def complete_appointment(appt_id):
     lead = Opportunity.query.get_or_404(appt.opportunity_id)
     user_id = int(get_jwt_identity())
     claims = get_jwt()
-    if not _check_lead_access(lead, claims.get('role'), user_id):
+    if not _ensure_lead_access(lead, claims.get('role'), user_id):
         return jsonify({"error": "Access denied"}), 403
 
     data = request.get_json() or {}
@@ -1260,7 +1275,7 @@ def noshow_appointment(appt_id):
     lead = Opportunity.query.get_or_404(appt.opportunity_id)
     user_id = int(get_jwt_identity())
     claims = get_jwt()
-    if not _check_lead_access(lead, claims.get('role'), user_id):
+    if not _ensure_lead_access(lead, claims.get('role'), user_id):
         return jsonify({"error": "Access denied"}), 403
 
     data = request.get_json() or {}
@@ -1279,7 +1294,7 @@ def reschedule_appointment(appt_id):
     lead = Opportunity.query.get_or_404(appt.opportunity_id)
     user_id = int(get_jwt_identity())
     claims = get_jwt()
-    if not _check_lead_access(lead, claims.get('role'), user_id):
+    if not _ensure_lead_access(lead, claims.get('role'), user_id):
         return jsonify({"error": "Access denied"}), 403
 
     data = request.get_json() or {}
@@ -1328,7 +1343,7 @@ def debrief_appointment(appt_id):
     lead = Opportunity.query.get_or_404(appt.opportunity_id)
     user_id = int(get_jwt_identity())
     claims = get_jwt()
-    if not _check_lead_access(lead, claims.get('role'), user_id):
+    if not _ensure_lead_access(lead, claims.get('role'), user_id):
         return jsonify({"error": "Access denied"}), 403
 
     data = request.get_json() or {}
@@ -1426,7 +1441,7 @@ def add_note(id):
     role = claims.get('role')
     user_id = int(get_jwt_identity())
     
-    if not _check_lead_access(lead, role, user_id):
+    if not _ensure_lead_access(lead, role, user_id):
         return jsonify({"error": "Access denied"}), 403
     
     data = request.json or {}
@@ -1559,7 +1574,7 @@ def get_all_reservations():
 def get_lead_reservations(id):
     lead = Opportunity.query.get_or_404(id)
     claims = get_jwt()
-    if not _check_lead_access(lead, claims.get('role'), int(get_jwt_identity())):
+    if not _ensure_lead_access(lead, claims.get('role'), int(get_jwt_identity())):
         return jsonify({"error": "Access denied"}), 403
     reservations = Reservation.query.filter_by(opportunity_id=id, is_deleted=False).all()
     return jsonify([r.to_dict() for r in reservations]), 200
@@ -1571,7 +1586,7 @@ def create_reservation(id):
     user_id = int(get_jwt_identity())
     claims = get_jwt()
     role = claims.get('role')
-    if not _check_lead_access(lead, role, user_id):
+    if not _ensure_lead_access(lead, role, user_id):
         return jsonify({"error": "Access denied"}), 403
 
     data = request.get_json() or {}
@@ -1640,7 +1655,7 @@ def create_reservation(id):
 def get_lead_objections(id):
     lead = Opportunity.query.get_or_404(id)
     claims = get_jwt()
-    if not _check_lead_access(lead, claims.get('role'), int(get_jwt_identity())):
+    if not _ensure_lead_access(lead, claims.get('role'), int(get_jwt_identity())):
         return jsonify({"error": "Access denied"}), 403
 
     objections = Objection.query.filter_by(opportunity_id=id).order_by(Objection.created_at.desc()).all()
@@ -1653,7 +1668,7 @@ def add_lead_objection(id):
     lead = Opportunity.query.get_or_404(id)
     user_id = int(get_jwt_identity())
     claims = get_jwt()
-    if not _check_lead_access(lead, claims.get('role'), user_id):
+    if not _ensure_lead_access(lead, claims.get('role'), user_id):
         return jsonify({"error": "Access denied"}), 403
 
     data = request.get_json() or {}
@@ -1809,7 +1824,7 @@ def review_cancellation(cancel_id):
 def get_objections(id):
     lead = Opportunity.query.get_or_404(id)
     claims = get_jwt()
-    if not _check_lead_access(lead, claims.get('role'), int(get_jwt_identity())):
+    if not _ensure_lead_access(lead, claims.get('role'), int(get_jwt_identity())):
         return jsonify({"error": "Access denied"}), 403
     objections = Objection.query.filter_by(opportunity_id=id).order_by(Objection.created_at.desc()).all()
     return jsonify([{
@@ -1833,7 +1848,7 @@ def add_objection(id):
     lead = Opportunity.query.get_or_404(id)
     user_id = int(get_jwt_identity())
     claims = get_jwt()
-    if not _check_lead_access(lead, claims.get('role'), user_id):
+    if not _ensure_lead_access(lead, claims.get('role'), user_id):
         return jsonify({"error": "Access denied"}), 403
 
     data = request.get_json() or {}
@@ -1872,7 +1887,7 @@ def update_objection(obj_id):
     lead = Opportunity.query.get_or_404(objection.opportunity_id)
     user_id = int(get_jwt_identity())
     claims = get_jwt()
-    if not _check_lead_access(lead, claims.get('role'), user_id):
+    if not _ensure_lead_access(lead, claims.get('role'), user_id):
         return jsonify({"error": "Access denied"}), 403
 
     data = request.get_json() or {}
@@ -2040,7 +2055,7 @@ def get_lead_questionnaire(id):
     claims = get_jwt()
     role = claims.get('role')
     user_id = int(get_jwt_identity())
-    if not _check_lead_access(lead, role, user_id):
+    if not _ensure_lead_access(lead, role, user_id):
         return jsonify({"error": "Access denied"}), 403
 
     from app.models import LeadQuestionnaireQuestion
@@ -2102,7 +2117,7 @@ def update_lead_questionnaire(id):
     claims = get_jwt()
     role = claims.get('role')
     user_id = int(get_jwt_identity())
-    if not _check_lead_access(lead, role, user_id):
+    if not _ensure_lead_access(lead, role, user_id):
         return jsonify({"error": "Access denied"}), 403
 
     data = request.json or {}
