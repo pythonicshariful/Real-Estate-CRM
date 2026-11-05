@@ -363,6 +363,44 @@ def send_daily_summary(app=None):
 # Meta Webhook Processor (synchronous — called from route handler)
 # ---------------------------------------------------------------------------
 
+# Standard Meta phone keys win; custom form questions are matched by hint
+# (work_phone_number, whatsapp_number, phone_/_whatsapp_number,
+# mobile_number, ...) so a lead never loses its number just because the
+# form asked for it with a non-standard field name. Every candidate must
+# normalise to a valid number before it is accepted.
+_PHONE_EXACT_KEYS = ('phone_number', 'phone')
+_PHONE_KEY_HINTS = ('phone', 'whatsapp', 'mobile', 'cell', 'telephone', 'contact', 'ফোন')
+
+
+def extract_phone_from_answers(answers):
+    """Best phone from a Meta field_data / questionnaire dict.
+
+    Returns (raw, normalized_e164), or ('', None) when nothing in the
+    dict normalises to a valid phone number.
+    """
+    from app.utils.phone import normalize_phone
+    if not answers:
+        return '', None
+    ordered = [k for k in _PHONE_EXACT_KEYS if answers.get(k)]
+    hinted = []
+    for key in answers:
+        if key in _PHONE_EXACT_KEYS:
+            continue
+        lk = str(key).lower()
+        if any(hint in lk for hint in _PHONE_KEY_HINTS) and answers.get(key):
+            hinted.append(key)
+    # Prefer explicit phone-like keys over whatsapp/mobile variants.
+    hinted.sort(key=lambda k: 0 if ('phone' in str(k).lower() or 'ফোন' in str(k)) else 1)
+    for key in ordered + hinted:
+        raw = str(answers[key]).strip()
+        if not raw:
+            continue
+        norm = normalize_phone(raw)
+        if norm:
+            return raw, norm
+    return '', None
+
+
 def process_meta_webhook(payload_dict: dict, app=None):
     """
     Process a Meta Lead Ads webhook payload.
@@ -416,8 +454,7 @@ def process_meta_webhook(payload_dict: dict, app=None):
 
                 full_name = field_data.get('full_name', field_data.get('name', 'Unknown'))
                 email = field_data.get('email', '')
-                phone_raw = field_data.get('phone_number', field_data.get('phone', ''))
-                phone_norm = normalize_phone(phone_raw) if phone_raw else None
+                phone_raw, phone_norm = extract_phone_from_answers(field_data)
 
                 # Deduplicate contact
                 contact = find_existing_contact(phone=phone_raw, email=email)
@@ -453,6 +490,8 @@ def process_meta_webhook(payload_dict: dict, app=None):
                         contact.service_type = service_type
                     if email and not contact.email:
                         contact.email = email
+                    if phone_raw and not contact.phone_raw:
+                        contact.phone_raw = phone_raw
                     if phone_norm and not contact.phone_normalized:
                         contact.phone_normalized = phone_norm
                     logger.info(f'Existing contact found: {contact.id} — deduplicating')
@@ -556,6 +595,43 @@ def process_meta_webhook(payload_dict: dict, app=None):
                 processed_count += 1
 
         return processed_count
+
+
+def backfill_contact_phones(app=None):
+    """Repair pass: copy phone numbers out of questionnaire answers.
+
+    Meta forms that ask for the number with a custom question key
+    (work_phone_number, whatsapp_number, ...) left Contact.phone empty
+    while the number sat in Opportunity.questionnaire_answers. For every
+    contact that still has no phone at all, scan its opportunities'
+    answers and fill phone_raw/phone_normalized from the first valid
+    number found. Idempotent.
+
+    Returns {'scanned': n, 'filled': n, 'still_missing': n}.
+    """
+    app = _get_app(app)
+    with app.app_context():
+        from app.extensions import db
+        from app.models import Contact, Opportunity
+        phoneless = Contact.query.filter(
+            db.or_(Contact.phone_raw.is_(None), Contact.phone_raw == ''),
+            db.or_(Contact.phone_normalized.is_(None), Contact.phone_normalized == ''),
+        ).all()
+        filled = 0
+        for contact in phoneless:
+            opps = (Opportunity.query
+                    .filter_by(contact_id=contact.id, is_deleted=False)
+                    .order_by(Opportunity.id).all())
+            for opp in opps:
+                raw, norm = extract_phone_from_answers(opp.questionnaire_answers or {})
+                if norm:
+                    contact.phone_raw = raw
+                    contact.phone_normalized = norm
+                    filled += 1
+                    break
+        db.session.commit()
+        return {'scanned': len(phoneless), 'filled': filled,
+                'still_missing': len(phoneless) - filled}
 
 
 # ---------------------------------------------------------------------------
