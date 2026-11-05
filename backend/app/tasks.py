@@ -376,6 +376,7 @@ def process_meta_webhook(payload_dict: dict, app=None):
         from app.utils.phone import normalize_phone, find_existing_contact
         import requests as http_req
 
+        processed_count = 0
         entries = payload_dict.get('entry', [])
         for entry in entries:
             for change in entry.get('changes', []):
@@ -513,6 +514,7 @@ def process_meta_webhook(payload_dict: dict, app=None):
                         f'Duplicate Meta lead merged: contact={contact.id}, '
                         f'inquiry={inquiry.id}, merged_into_opp={active_opp.id}'
                     )
+                    processed_count += 1
                     continue
 
                 # Auto-assign lead owner based on date/time schedule or equal round-robin
@@ -551,6 +553,9 @@ def process_meta_webhook(payload_dict: dict, app=None):
                     f'Meta lead processed: contact={saved_contact_id}, '
                     f'inquiry={saved_inquiry_id}, opportunity={saved_opp_id}'
                 )
+                processed_count += 1
+
+        return processed_count
 
 
 # ---------------------------------------------------------------------------
@@ -575,13 +580,13 @@ def poll_facebook_leads(app=None):
     The first run has no watermark and therefore performs the catch-up
     pull of every retrievable lead (Graph keeps leads for ~90 days).
 
-    Returns a summary dict: {forms_checked, new_leads, skipped_existing}.
+    Returns a summary dict: {forms_checked, new_leads, skipped_existing, failed}.
     """
     import json
     import requests
 
     app = _get_app(app)
-    summary = {'forms_checked': 0, 'new_leads': 0, 'skipped_existing': 0}
+    summary = {'forms_checked': 0, 'new_leads': 0, 'skipped_existing': 0, 'failed': 0}
     with app.app_context():
         from app.models import SystemSetting, Contact
 
@@ -637,7 +642,12 @@ def poll_facebook_leads(app=None):
                     if not url:
                         break
 
-                # Feed oldest first so CRM ordering and SLA chains make sense.
+                # Feed oldest first so CRM ordering and SLA chains make
+                # sense. Advance the watermark only over leads that were
+                # actually ingested — on the first failure, stop this form
+                # for this run so the failed lead (and everything newer)
+                # is retried on the next run instead of skipped forever.
+                last_ok_created = None
                 for lead in reversed(fresh):
                     payload = {
                         'object': 'page',
@@ -655,11 +665,14 @@ def poll_facebook_leads(app=None):
                             }],
                         }],
                     }
-                    process_meta_webhook(payload, app=app)
+                    if not process_meta_webhook(payload, app=app):
+                        summary['failed'] += 1
+                        break
                     summary['new_leads'] += 1
+                    last_ok_created = lead.get('created_time') or last_ok_created
 
-                if fresh:
-                    state[form_id] = max((l.get('created_time') or '') for l in fresh)
+                if last_ok_created:
+                    state[form_id] = last_ok_created
             except Exception as e:  # one bad form must not stop the others
                 logger.error(f'FB lead poll: form {form_id} failed: {e}')
 
@@ -667,6 +680,7 @@ def poll_facebook_leads(app=None):
         logger.info(
             f"FB lead poll: {summary['new_leads']} new lead(s) ingested, "
             f"{summary['skipped_existing']} already present, "
+            f"{summary['failed']} failed, "
             f"{summary['forms_checked']} form(s) checked"
         )
         return summary
@@ -789,7 +803,13 @@ def _fetch_meta_lead(app, leadgen_id: str) -> dict | None:
     """Fetch full lead details from Meta Graph API."""
     import requests
     from app.models import SystemSetting
-    token = SystemSetting.get('meta_page_access_token') or app.config.get('META_PAGE_ACCESS_TOKEN')
+    # Prefer the token stored by the Facebook OAuth connect flow — the
+    # Page an admin actually connected in Settings. The legacy
+    # meta_page_access_token setting predates that flow and may hold a
+    # token for a different Page/app, which cannot read this Page's leads.
+    token = (SystemSetting.get('facebook_page_access_token')
+             or SystemSetting.get('meta_page_access_token')
+             or app.config.get('META_PAGE_ACCESS_TOKEN'))
     if not token:
         return None
 

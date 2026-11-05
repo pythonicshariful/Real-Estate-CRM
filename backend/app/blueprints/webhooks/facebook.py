@@ -407,7 +407,7 @@ def facebook_poll_now():
         return jsonify({'success': False, 'message': 'Facebook Page is not connected yet.'}), 400
     if _get('mode') == 'demo':
         return jsonify({'success': True, 'message': 'Demo connection — nothing to poll.',
-                        'summary': {'forms_checked': 0, 'new_leads': 0, 'skipped_existing': 0}}), 200
+                        'summary': {'forms_checked': 0, 'new_leads': 0, 'skipped_existing': 0, 'failed': 0}}), 200
     from ...tasks import poll_facebook_leads
     from flask import current_app
     summary = poll_facebook_leads(app=current_app._get_current_object())

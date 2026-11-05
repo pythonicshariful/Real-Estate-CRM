@@ -49,7 +49,19 @@ LEAD_DETAILS = {
         {'name': 'email', 'values': ['poll.three@example.com']},
         {'name': 'phone_number', 'values': ['+8801999111003']},
     ],
+    'N1': [
+        {'name': 'full_name', 'values': ['Poll Fail One']},
+        {'name': 'email', 'values': ['poll.n1@example.com']},
+        {'name': 'phone_number', 'values': ['+8801999111011']},
+    ],
+    'N2': [
+        {'name': 'full_name', 'values': ['Poll Fail Two']},
+        {'name': 'email', 'values': ['poll.n2@example.com']},
+        {'name': 'phone_number', 'values': ['+8801999111012']},
+    ],
 }
+
+FAIL_IDS = set()
 
 FORM_LEADS = {
     'FORM1': [
@@ -58,6 +70,10 @@ FORM_LEADS = {
     ],
     'FORM2': [
         {'id': 'L3', 'created_time': '2026-11-05T07:00:00+0000'},
+    ],
+    'FORM3': [
+        {'id': 'N2', 'created_time': '2026-11-05T08:00:00+0000'},
+        {'id': 'N1', 'created_time': '2026-11-05T07:30:00+0000'},
     ],
 }
 
@@ -80,6 +96,8 @@ def fake_get(url, params=None, timeout=None):
 
 
 def fake_fetch_meta_lead(app_, leadgen_id):
+    if leadgen_id in FAIL_IDS:
+        return None
     return {'id': leadgen_id, 'field_data': LEAD_DETAILS[leadgen_id]}
 
 
@@ -90,13 +108,15 @@ def set_settings(**kw):
 
 
 def cleanup():
-    for lid in ('L1', 'L2', 'L3'):
+    FAIL_IDS.clear()
+    for lid in ('L1', 'L2', 'L3', 'N1', 'N2'):
         c = Contact.query.filter_by(facebook_lead_id=lid).first()
         if c:
             Opportunity.query.filter_by(contact_id=c.id).delete()
             Inquiry.query.filter_by(contact_id=c.id).delete()
             db.session.delete(c)
-    for em in ('poll.one@example.com', 'poll.two@example.com', 'poll.three@example.com'):
+    for em in ('poll.one@example.com', 'poll.two@example.com', 'poll.three@example.com',
+               'poll.n1@example.com', 'poll.n2@example.com'):
         c = Contact.query.filter_by(email=em).first()
         if c:
             Opportunity.query.filter_by(contact_id=c.id).delete()
@@ -105,7 +125,7 @@ def cleanup():
     db.session.commit()
     set_settings(facebook_page_access_token='', facebook_page_id='',
                  facebook_connection_mode='', facebook_lead_forms_json='',
-                 facebook_poll_state_json='')
+                 facebook_poll_state_json='', meta_page_access_token='')
 
 
 def main():
@@ -164,6 +184,51 @@ def main():
         with patch('requests.get', side_effect=fake_get) as mock_get:
             s3 = poll_facebook_leads(app=app)
         check('demo mode poll is a no-op', s3['new_leads'] == 0 and mock_get.call_count == 0)
+
+        # --- fetch failure: not counted, watermark holds, form stops --------
+        set_settings(
+            facebook_connection_mode='live',
+            facebook_lead_forms_json=json.dumps([
+                {'id': 'FORM3', 'name': 'Fail form', 'status': 'ACTIVE'},
+            ]),
+            facebook_poll_state_json='',
+        )
+        FAIL_IDS.add('N1')  # the OLDEST lead of FORM3 cannot be fetched
+        with patch('requests.get', side_effect=fake_get), \
+             patch('app.tasks._fetch_meta_lead', side_effect=fake_fetch_meta_lead):
+            s4 = poll_facebook_leads(app=app)
+        check('failed lead is not counted as new', s4['new_leads'] == 0)
+        check('failure is reported', s4['failed'] == 1)
+        check('newer lead behind the failure is not fed either',
+              Contact.query.filter_by(facebook_lead_id='N2').first() is None)
+        state = json.loads(SystemSetting.get('facebook_poll_state_json') or '{}')
+        check('watermark does not advance past a failure', 'FORM3' not in state)
+
+        FAIL_IDS.clear()
+        with patch('requests.get', side_effect=fake_get), \
+             patch('app.tasks._fetch_meta_lead', side_effect=fake_fetch_meta_lead):
+            s5 = poll_facebook_leads(app=app)
+        check('retry ingests both leads once fetch recovers', s5['new_leads'] == 2)
+        state = json.loads(SystemSetting.get('facebook_poll_state_json') or '{}')
+        check('watermark advances after successful retry',
+              state.get('FORM3') == '2026-11-05T08:00:00+0000')
+
+        # --- _fetch_meta_lead prefers the OAuth-flow token ------------------
+        from app.tasks import _fetch_meta_lead
+        captured = {}
+
+        def capture_get(url, params=None, timeout=None):
+            captured['token'] = (params or {}).get('access_token')
+            return FakeResp({'id': 'X', 'field_data': []})
+
+        set_settings(facebook_page_access_token='FBTOKEN', meta_page_access_token='LEGACYTOKEN')
+        with patch('requests.get', side_effect=capture_get):
+            _fetch_meta_lead(app, 'X')
+        check('lead fetch uses the connected-Page token first', captured.get('token') == 'FBTOKEN')
+        set_settings(facebook_page_access_token='')
+        with patch('requests.get', side_effect=capture_get):
+            _fetch_meta_lead(app, 'X')
+        check('legacy token still works as fallback', captured.get('token') == 'LEGACYTOKEN')
 
         cleanup()
         print(f'\n{passed} passed, {failed} failed')
