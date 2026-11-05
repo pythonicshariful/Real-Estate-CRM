@@ -985,6 +985,11 @@ def assign_lead_owner_auto(exclude_user_id: int | None = None, app=None):
          'auto_assign_rr_index' pointer, skipping full candidates; the
          pointer advances only on a successful pick and is persisted via
          SystemSetting (flushed here, committed by the caller's transaction).
+    Capacity exception (deploy 30): when the pool was restricted to
+    in-window (scheduled) owners, the schedule wins over capacity — a
+    scheduled owner is picked even at/over max_lead_capacity, because the
+    schedule is the client's explicit routing instruction ("leads in my
+    duty hours go to me"). Capacity still applies to the fallback pool.
     Returns the selected User, or None if the pool is empty / all full.
     """
     # PipelineStage was missing from this import, so the very next use of it
@@ -1063,7 +1068,8 @@ def assign_lead_owner_auto(exclude_user_id: int | None = None, app=None):
             if date_ok and time_ok:
                 matching_scheduled_owners.append(owner)
 
-        if len(matching_scheduled_owners) > 0:
+        scheduled_pool = len(matching_scheduled_owners) > 0
+        if scheduled_pool:
             candidate_pool = matching_scheduled_owners
         else:
             # No owner currently falls inside their configured date/time window
@@ -1120,7 +1126,7 @@ def assign_lead_owner_auto(exclude_user_id: int | None = None, app=None):
                 if user is None:
                     break
                 max_cap = user.max_lead_capacity if user.max_lead_capacity is not None else 30
-                if active_cnt < max_cap:
+                if scheduled_pool or active_cnt < max_cap:
                     selected = user
                     try:
                         SystemSetting.set('auto_assign_rr_index', str((rr_index + offset + 1) % len(pool_by_id)))
@@ -1131,7 +1137,7 @@ def assign_lead_owner_auto(exclude_user_id: int | None = None, app=None):
         else:
             for user, active_cnt in candidates_with_counts:
                 max_cap = user.max_lead_capacity if user.max_lead_capacity is not None else 30
-                if active_cnt < max_cap:
+                if scheduled_pool or active_cnt < max_cap:
                     selected = user
                     break
 

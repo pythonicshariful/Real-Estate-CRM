@@ -5,7 +5,7 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Messages — Southeast CRM v2.0</title>
   <link rel="stylesheet" href="/assets/css/tailwind.css">
-  <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="stylesheet" href="/assets/css/main.css?v=2">
   <link rel="stylesheet" href="/assets/css/theme.css">
   <style>
     /* Custom Scrollbar for Chat */
@@ -22,6 +22,21 @@
     .chat-scroll::-webkit-scrollbar-thumb:hover {
       background: rgba(255, 255, 255, 0.25);
     }
+    /* Mobile two-pane behaviour (deploy 29): on phones the contact list
+       and the conversation take turns filling the screen (WhatsApp
+       pattern) instead of being squeezed into a 1/3 + 2/3 split. */
+    .msg-back-btn { display: none; }
+    @media (max-width: 767px) {
+      .msg-contacts { height: 100% !important; }
+      .msg-chat { display: none !important; }
+      .msg-layout.chat-open .msg-contacts { display: none !important; }
+      .msg-layout.chat-open .msg-chat { display: flex !important; }
+      .msg-back-btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 2rem; height: 2rem; margin-right: 0.25rem; flex-shrink: 0;
+        border-radius: 0.5rem; color: #cbd5e1; background: rgba(255,255,255,0.05);
+      }
+    }
   </style>
   <script src="/assets/js/theme.js"></script>
 </head>
@@ -33,9 +48,9 @@
       <div class="text-sm font-bold text-white">Messages</div>
     </header>
     
-    <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+    <div class="msg-layout flex-1 flex flex-col md:flex-row overflow-hidden">
       <!-- Contacts List (Left Column / Top Row on Mobile) -->
-      <div class="w-full md:w-80 h-1/3 md:h-auto border-b md:border-b-0 md:border-r border-slate-800 flex flex-col flex-shrink-0 bg-slate-950/40">
+      <div class="msg-contacts w-full md:w-80 h-1/3 md:h-auto border-b md:border-b-0 md:border-r border-slate-800 flex flex-col flex-shrink-0 bg-slate-950/40">
         <div class="p-4 border-b border-slate-800 flex justify-between items-center flex-shrink-0">
           <div class="font-bold text-sm text-white">Active Members</div>
           <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
@@ -46,10 +61,13 @@
       </div>
       
       <!-- Chat Interface (Right Column) -->
-      <div class="flex-1 flex flex-col bg-slate-900/10 overflow-hidden">
+      <div class="msg-chat flex-1 flex flex-col bg-slate-900/10 overflow-hidden">
         <!-- Chat Header -->
         <div class="px-6 py-3.5 border-b border-slate-800/60 bg-slate-950/20 flex justify-between items-center flex-shrink-0">
           <div id="chat-header-user" class="hidden flex items-center gap-3">
+            <button type="button" class="msg-back-btn" onclick="backToContacts()" aria-label="Back to contacts">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            </button>
             <img id="active-user-avatar" class="w-9 h-9 rounded-full object-cover border border-white/10" src="/assets/img/default-avatar.png">
             <div>
               <div class="font-bold text-white text-sm" id="active-user-name">Select Contact</div>
@@ -209,7 +227,13 @@
       });
     }
 
+    // Mobile: switch from the contact list to the conversation pane.
+    function backToContacts() {
+      document.querySelector('.msg-layout')?.classList.remove('chat-open');
+    }
+
     async function selectContact(id, name, role, avatarUrl) {
+      document.querySelector('.msg-layout')?.classList.add('chat-open');
       activePartnerId = id;
       activePartnerName = name;
       activePartnerRole = role;

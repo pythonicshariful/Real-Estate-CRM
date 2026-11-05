@@ -421,3 +421,24 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
     box-sizing: border-box;
   }
 }
+
+/* ─── Mobile responsiveness layer (deploy 29, 2026-11-05) ─────────────
+   The compiled tailwind.css only contains the utility classes that
+   existed at build time, so these fixes are plain CSS. Bare grid-cols-N
+   utilities (no sm:/md: variant) stay N-wide on phones and squeeze
+   their content — collapse the wide ones to two columns. Elements using
+   responsive variants (md:grid-cols-4 etc.) carry different class names
+   and are untouched. */
+@media (max-width: 768px) {
+  .grid-cols-3, .grid-cols-4, .grid-cols-5, .grid-cols-6 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  /* App shells sized with h-screen jump when the mobile URL bar
+     shows/hides; dvh tracks the real visible height instead. */
+  .h-screen { height: 100dvh !important; }
+  /* Leads toolbar: search + action buttons in one non-wrapping row
+     overflowed the phone screen — search takes its own row and the
+     buttons wrap underneath. */
+  .leads-actions { flex-wrap: wrap; }
+  .leads-actions #filter-search { flex: 1 1 100%; width: 100%; }
+}

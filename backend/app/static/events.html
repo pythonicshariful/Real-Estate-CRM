@@ -7,7 +7,7 @@
   <title>Events & Calendar — Southeast CRM v2.0</title>
   <link rel="stylesheet" href="/assets/css/tailwind.css">
   <link media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="stylesheet" href="/assets/css/main.css?v=2">
   <link rel="stylesheet" href="/assets/css/theme.css">
   <script src="/assets/vendor/fullcalendar.global.min.js" defer></script>
   <style>
@@ -54,6 +54,15 @@
       .fc .fc-button { padding: 0.4rem 0.6rem; font-size: 0.75rem; }
       .fc-col-header-cell-cushion { font-size: 0.7rem; padding: 0.5rem 0.25rem; }
       .fc-daygrid-day-number { padding: 0.4rem; font-size: 0.8rem; }
+    }
+    @media (max-width: 640px) {
+      /* Phone layout: tighter shell, calendar card fits the visible
+         height instead of forcing a 700px-tall month grid (deploy 29) */
+      .cal-shell { padding: 0.75rem !important; }
+      .cal-card { min-height: 0 !important; }
+      .hdr-sub { display: none; }
+      .fc-list-day-cushion { padding: 0.5rem 0.75rem; }
+      .fc-list-event td { padding: 0.55rem 0.75rem; font-size: 0.8rem; }
     }
     .fc-toolbar-chunk { display: flex; gap: 0.5rem; }
     
@@ -113,7 +122,7 @@
         </div>
         <div>
           <div class="text-sm font-bold text-white tracking-wide">Events & Calendar</div>
-          <div class="text-xs text-slate-400 font-medium mt-0.5">Manage site visits, appointments, and reminders</div>
+          <div class="hdr-sub text-xs text-slate-400 font-medium mt-0.5">Manage site visits, appointments, and reminders</div>
         </div>
       </div>
       <div class="flex items-center gap-2 flex-shrink-0">
@@ -126,7 +135,7 @@
     </header>
     
     <!-- Calendar Container -->
-    <div class="flex-1 overflow-y-auto p-6 md:p-8 z-10 relative">
+    <div class="cal-shell flex-1 overflow-y-auto p-6 md:p-8 z-10 relative">
       <!-- Owner colour legend + lead filter -->
       <div class="mb-4 flex flex-wrap items-center gap-3">
         <div id="owner-legend" class="flex flex-wrap items-center gap-2"></div>
@@ -142,7 +151,7 @@
           </select>
         </div>
       </div>
-      <div class="glass-dark border border-white/5 rounded-2xl h-full min-h-[700px] flex flex-col shadow-2xl backdrop-blur-xl bg-black/40 overflow-hidden">
+      <div class="cal-card glass-dark border border-white/5 rounded-2xl h-full min-h-[700px] flex flex-col shadow-2xl backdrop-blur-xl bg-black/40 overflow-hidden">
         <div id="calendar" class="flex-1 w-full h-full"></div>
       </div>
     </div>
@@ -452,17 +461,19 @@
          Calendar
       ------------------------------------------------------------------ */
       const calendarEl = document.getElementById('calendar');
+      // Phones get the readable list view + a compact toolbar; desktop
+      // keeps the full month grid and all four views (deploy 29).
+      const calIsMobile = () => window.innerWidth < 768;
+      const calToolbar = (mobile) => mobile
+        ? { left: 'prev,next', center: 'title', right: 'today dayGridMonth,listWeek' }
+        : { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth' };
       const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
+        initialView: calIsMobile() ? 'listWeek' : 'dayGridMonth',
         // Stored datetimes are UTC; display them in Bangladesh time so
         // 2:05 PM Dhaka shows as 2:05 PM, not 8:05 AM.
         timeZone: 'Asia/Dhaka',
         height: '100%',
-        headerToolbar: {
-          left: 'prev,next today',
-          center: 'title',
-          right: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth'
-        },
+        headerToolbar: calToolbar(calIsMobile()),
         eventContent: function (arg) {
           const p = arg.event.extendedProps || {};
           const color = arg.event.backgroundColor || '#14B8A6';
@@ -561,6 +572,17 @@
         }
       });
       calendar.render();
+
+      // Switch layout when the viewport crosses the phone breakpoint
+      // (rotation, foldables, desktop window resize).
+      let calMobileState = calIsMobile();
+      window.addEventListener('resize', () => {
+        const m = calIsMobile();
+        if (m === calMobileState) return;
+        calMobileState = m;
+        calendar.setOption('headerToolbar', calToolbar(m));
+        calendar.changeView(m ? 'listWeek' : 'dayGridMonth');
+      });
 
       // re-fetch when the lead filter changes
       document.getElementById('leadFilter')?.addEventListener('change', () => calendar.refetchEvents());

@@ -2368,11 +2368,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ── Bulk Import CSV Modal (M-01) ──────────────────────────────────────────
-    window.openImportModal = function() {
+    window.openImportModal = async function() {
         const modal = document.getElementById('import-modal');
         if (!modal) return;
         const form = document.getElementById('import-leads-form');
         if (form) form.reset();
+        // Populate the Assign-To select (same source as the mapping modal)
+        const frontOwnerSelect = document.getElementById('import-owner-select-front');
+        if (frontOwnerSelect) {
+            try {
+                const token = localStorage.getItem('crm_token');
+                const res = await fetch('/api/team/members', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const members = await res.json();
+                    frontOwnerSelect.innerHTML = '<option value="">Auto-assign (schedule / lowest load)</option>';
+                    members.forEach(m => {
+                        const opt = document.createElement('option');
+                        opt.value = m.id;
+                        opt.textContent = m.full_name;
+                        frontOwnerSelect.appendChild(opt);
+                    });
+                }
+            } catch (e) {
+                console.error('Failed to load members for import modal', e);
+            }
+        }
         const text = document.getElementById('file-chosen-text');
         if (text) text.textContent = 'Drag and drop your .csv file here, or click to browse';
         const statusBox = document.getElementById('import-status-box');
@@ -2444,6 +2466,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const formData = new FormData();
             formData.append('file', fileInput.files[0]);
+            const frontOwnerSelect = document.getElementById('import-owner-select-front');
+            if (frontOwnerSelect && frontOwnerSelect.value) {
+                formData.append('assigned_to_id', frontOwnerSelect.value);
+            }
 
             try {
                 const token = localStorage.getItem('crm_token');
