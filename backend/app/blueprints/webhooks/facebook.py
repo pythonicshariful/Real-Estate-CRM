@@ -164,6 +164,34 @@ def facebook_oauth_start():
     }), 200
 
 
+def _kick_immediate_poll():
+    """Pull waiting leads immediately after a (re)connect (deploy 31).
+
+    The 5-minute scheduler poll would get them eventually, but a client
+    reconnects precisely because leads are stuck in Meta — they must
+    start flowing at once, not up to 5 minutes later. Runs the exact
+    scheduler poll in a daemon thread so the OAuth callback page is not
+    blocked (a catch-up over ~50 forms can take minutes). Dedupe is by
+    facebook_lead_id + per-form watermarks, so racing the scheduler's
+    own tick is safe.
+    """
+    import threading
+
+    from ...tasks import poll_facebook_leads
+
+    app_obj = current_app._get_current_object()
+
+    def _run():
+        try:
+            summary = poll_facebook_leads(app=app_obj)
+            app_obj.logger.info(f'FB connect: immediate poll finished: {summary}')
+        except Exception as exc:  # noqa: BLE001
+            app_obj.logger.error(f'FB connect: immediate poll failed: {exc}')
+
+    threading.Thread(target=_run, daemon=True, name='fb-connect-poll').start()
+    return 'অপেক্ষমাণ lead-গুলো এখনই টানা শুরু হয়েছে — কয়েক মুহূর্তের মধ্যে CRM-এ দেখা যাবে।'
+
+
 @webhooks_bp.route('/facebook/oauth/callback', methods=['GET'])
 def facebook_oauth_callback():
     """
@@ -226,9 +254,13 @@ def facebook_oauth_callback():
         sub_info = _subscribe_page_webhooks(page['id'], page.get('access_token', ''))
         sync_info = _sync_lead_forms(page['id'], page.get('access_token', ''))
 
+        # 4. Pull any waiting leads RIGHT NOW (deploy 31) — reconnecting
+        #    must refill the CRM immediately, not at the next poll tick.
+        poll_note = _kick_immediate_poll()
+
         return _callback_html(
             True,
-            f"Connected to Page “{page.get('name','')}”. {sub_info} {sync_info}",
+            f"Connected to Page “{page.get('name','')}”. {sub_info} {sync_info} {poll_note}",
         )
     except requests.RequestException as exc:
         return _callback_html(False, f"Network error talking to Facebook: {exc}")
