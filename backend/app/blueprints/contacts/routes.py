@@ -1,8 +1,42 @@
 from flask import request, jsonify
 from app.blueprints.contacts import contacts_bp
-from app.models import Contact, db, clean_phone_str, utc_iso
-from flask_jwt_extended import jwt_required
+from app.models import Contact, Opportunity, db, clean_phone_str, utc_iso
+from app.utils.rbac import is_admin
+from flask_jwt_extended import jwt_required, get_jwt, get_jwt_identity
 from datetime import datetime, timezone
+
+
+def _visible_contact_filter(user_id):
+    """Deploy 33 (2026-11-05, owner's direct instruction): a non-admin
+    user sees a contact on the Clients page only when it is THEIR client
+    — they own at least one live lead (opportunity) for it — or the
+    contact has no live lead at all (a shared address-book entry, e.g.
+    manually added before any lead exists, so an owner's own add does
+    not vanish from their list). Contacts whose leads belong to another
+    owner, are unassigned, or sit with an Admin are hidden. Admins are
+    not filtered: they see every contact.
+    """
+    own = db.session.query(Opportunity.contact_id).filter(
+        Opportunity.contact_id.isnot(None),
+        Opportunity.assigned_to_id == user_id,
+        Opportunity.is_deleted == False,
+    )
+    any_live = db.session.query(Opportunity.contact_id).filter(
+        Opportunity.contact_id.isnot(None),
+        Opportunity.is_deleted == False,
+    )
+    return db.or_(Contact.id.in_(own), Contact.id.notin_(any_live))
+
+
+def _can_view_contact(contact, role, user_id):
+    """Single-contact counterpart of _visible_contact_filter."""
+    if is_admin(role):
+        return True
+    live_opps = Opportunity.query.filter_by(
+        contact_id=contact.id, is_deleted=False)
+    if live_opps.filter(Opportunity.assigned_to_id == user_id).first():
+        return True
+    return live_opps.first() is None
 
 def contact_to_dict(contact):
     return {
@@ -28,8 +62,13 @@ def contact_to_dict(contact):
 def get_contacts():
     query_str = request.args.get('query', '')
     source = request.args.get('source', '')
-    
+
     query = Contact.query.filter(Contact.is_deleted == False)
+
+    # Deploy 33: Lead Owners see only their own clients (see helper).
+    claims = get_jwt()
+    if not is_admin(claims.get('role')):
+        query = query.filter(_visible_contact_filter(int(get_jwt_identity())))
     
     if query_str:
         query = query.filter(
@@ -76,6 +115,9 @@ def get_contact(id):
     contact = Contact.query.get_or_404(id)
     if contact.is_deleted:
         return jsonify({"error": "Contact not found"}), 404
+    claims = get_jwt()
+    if not _can_view_contact(contact, claims.get('role'), int(get_jwt_identity())):
+        return jsonify({"error": "Access denied"}), 403
     return jsonify(contact_to_dict(contact)), 200
 
 @contacts_bp.route('/<int:id>', methods=['PUT'])
@@ -123,13 +165,26 @@ def delete_contact(id):
 @jwt_required()
 def contact_inquiries(id):
     contact = Contact.query.get_or_404(id)
+    claims = get_jwt()
+    if not _can_view_contact(contact, claims.get('role'), int(get_jwt_identity())):
+        return jsonify({"error": "Access denied"}), 403
     return jsonify([i.raw_payload for i in contact.inquiries if contact.inquiries]), 200
 
 @contacts_bp.route('/<int:id>/opportunities', methods=['GET'])
 @jwt_required()
 def contact_opportunities(id):
     contact = Contact.query.get_or_404(id)
-    return jsonify([o.to_dict() for o in contact.opportunities if contact.opportunities]), 200
+    claims = get_jwt()
+    role = claims.get('role')
+    user_id = int(get_jwt_identity())
+    if not _can_view_contact(contact, role, user_id):
+        return jsonify({"error": "Access denied"}), 403
+    opps = [o for o in contact.opportunities if not o.is_deleted]
+    if not is_admin(role):
+        # A shared contact may also carry another owner's lead — a
+        # non-admin only ever sees their own.
+        opps = [o for o in opps if o.assigned_to_id == user_id]
+    return jsonify([o.to_dict() for o in opps]), 200
 
 
 @contacts_bp.route('/import', methods=['POST'])
