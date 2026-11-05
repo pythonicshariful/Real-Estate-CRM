@@ -2204,7 +2204,7 @@ def _suggest_mapping(headers):
     for h in headers:
         key = str(h).strip().lower().replace(' ', '_').replace('-', '_')
         field = ''
-        if any(k in key for k in ['phone', 'mobile', 'contact', 'cell']):
+        if any(k in key for k in ['phone', 'mobile', 'contact', 'cell', 'whatsapp']):
             field = 'phone'
         elif 'email' in key or 'mail' in key:
             field = 'email'
@@ -2432,8 +2432,10 @@ def import_leads():
             'Full Name', 'Name', 'Customer Name', 'full_name',
             'Phone Number', 'Phone', 'Mobile', 'Contact Number',
             'phone', 'phone_raw', 'phone_number',
+            'WhatsApp Number', 'WhatsApp', 'whatsapp_number',
             'Email', 'Email Address', 'email',
             'Profession', 'Occupation', 'Job', 'profession',
+            'Job Title', 'job_title',
             'Service Type', 'Service', 'Property Type', 'service_type',
             'Budget Range', 'Budget', 'budget',
         )
@@ -2470,9 +2472,12 @@ def import_leads():
     for idx, row in enumerate(rows, 1):
         try:
             full_name = get_val(row, 'Full Name', 'Name', 'Customer Name', 'full_name')
-            phone_raw = clean_phone_str(get_val(row, 'Phone Number', 'Phone', 'Mobile', 'Contact Number', 'phone', 'phone_raw', 'phone_number'))
+            phone_raw = clean_phone_str(get_val(row, 'Phone Number', 'Phone', 'Mobile', 'Contact Number', 'phone', 'phone_raw', 'phone_number', 'WhatsApp Number', 'WhatsApp', 'whatsapp_number'))
+            if phone_raw and phone_raw.lower().startswith('p:'):
+                # Meta lead-export CSVs prefix phone values with 'p:'
+                phone_raw = phone_raw[2:].strip()
             email = get_val(row, 'Email', 'Email Address', 'email')
-            profession = get_val(row, 'Profession', 'Occupation', 'Job', 'profession')
+            profession = get_val(row, 'Profession', 'Occupation', 'Job', 'profession', 'Job Title', 'job_title')
             service_type = get_val(row, 'Service Type', 'Service', 'Property Type', 'service_type')
             project_name = get_val(row, 'Project Name', 'Project', 'project', 'project_name')
             source = get_val(row, 'Source', 'Lead Source', 'source') or default_source

@@ -696,13 +696,19 @@ def poll_facebook_leads(app=None):
     The first run has no watermark and therefore performs the catch-up
     pull of every retrievable lead (Graph keeps leads for ~90 days).
 
-    Returns a summary dict: {forms_checked, new_leads, skipped_existing, failed}.
+    Returns a summary dict: {forms_checked, new_leads, skipped_existing,
+    failed, errors, error}. 'errors' counts Graph API listing failures
+    (e.g. an invalidated Page token) and 'error' carries the first such
+    message — a dead token must never again look like a clean poll that
+    simply found no new leads (2026-11-05: token invalidated, poll-now
+    reported all zeros).
     """
     import json
     import requests
 
     app = _get_app(app)
-    summary = {'forms_checked': 0, 'new_leads': 0, 'skipped_existing': 0, 'failed': 0}
+    summary = {'forms_checked': 0, 'new_leads': 0, 'skipped_existing': 0,
+               'failed': 0, 'errors': 0, 'error': None}
     with app.app_context():
         from app.models import SystemSetting, Contact
 
@@ -735,10 +741,14 @@ def poll_facebook_leads(app=None):
                     resp = requests.get(url, params=params, timeout=20)
                     data = resp.json()
                     if 'error' in data:
+                        _err_msg = data['error'].get('message', 'unknown error')
                         logger.error(
                             f"FB lead poll: Graph error for form {form_id}: "
-                            f"{data['error'].get('message', 'unknown error')}"
+                            f"{_err_msg}"
                         )
+                        summary['errors'] += 1
+                        if not summary['error']:
+                            summary['error'] = _err_msg
                         fresh = []
                         break
                     reached_watermark = False
@@ -791,12 +801,16 @@ def poll_facebook_leads(app=None):
                     state[form_id] = last_ok_created
             except Exception as e:  # one bad form must not stop the others
                 logger.error(f'FB lead poll: form {form_id} failed: {e}')
+                summary['errors'] += 1
+                if not summary['error']:
+                    summary['error'] = str(e)
 
         SystemSetting.set('facebook_poll_state_json', json.dumps(state))
         logger.info(
             f"FB lead poll: {summary['new_leads']} new lead(s) ingested, "
             f"{summary['skipped_existing']} already present, "
             f"{summary['failed']} failed, "
+            f"{summary['errors']} listing error(s), "
             f"{summary['forms_checked']} form(s) checked"
         )
         return summary
