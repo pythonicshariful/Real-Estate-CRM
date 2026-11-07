@@ -287,3 +287,102 @@ def manage_users_get():
     if err: return err
     users = User.query.order_by(User.id.asc()).all()
     return jsonify([u.to_dict() for u in users]), 200
+
+@team_bp.route('/users', methods=['POST'])
+@jwt_required()
+def create_user():
+    """General account creation — the Team page's Create Account form
+    (TeamAPI.createUser) posts here; the route never existed, so the
+    button 405'd. Mirrors create_lead_owner but honours the role the
+    form sends (team.html: ADMIN / CEO / GM / MANAGER / EXECUTIVE;
+    missing role defaults to LEAD_OWNER)."""
+    claims = get_jwt()
+    err = _require_admin(claims)
+    if err: return err
+
+    data = request.get_json() or {}
+    email = (data.get('email') or '').strip()
+    full_name = (data.get('full_name') or '').strip()
+    password = data.get('password', '')
+    phone = (data.get('phone') or '').strip()
+
+    if not email or not password or not full_name:
+        return jsonify({'error': 'Email, full name, and password are required'}), 400
+
+    role_raw = data.get('role')
+    if role_raw is None or (isinstance(role_raw, str) and not role_raw.strip()):
+        role = UserRole.LEAD_OWNER
+    else:
+        try:
+            role = UserRole[str(role_raw).strip().upper()]
+        except KeyError:
+            return jsonify({'error': f"Unknown role '{role_raw}'"}), 400
+
+    from app.utils.security import validate_password
+    is_valid, msg = validate_password(password)
+    if not is_valid:
+        return jsonify({'error': msg}), 400
+
+    if User.query.filter_by(email=email).first():
+        return jsonify({'error': f"User with email '{email}' already exists"}), 409
+
+    user = User(
+        email=email,
+        full_name=full_name,
+        role=role,
+        phone=phone,
+        is_active=True,
+        is_mfa_enabled=False,
+        calendar_color=data.get('calendar_color') or data.get('color') or '#6366f1',
+    )
+    if data.get('max_lead_capacity') is not None:
+        try:
+            user.max_lead_capacity = int(data['max_lead_capacity'])
+        except (TypeError, ValueError):
+            return jsonify({"error": "max_lead_capacity must be an integer"}), 400
+    user.set_password(password)
+    db.session.add(user)
+    db.session.commit()
+
+    return jsonify({'message': 'User account created successfully', 'user': user.to_dict()}), 201
+
+@team_bp.route('/users/<int:id>/toggle-status', methods=['POST'])
+@jwt_required()
+def toggle_user_status(id):
+    claims = get_jwt()
+    err = _require_admin(claims)
+    if err: return err
+
+    # Guard the lead-owner toggle lacks: never let an admin switch off
+    # their own account (could lock out the only admin).
+    if id == int(get_jwt_identity()):
+        return jsonify({'error': 'You cannot deactivate your own account'}), 400
+
+    user = User.query.get_or_404(id)
+    user.is_active = not user.is_active
+    if not user.is_active:
+        user.deactivated_at = datetime.now(timezone.utc)
+        user.deactivated_by_id = int(get_jwt_identity())
+    else:
+        user.deactivated_at = None
+        user.deactivated_by_id = None
+    db.session.commit()
+    return jsonify({'message': f"Status changed to {'Active' if user.is_active else 'Inactive'}", 'user': user.to_dict()}), 200
+
+@team_bp.route('/users/<int:id>/deactivate', methods=['POST'])
+@jwt_required()
+def deactivate_user(id):
+    claims = get_jwt()
+    err = _require_admin(claims)
+    if err: return err
+
+    if id == int(get_jwt_identity()):
+        return jsonify({'error': 'You cannot deactivate your own account'}), 400
+
+    user = User.query.get_or_404(id)
+    if user.is_active:
+        user.is_active = False
+        user.deactivated_at = datetime.now(timezone.utc)
+        user.deactivated_by_id = int(get_jwt_identity())
+        db.session.commit()
+    return jsonify({'message': 'User deactivated', 'user': user.to_dict()}), 200

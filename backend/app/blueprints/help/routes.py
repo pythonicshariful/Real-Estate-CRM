@@ -44,3 +44,38 @@ def create_article():
     db.session.add(article)
     db.session.commit()
     return jsonify(article.to_dict()), 201
+
+@help_bp.route("/articles/<int:id>", methods=["PUT"])
+@jwt_required()
+@require_min_role("ADMIN")
+def update_article(id):
+    article = Article.query.get(id)
+    if article is None:
+        return jsonify({"error": "Article not found"}), 404
+
+    data = request.get_json() or {}
+    if "title" in data:
+        article.title = data["title"]
+    if "content" in data:
+        article.content = data["content"]
+    if "category" in data:
+        # Same tolerance as create: the raw value is stored and the
+        # Enum column resolves it against ArticleCategory values.
+        article.category = data["category"]
+    if "is_published" in data:
+        article.is_published = data["is_published"]
+
+    db.session.commit()
+    return jsonify(article.to_dict()), 200
+
+@help_bp.route("/articles/<int:id>", methods=["DELETE"])
+@jwt_required()
+@require_min_role("ADMIN")
+def delete_article(id):
+    article = Article.query.get(id)
+    if article is None:
+        return jsonify({"error": "Article not found"}), 404
+
+    db.session.delete(article)
+    db.session.commit()
+    return jsonify({"message": "Article deleted"}), 200
