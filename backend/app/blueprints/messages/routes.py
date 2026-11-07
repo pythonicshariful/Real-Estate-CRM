@@ -67,6 +67,25 @@ def send_message():
     )
     db.session.add(message)
     db.session.commit()
+
+    # Deploy 34: notify the recipient (in-app Notification + FCM push)
+    # — title is the sender's name, body a short preview. The Message
+    # model has no thread id; conversations are keyed by the partner,
+    # so the push data carries the sender's id as the conversation key.
+    # Failure-isolated: a push problem never breaks message sending.
+    try:
+        from app.push import notify_user
+        sender = User.query.get(user_id)
+        notify_user(
+            recipient,
+            'MESSAGE',
+            sender.full_name if sender else 'New message',
+            (message.body or '')[:120],
+            data={'type': 'MESSAGE', 'sender_id': sender.id if sender else user_id,
+                  'message_id': message.id},
+        )
+    except Exception:
+        pass
     return jsonify(message_to_dict(message)), 201
 
 

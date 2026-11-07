@@ -398,7 +398,9 @@ def _register_blueprints(app):
     from app.blueprints.expenses import expenses_bp
     from app.blueprints.prospects import prospects_bp
     from app.blueprints.help import help_bp
+    from app.blueprints.users import users_bp
 
+    app.register_blueprint(users_bp,     url_prefix='/api/users')
     app.register_blueprint(auth_bp,      url_prefix='/api/auth')
     app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
     app.register_blueprint(leads_bp,     url_prefix='/api/leads')

@@ -59,6 +59,12 @@ class Config:
     SCHEDULER_TIMEZONE = 'Asia/Dhaka'
     DISABLE_SCHEDULER = os.environ.get('DISABLE_SCHEDULER', 'False').lower() == 'true'
 
+    # ------------------------------------------------------------------
+    # FCM push notifications (deploy 34) — path to the Firebase
+    # service-account JSON key. Unset/missing file = push disabled.
+    # ------------------------------------------------------------------
+    FCM_CREDENTIALS_FILE = os.environ.get('FCM_CREDENTIALS_FILE')
+
 
     # ------------------------------------------------------------------
     # Call Recording Storage — Local Filesystem

@@ -599,6 +599,45 @@ def process_meta_webhook(payload_dict: dict, app=None):
 
                 db.session.commit()
 
+                # Deploy 34: notify about the genuinely NEW lead —
+                # in-app Notification + FCM push. Assigned → the owner;
+                # unassigned → every token-holding ADMIN. Fully
+                # failure-isolated: a push problem never affects the
+                # ingestion above (the dedupe/merge path never reaches
+                # here, so a re-submission notifies nobody).
+                try:
+                    from app.models import Notification as _Notification
+                    from app.push import notify_lead_assignment, admin_recipients, push_to_admins
+                    if assigned_owner is not None:
+                        notify_lead_assignment(
+                            assigned_owner, saved_opp_id,
+                            "New lead assigned",
+                            f"New Meta lead assigned to you: {full_name}.",
+                        )
+                    else:
+                        _title = "New lead received"
+                        _body = f"New Meta lead received: {full_name} (unassigned)."
+                        # In-app rows for the token-holding admins, then
+                        # ONE push_to_admins fan-out (notify_lead_assignment
+                        # would push per-admin as well — not used here).
+                        for _admin in admin_recipients():
+                            db.session.add(_Notification(
+                                user_id=_admin.id,
+                                title=_title,
+                                body=_body,
+                                type='LEAD_ASSIGNED',
+                                lead_id=saved_opp_id,
+                            ))
+                        db.session.commit()
+                        push_to_admins(_title, _body,
+                                       data={'lead_id': saved_opp_id, 'type': 'LEAD_ASSIGNED'})
+                except Exception as _push_exc:
+                    logger.warning(f'Lead notification/push failed for opp {saved_opp_id}: {_push_exc}')
+                    try:
+                        db.session.rollback()
+                    except Exception:
+                        pass
+
                 # Schedule SLA chain (APScheduler)
                 schedule_sla_chain(saved_opp_id, app=app)
 
@@ -1386,6 +1425,18 @@ def check_event_reminders(app=None):
                 event_id=ev.id,
                 lead_id=ev.lead_id,
             ))
+            # Deploy 34: mirror the reminder to the recipient's phone.
+            # push_to_user never raises; a push failure must not affect
+            # the reminder bookkeeping around it.
+            try:
+                from app.models import User as _User
+                from app.push import push_to_user as _push_to_user
+                _recipient = _User.query.get(recipient_id)
+                if _recipient is not None:
+                    _push_to_user(_recipient, title, body,
+                                  data={'event_id': ev.id, 'type': 'EVENT_REMINDER'})
+            except Exception as _push_exc:
+                logger.warning(f"Event-reminder push failed for Event #{ev.id}: {_push_exc}")
             ev.reminder_sent = True
             created += 1
             logger.info(f"Event reminder sent for Event #{ev.id} to user #{recipient_id}")

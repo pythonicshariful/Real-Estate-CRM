@@ -1498,10 +1498,11 @@ def bulk_assign_leads():
     owner = db.session.query(User).get(owner_id) if owner_id else None
     owner_name = owner.full_name if owner else "Unassigned"
 
+    newly_assigned = []
     for lead in leads:
         old_owner = lead.assigned_to_id
         lead.assigned_to_id = owner_id if owner_id else None
-        
+
         # Add Audit log
         contact_name = lead.contact.full_name if lead.contact else "Unknown"
         audit = AuditLog(
@@ -1514,8 +1515,25 @@ def bulk_assign_leads():
             new_value=str(owner_id) if owner_id else "None"
         )
         db.session.add(audit)
-        
+        if owner is not None and old_owner != owner_id:
+            newly_assigned.append((lead.id, contact_name))
+
     db.session.commit()
+
+    # Deploy 34: notify the new owner (in-app + FCM push) for every lead
+    # whose owner actually changed — never when an admin assigns leads
+    # to themself. Failure-isolated.
+    if owner is not None and owner_id != current_user_id:
+        try:
+            from app.push import notify_lead_assignment
+            for lead_id, contact_name in newly_assigned:
+                notify_lead_assignment(
+                    owner, lead_id,
+                    "Lead assigned to you",
+                    f"Lead assigned to you: {contact_name}.",
+                )
+        except Exception:
+            pass
     return jsonify({"msg": f"Successfully assigned {len(leads)} leads to {owner_name}."}), 200
 # ── Assignment rule (persisted, manager-settable) ─────────────────────────
 # auto_assign_mode (SystemSetting): 'lowest_count' (default) or 'round_robin'.
@@ -1941,6 +1959,22 @@ def reassign_lead(id):
     )
     db.session.add(audit)
     db.session.commit()
+
+    # Deploy 34: tell the new owner (in-app + FCM push) when a lead is
+    # handed to someone other than the previous owner — never when an
+    # admin assigns a lead to themself. Failure-isolated.
+    if new_owner is not None and new_owner_id != old_owner_id \
+            and new_owner_id != current_user_id:
+        try:
+            from app.push import notify_lead_assignment
+            contact_name = lead.contact.full_name if lead.contact else "Unknown"
+            notify_lead_assignment(
+                new_owner, lead.id,
+                "Lead assigned to you",
+                f"Lead assigned to you: {contact_name}.",
+            )
+        except Exception:
+            pass
     return jsonify({"msg": f"Lead reassigned to {new_owner.full_name if new_owner else 'Unassigned'}"}), 200
 
 
